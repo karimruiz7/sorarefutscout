@@ -213,3 +213,5 @@ Objetivo de producto: conectar Sorare, importar cartas compatibles y preparar la
 - [ ] Realizar auditoría de seguridad y escala antes de activar OAuth a usuarios públicos.
 
 Sorare OAuth da acceso autorizado a información básica y cartas; no proporciona email, futuras alineaciones privadas ni operaciones de compraventa. Enlaces: https://github.com/sorare/api#oauth-authentication--login-with-sorare
+
+**Activación deliberada:** el backend solo activa OAuth cuando, además de credenciales, KV y contacto, se configura explícitamente `SFS_OAUTH_ENABLED=true` en Production. No activar esta variable hasta completar revisión de privacidad y pruebas del registro.
