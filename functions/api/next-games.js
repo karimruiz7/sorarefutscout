@@ -28,9 +28,9 @@ function json(body,status=200,extra={}) {
 }
 function retrySeconds(value){
  const num=Number(value);
- if(Number.isFinite(num)&&num>0)return Math.min(3600,Math.ceil(num));
+ if(Number.isFinite(num)&&num>0)return Math.min(86400,Math.ceil(num));
  const d=value?Date.parse(value):NaN;
- return Number.isFinite(d)?Math.min(3600,Math.max(1,Math.ceil((d-Date.now())/1000))):60;
+ return Number.isFinite(d)?Math.min(86400,Math.max(1,Math.ceil((d-Date.now())/1000))):60;
 }
 export async function onRequestGet(context) {
  const url=new URL(context.request.url);
@@ -42,12 +42,22 @@ export async function onRequestGet(context) {
    return json({ok:false,error:"Selecciona entre 1 y 12 identificadores de jugadores distintos."},400);
  }
  const sorted=[...slugs].sort();
- const key=new Request(url.origin+"/api/next-games?v=2&slugs="+encodeURIComponent(sorted.join(",")));
+ const key=new Request(url.origin+"/api/next-games?v=3&slugs="+encodeURIComponent(sorted.join(",")));
+ // Local edge-wide cooldown: 429 is returned to users but never cached as a success.
+ const cooldownKey=new Request(url.origin+"/api/next-games?__cooldown=v3");
  let cache=null;
  try{
    cache=caches.default;
    const cached=await cache.match(key);
    if(cached)return cached;
+   const marker=await cache.match(cooldownKey);
+   if(marker){
+     const saved=await marker.json();
+     const remaining=Math.ceil((Number(saved.retryAt)-Date.now())/1000);
+     if(Number.isFinite(remaining)&&remaining>0){
+       return json({ok:false,error:"Sorare ha limitado temporalmente las consultas.",reason:"rate_limit",retryAfter:remaining},429,{"retry-after":String(remaining)});
+     }
+   }
  }catch(_){}
  let upstream;
  try{
@@ -61,7 +71,13 @@ export async function onRequestGet(context) {
  }catch(_){return json({ok:false,error:"No se ha podido contactar con la API de Sorare."},502);}
  if(upstream.status===429){
    const seconds=retrySeconds(upstream.headers.get("retry-after"));
-   return json({ok:false,error:"Sorare ha limitado temporalmente las consultas.",retryAfter:seconds},429,{"retry-after":String(seconds)});
+   if(cache&&context.waitUntil){
+     const marker=new Response(JSON.stringify({retryAt:Date.now()+seconds*1000}),{
+       status:200,headers:{"content-type":"application/json","cache-control":"public, max-age="+seconds+", s-maxage="+seconds},
+     });
+     context.waitUntil(cache.put(cooldownKey,marker).catch(()=>{}));
+   }
+   return json({ok:false,error:"Sorare ha limitado temporalmente las consultas.",reason:"rate_limit",retryAfter:seconds},429,{"retry-after":String(seconds)});
  }
  if(!upstream.ok)return json({ok:false,error:"Sorare no ha respondido correctamente.",upstreamStatus:upstream.status},502);
  let data;
