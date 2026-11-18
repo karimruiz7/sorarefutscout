@@ -28,13 +28,13 @@ function respond(body, status = 200, headers = {}) {
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const q = (url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
-  const rawPage = url.searchParams.get("page") ?? "0";
+  const rawPage = url.searchParams.get("page") ?? "1";
   const page = Number(rawPage);
 
   if (q.length < 2 || q.length > 60 || !/^[\p{L}\p{M}\p{N}\s.'’-]+$/u.test(q)) {
     return respond({ ok: false, error: "Escribe un nombre de al menos 2 letras (máximo 60)." }, 400);
   }
-  if (!/^\d{1,2}$/.test(rawPage) || !Number.isInteger(page) || page < 0 || page > 20) {
+  if (!/^\d{1,2}$/.test(rawPage) || !Number.isInteger(page) || page < 1 || page > 20) {
     return respond({ ok: false, error: "Página de búsqueda no válida." }, 400);
   }
 
