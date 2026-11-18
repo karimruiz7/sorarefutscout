@@ -338,6 +338,7 @@ function saveOppCache(){
  try{sessionStorage.setItem(OPP_CACHE,JSON.stringify({at:Date.now(),items:[...opponents.values()]}));}catch(_){}
 }
 function fixtureOpponent(p){
+ if(!fixtureFresh(p.slug))return null;
  const info=games.get(p.slug),game=info?.game;
  if(info?.status!=="scheduled"||!game)return null;
  const own=info.clubSlug;
@@ -506,7 +507,7 @@ async function analyzeOpponents(){
   render();
   return;
  }
- const missingFixture=candidates.filter(p=>!games.has(p.slug));
+ const missingFixture=candidates.filter(p=>!fixtureFresh(p.slug));
  if(missingFixture.length){
   $("matchup-status").textContent="Primero pulsa «Consultar próximos partidos» para obtener los rivales y sus identificadores.";
   return;
@@ -552,7 +553,7 @@ const GAME_CACHE="sorarefutscout:next-games:v2";
 const GAME_OLD_CACHE="sorarefutscout:next-games:v1";
 const GAME_PERSIST="sorarefutscout:next-games:per-player:v1";
 const GAME_COOLDOWN="sorarefutscout:next-games:pause:v1";
-const GAME_TTL=2*60*60*1000; // Current enough for GW filtering.
+const GAME_TTL=4*60*60*1000; // Current enough for GW filtering.
 const GAME_STALE_TTL=36*60*60*1000; // Stale matches are display-only, not eligible.
 const WEEK_MS=7*24*3600*1000;
 let games=new Map(),gameFetchedAt=new Map(),fixtureCooldownUntil=0;
@@ -619,7 +620,7 @@ function writeGameCache(){
    .map(([slug,fixture])=>({fixture,fetchedAt:gameFetchedAt.get(slug)}));
  try{localStorage.setItem(GAME_PERSIST,JSON.stringify({savedAt:Date.now(),items}));}catch(_){}
  // Keep legacy session format available for a safe upgrade path.
- try{sessionStorage.setItem(GAME_CACHE,JSON.stringify({savedAt:Date.now(),fixtures:items.map(x=>x.fixture)}));}catch(_){}
+ try{sessionStorage.setItem(GAME_CACHE,JSON.stringify({savedAt:Date.now(),fixtures:items}));}catch(_){}
 }
 function matchSummary(g){
  if(!g)return"Sin información";
@@ -630,18 +631,21 @@ function matchSummary(g){
 }
 function matchLabel(slug){
  const info=games.get(slug),node=make("div","match");
+ const fresh=fixtureFresh(slug);
  if(!info){node.classList.add("neutral");node.textContent="Sin consultar";return node;}
  if(info.status!=="scheduled"||!info.game){
    node.classList.add("neutral");
-   node.textContent=info.status==="none"?"Sin próximo partido registrado":"Calendario no disponible";
+   node.textContent=(info.status==="none"?"Sin próximo partido registrado":"Calendario no disponible")+
+     (fresh?"":" · dato guardado sin actualizar");
    return node;
  }
- node.classList.add("positive");
+ node.classList.add(fresh?"positive":"neutral");
  node.textContent=matchSummary(info.game);
  if(info.game.fixtureName||info.game.gw!=null){
    const details=make("small","",(info.game.fixtureName||"")+(info.game.gw!=null?" · GW "+info.game.gw:""));
    node.append(details);
  }
+ if(!fresh)node.append(make("small","","Dato guardado el "+fixtureStamp(slug)+" · sin confirmar; no habilita la GW hasta actualizar."));
  return node;
 }
 function playsWithinWeek(info){
@@ -653,7 +657,7 @@ function availableGameWeeks(candidates){
  const found=new Map();
  for(const p of candidates){
    const info=games.get(p.slug),g=info?.game;
-   if(info?.status!=="scheduled"||!g||!Number.isSafeInteger(g.gw)||g.gw<1)continue;
+   if(!fixtureFresh(p.slug)||info?.status!=="scheduled"||!g||!Number.isSafeInteger(g.gw)||g.gw<1)continue;
    if(!found.has(g.gw)){
      found.set(g.gw,{
        id:g.gw,
@@ -670,11 +674,11 @@ function gameWeekLabel(week){
 }
 function hasGameWeek(player,id){
  const info=games.get(player.slug);
- return info?.status==="scheduled" && Number.isSafeInteger(info?.game?.gw) && info.game.gw===id;
+ return fixtureFresh(player.slug) && info?.status==="scheduled" && Number.isSafeInteger(info?.game?.gw) && info.game.gw===id;
 }
 function updateGameWeekFilter(){
  const select=$("game-week"),candidates=filteredByMode();
- const allQueried=candidates.length>0 && candidates.every(p=>games.has(p.slug));
+ const allQueried=candidates.length>0 && candidates.every(p=>fixtureFresh(p.slug));
  const chosen=select.value;
  const options=availableGameWeeks(candidates);
  select.replaceChildren();
@@ -689,9 +693,12 @@ function updateGameWeekFilter(){
  if(!candidates.length){
    info.textContent="Selecciona futbolistas para consultar jornadas.";return;
  }
- const missing=candidates.filter(p=>!games.has(p.slug)).length;
+ const missing=candidates.filter(p=>!fixtureFresh(p.slug)).length;
  if(missing){
-   info.textContent="Faltan calendarios de "+missing+" de "+candidates.length+" jugadores. Consulta sus próximos partidos para activar el selector.";return;
+   const saved=candidates.filter(p=>games.has(p.slug)&&!fixtureFresh(p.slug)).length;
+   info.textContent="Hay "+(candidates.length-missing)+" calendarios recientes de "+candidates.length+
+     (saved?" y "+saved+" guardados que necesitan actualizarse.":" sin actualizar.")+
+     " Seleccionar una GW requiere datos recientes de todos.";return;
  }
  if(!options.length){
    info.textContent="Sorare no ha devuelto una Game Week identificable para estas cartas.";return;
@@ -706,7 +713,7 @@ function updateGameWeekFilter(){
 }
 function updateFixtureFilter(){
  const candidates=filteredByMode();
- const complete=candidates.length>0&&candidates.every(p=>games.has(p.slug));
+ const complete=candidates.length>0&&candidates.every(p=>fixtureFresh(p.slug));
  $("only-playing").disabled=!complete || Boolean($("game-week").value);
  if(!complete || $("game-week").value)$("only-playing").checked=false;
 }
@@ -935,7 +942,7 @@ function run(){
  let candidates=filteredByMode();
  const chosenGw=$("game-week").value;
  if(chosenGw){
-   const missing=candidates.filter(p=>!games.has(p.slug));
+   const missing=candidates.filter(p=>!fixtureFresh(p.slug));
    if(missing.length){
      $("result").hidden=true;
      notice("Faltan datos del próximo partido para "+missing.length+" futbolistas. Consulta el calendario antes de optimizar por GW.");
@@ -943,7 +950,7 @@ function run(){
    }
    candidates=candidates.filter(p=>hasGameWeek(p,Number(chosenGw)));
  }else if($("only-playing").checked){
-   const missing=candidates.filter(p=>!games.has(p.slug));
+   const missing=candidates.filter(p=>!fixtureFresh(p.slug));
    if(missing.length){
      $("result").hidden=true;
      notice("Faltan datos de calendario de "+missing.length+" jugadores. Pulsa «Consultar próximos partidos» para continuar.");
