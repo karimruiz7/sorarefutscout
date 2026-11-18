@@ -24,6 +24,8 @@ SorareFutScout already offers player search, historical Sorare scoring averages 
 
 We are now developing an optional “Connect with Sorare” experience. With each manager’s authorization, we would like to read their basic user identity and owned cards so they can import their eligible collection instead of entering players manually, then prepare and compare lineups using their own cards. Our goal is an easy workflow that takes less than ten minutes. We will verify the available card types and Arcade coverage rather than assuming all cards can be retrieved.
 
+SorareFutScout is not affiliated with or endorsed by Sorare. Because the proposed name contains the Sorare brand, please let us know whether it complies with your branding requirements; we are willing to adjust the public-facing name if necessary. We will not use Sorare's official logo or claim official status.
+
 We request read-only use for this user-facing workflow. We do not seek permission to trade cards, place bids, access users’ email addresses, or submit lineups on their behalf. Authentication is designed to be handled server-side through Cloudflare; application secrets and user tokens will not be exposed in frontend code. We will finalize our privacy documentation and complete end-to-end security tests before enabling connections publicly.
 
 Application name: SorareFutScout
@@ -62,7 +64,8 @@ The SorareFutScout developer
 - [x] PNG logo prepared for review.
 - [ ] Owner approves final logo.
 - [ ] Privacy page finalized with correct identity, contact address and legally required disclosures; beta privacy text is still provisional.
-- [ ] Owner confirms the wording, obtains a legitimate support or registration channel, attaches the PNG, and submits the request.
+- [ ] Owner verifies Sorare's branding requirements for a third-party name containing 'Sorare'.
+- [ ] Owner confirms the wording, selects the API/OAuth category in Sorare's official request form, attaches the PNG, and submits the request.
 - [ ] Sorare issues OAuth Client ID and Client Secret; configure privately in Cloudflare, NEVER in GitHub or chat.
 - [ ] Cloudflare KV namespace set up, end-to-end login/logout/refresh tested and security reviewed before switching on OAuth.
 - [ ] Actual card collection import implemented, verified and separately tested for Arcade and competitive cards.
