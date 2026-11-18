@@ -7,10 +7,11 @@ const QUERY=[
   "   __typename",
   "   ... on Player {",
   "     slug",
+  "     activeClub { slug name }",
   "     nextGame(so5FixtureEligible: true) {",
   "       date",
-  "       homeTeam { name }",
-  "       awayTeam { name }",
+  "       homeTeam { name slug }",
+  "       awayTeam { name slug }",
   "       so5Fixture { displayName gameWeek startDate endDate }",
   "     }",
   "   }",
@@ -41,7 +42,7 @@ export async function onRequestGet(context) {
    return json({ok:false,error:"Selecciona entre 1 y 12 identificadores de jugadores distintos."},400);
  }
  const sorted=[...slugs].sort();
- const key=new Request(url.origin+"/api/next-games?v=1&slugs="+encodeURIComponent(sorted.join(",")));
+ const key=new Request(url.origin+"/api/next-games?v=2&slugs="+encodeURIComponent(sorted.join(",")));
  let cache=null;
  try{
    cache=caches.default;
@@ -78,11 +79,14 @@ export async function onRequestGet(context) {
    return {
      slug,
      status:!p?"unavailable":!g?"none":valid?"scheduled":"unavailable",
+     clubSlug:p?.activeClub?.slug||null,
      // Next SO5-eligible game, NOT guaranteed Arcade/Pro eligibility.
      game:valid?{
        date:new Date(when).toISOString(),
        home:g.homeTeam?.name||null,
        away:g.awayTeam?.name||null,
+       homeSlug:g.homeTeam?.slug||null,
+       awaySlug:g.awayTeam?.slug||null,
        gw:typeof f?.gameWeek==="number"?f.gameWeek:null,
        fixtureName:f?.displayName||null,
        fixtureStart:f?.startDate||null,
