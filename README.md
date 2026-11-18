@@ -39,3 +39,13 @@ Los retratos proceden de URLs devueltas por la API de Sorare; la existencia de u
 
 
 **Alcance de los filtros:** posición, club, mínimos L5/L10/L15 y ordenación se aplican **solo a los resultados de la página cargada** (hasta 12), no a toda la base de datos de Sorare. Las medias históricas no indican automáticamente que un futbolista esté activo o sea elegible en una competición.
+
+## Fase 2.3 · Búsquedas exactas de equipos (18-11-2026)
+- Se añadió el modo «Por jugador / Por equipo» en el explorador.
+- En modo equipo se consulta `functions/api/club.js` mediante la operación `football { club(slug) { activePlayers ... } }` del esquema de Sorare, en vez de buscar por texto.
+- Clubes inicialmente habilitados con slugs comprobados en Sorare: Real Madrid, FC Barcelona, Atlético de Madrid, Valencia CF y Real Oviedo.
+- Escribir exactamente «Real Madrid» en el buscador de jugadores cambia automáticamente al modo equipo. Así se evita incluir al Real Oviedo por coincidencias difusas de texto.
+- Cada página trae hasta 20 miembros y admite páginas adicionales usando un cursor; los datos de los clubes quedan cacheados en Cloudflare durante 15 minutos.
+- Los futbolistas devueltos con un `activeClub.slug` distinto del equipo solicitado se excluyen, para no mezclarlos.
+- **Precisión:** Sorare ofrece el campo `activePlayers`, pero este listado es «plantilla activa según Sorare», no prueba independiente de la inscripción oficial o convocatoria de un club. Para esas verificaciones se consultará también el sitio oficial de cada equipo.
+- **Validación:** código y sintaxis listos en GitHub; la nueva ruta `/api/club` debe probarse después de publicarse en Cloudflare.
