@@ -547,19 +547,79 @@ async function analyzeOpponents(){
   " jugadores tienen un ajuste calculable."+(errors.length?" "+errors[0]:"")+
   (total<candidates.length?" Los demás continúan pendientes o carecen de datos suficientes.":"");
 }
+// Per-player calendar snapshots survive reloads and new tabs; no credentials stored.
 const GAME_CACHE="sorarefutscout:next-games:v2";
-const GAME_TTL=15*60*1000;
+const GAME_OLD_CACHE="sorarefutscout:next-games:v1";
+const GAME_PERSIST="sorarefutscout:next-games:per-player:v1";
+const GAME_COOLDOWN="sorarefutscout:next-games:pause:v1";
+const GAME_TTL=2*60*60*1000; // Current enough for GW filtering.
+const GAME_STALE_TTL=36*60*60*1000; // Stale matches are display-only, not eligible.
 const WEEK_MS=7*24*3600*1000;
-let games=new Map();
+let games=new Map(),gameFetchedAt=new Map(),fixtureCooldownUntil=0;
+try{
+ const value=Number(localStorage.getItem(GAME_COOLDOWN));
+ if(Number.isFinite(value)&&value>Date.now())fixtureCooldownUntil=value;
+}catch(_){}
+function fixtureCooldownSeconds(){
+ return Math.max(0,Math.ceil((fixtureCooldownUntil-Date.now())/1000));
+}
+function setFixtureCooldown(seconds){
+ const n=Math.min(86400,Math.max(1,Math.ceil(Number(seconds)||60)));
+ fixtureCooldownUntil=Date.now()+n*1000;
+ try{localStorage.setItem(GAME_COOLDOWN,String(fixtureCooldownUntil));}catch(_){}
+ return n;
+}
+function relevantFixture(f){
+ if(!f||!["scheduled","none","unavailable"].includes(f.status))return false;
+ if(f.status!=="scheduled")return true;
+ const when=Date.parse(f.game?.date||"");
+ return Number.isFinite(when)&&when>=Date.now()-2*3600000&&when<=Date.now()+180*86400000;
+}
+function fixtureFresh(slug){
+ const saved=gameFetchedAt.get(slug);
+ return games.has(slug)&&Number.isFinite(saved)&&Date.now()-saved<GAME_TTL&&
+   Date.now()>=saved&&relevantFixture(games.get(slug));
+}
+function fixtureStamp(slug){
+ const date=gameFetchedAt.get(slug);
+ return Number.isFinite(date)?new Date(date).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"sin fecha";
+}
 function readGameCache(){
+ const collected=new Map();
+ function collect(list,at){
+   if(!Array.isArray(list))return;
+   for(const raw of list){
+     const fixture=raw?.fixture||raw;
+     const slug=fixture?.slug;
+     const stamp=Number(raw?.fetchedAt||at);
+     if(typeof slug!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)||!Number.isFinite(stamp)||
+        stamp>Date.now()+60000||Date.now()-stamp>GAME_STALE_TTL||!relevantFixture(fixture))continue;
+     if(!collected.has(slug)||collected.get(slug).time<stamp)collected.set(slug,{fixture,time:stamp});
+   }
+ }
  try{
-   const parsed=JSON.parse(sessionStorage.getItem(GAME_CACHE)||"null");
-   if(!parsed||Date.now()-parsed.savedAt>GAME_TTL||!Array.isArray(parsed.fixtures))return;
-   games=new Map(parsed.fixtures.filter(o=>o&&typeof o.slug==="string").map(o=>[o.slug,o]));
+   const parsed=JSON.parse(localStorage.getItem(GAME_PERSIST)||"null");
+   if(parsed?.items)collect(parsed.items,parsed.savedAt);
  }catch(_){}
+ // Migrate old session-only snapshots, including ones past their former 15-minute TTL.
+ for(const key of [GAME_CACHE,GAME_OLD_CACHE]){
+   try{
+     const parsed=JSON.parse(sessionStorage.getItem(key)||"null");
+     if(parsed?.fixtures)collect(parsed.fixtures,parsed.savedAt);
+   }catch(_){}
+ }
+ games=new Map();gameFetchedAt=new Map();
+ for(const [slug,item] of collected){games.set(slug,item.fixture);gameFetchedAt.set(slug,item.time);}
+ if(collected.size)writeGameCache();
 }
 function writeGameCache(){
- try{sessionStorage.setItem(GAME_CACHE,JSON.stringify({savedAt:Date.now(),fixtures:[...games.values()]}));}catch(_){}
+ const items=[...games].filter(([slug,f])=>
+   relevantFixture(f)&&Number.isFinite(gameFetchedAt.get(slug))&&
+   Date.now()-gameFetchedAt.get(slug)<=GAME_STALE_TTL)
+   .map(([slug,fixture])=>({fixture,fetchedAt:gameFetchedAt.get(slug)}));
+ try{localStorage.setItem(GAME_PERSIST,JSON.stringify({savedAt:Date.now(),items}));}catch(_){}
+ // Keep legacy session format available for a safe upgrade path.
+ try{sessionStorage.setItem(GAME_CACHE,JSON.stringify({savedAt:Date.now(),fixtures:items.map(x=>x.fixture)}));}catch(_){}
 }
 function matchSummary(g){
  if(!g)return"Sin información";
