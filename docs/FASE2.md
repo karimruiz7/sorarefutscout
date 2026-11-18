@@ -102,3 +102,14 @@ La API de Sorare documenta `Player.pictureUrl(derivative: "avatar")`. El uso de 
 - [ ] Verificar la actualización publicada en Cloudflare y confirmar el flujo manual.
 - [ ] Incorporar verificación de la liga actual de cada jugador desde una fuente documentada, sin inferirla de su nombre.
 - [ ] Conectar datos de colección mediante OAuth y validar reglas específicas de tablero / Game Week cuando Sorare conceda acceso autorizado.
+
+## Fase 3.2 — Próximo partido puntuable y filtro opcional
+- [x] Verificado en el esquema oficial de Sorare el campo `Player.nextGame(so5FixtureEligible: true)` y `AnyGameInterface.so5Fixture` con fecha, clubes, GW, inicio y fin.
+- [x] Añadida Cloudflare Pages Function `functions/api/next-games.js`, hasta 12 futbolistas por consulta con validación de entrada y caché.
+- [x] Añadidos botón «Consultar próximos partidos», columna de partido y detalles junto a las cartas del resultado del optimizador.
+- [x] Incluido filtro **opcional** de siete días, desactivado mientras faltan datos de alguno de los candidatos del modo elegido. Siete días no es un reemplazo de la GW oficial.
+- [x] Validación sintáctica y lógica del filtro de calendario con +1 día, +10 días y ausencia de datos.
+- [ ] Verificar respuesta real de la API en Cloudflare y comprobar calendario de cinco jugadores del modo Arcade.
+- [ ] Incorporar un selector de Game Week real y reglas de elegibilidad particulares de cada modo, tras verificar en el backend los fixtures oficiales.
+
+No afirmar que se puede predecir titularidad o que «próximo partido puntuable» garantiza que la carta pueda entrar en cualquier competición.
