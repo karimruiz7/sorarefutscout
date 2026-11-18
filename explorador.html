@@ -62,11 +62,20 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 .team-picker{flex:1;min-width:220px}.team-picker select{width:100%;height:49px;background:#0c1522}
 .roster-caption{font-size:12px;line-height:1.6;color:#a7bbcc;margin:9px 0 0}
 @media(max-width:700px){.team-picker{width:100%}}
+
+/* Fase 3 · acceso y selección del optimizador real */
+.nav a.opt-link{color:#d9f8cb}.nav a.opt-link:hover{color:var(--accent)}
+.pool-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+.pool-toolbar .btn{font-size:13px}
+.pool-note{font-size:12px;color:var(--sub);margin:0;min-height:20px}
+.actions .save-pool{background:#30452c;border:1px solid #6f8d57;color:#daf6cd}
+.table-actions{flex-wrap:wrap;min-width:210px}
+@media(max-width:700px){.pool-toolbar .btn{width:100%}}
 </style>
 </head>
 <body>
 <header><div class="wrap head"><a class="brand" href="/"><span class="mark">SF</span><span>Sorare<i>FutScout</i></span></a>
-<nav class="nav"><a href="/">Demo</a><a class="selected" href="/explorador.html" aria-current="page">Explorador real</a><a href="/datos-reales.html">Prueba API</a></nav></div></header>
+<nav class="nav"><a href="/">Demo</a><a class="selected" href="/explorador.html" aria-current="page">Explorador real</a><a class="opt-link" href="/optimizador-real.html">Optimizador real</a><a href="/datos-reales.html">Prueba API</a></nav></div></header>
 <main class="wrap">
 <div class="flag">FASE 2 · ESTADÍSTICAS REALES · BETA</div>
 <h1>Explora jugadores de<br><span style="color:var(--accent)">Sorare Fútbol</span></h1>
@@ -111,6 +120,12 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 <div class="view-options" role="group" aria-label="Vista de resultados"><button type="button" id="cards-view" class="active" aria-pressed="true">▦ Tarjetas</button><button type="button" id="table-view" aria-pressed="false">☷ Tabla avanzada</button></div>
 <label class="filter" for="sort">Ordenar <select id="sort"><option value="l5-desc">Mayor L5</option><option value="l10-desc">Mayor L10</option><option value="l15-desc">Mayor L15</option><option value="name-asc">Nombre (A–Z)</option></select></label>
 </div>
+
+<div class="pool-toolbar">
+  <button type="button" class="btn secondary tiny" id="add-visible">+ Añadir jugadores visibles al optimizador</button>
+  <a class="btn tiny" id="open-optimizer" href="/optimizador-real.html">Abrir optimizador <span id="optimizer-count">(0)</span></a>
+  <span class="pool-note" id="pool-message" role="status" aria-live="polite"></span>
+</div>
 <div class="grid" id="players"><div class="empty" style="grid-column:1/-1">Los resultados aparecerán aquí.</div></div>
 <div class="paging" id="paging" hidden><button class="btn outline tiny" id="prev" type="button">← Anterior</button><span id="page-label"></span><button class="btn outline tiny" id="next" type="button">Siguiente →</button></div>
 </section>
@@ -128,6 +143,39 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
+
+const OPTIMIZER_KEY="sorarefutscout:optimizer-pool:v1";
+const POOL_MAX=120;
+function poolRead(){
+ try{
+   const data=JSON.parse(localStorage.getItem(OPTIMIZER_KEY)||"[]");
+   if(!Array.isArray(data))return [];
+   const seen=new Set();
+   return data.filter(p=>{
+     if(!p||typeof p.slug!=="string"||seen.has(p.slug))return false;
+     seen.add(p.slug);return true;
+   }).slice(0,POOL_MAX);
+ }catch(_){return [];}
+}
+function poolSaveItem(p){
+ const pos=String(p.position||"").toLowerCase();
+ if(!["goalkeeper","defender","midfielder","forward"].includes(pos))return {ok:false,error:"Posición no compatible"};
+ if(typeof p.slug!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.slug))return {ok:false,error:"Identificador no válido"};
+ const metric=k=>typeof p[k]==="number"&&Number.isFinite(p[k])&&p[k]>=0&&p[k]<=100?p[k]:null;
+ const item={slug:p.slug,name:p.name,club:p.club,position:p.position,
+  l5:metric("l5"),l10:metric("l10"),l15:metric("l15"),avatar:safePhoto(p.avatar),savedAt:Date.now()};
+ const current=poolRead(),prior=current.findIndex(o=>o.slug===p.slug);
+ if(prior<0&&current.length>=POOL_MAX)return {ok:false,error:"Máximo de "+POOL_MAX+" jugadores"};
+ if(prior>=0)current[prior]=item;else current.push(item);
+ try{localStorage.setItem(OPTIMIZER_KEY,JSON.stringify(current));return {ok:true,newItem:prior<0};}
+ catch(_){return {ok:false,error:"Tu navegador ha bloqueado el almacenamiento local"};}
+}
+function poolCount(){return poolRead().length;}
+function updatePoolIndicator(){
+ const el=document.getElementById("optimizer-count");
+ if(el)el.textContent="("+poolCount()+")";
+}
+function poolMessage(text){document.getElementById("pool-message").textContent=text;}
 const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),photoBySlug:new Map(),view:"cards",mode:"player",teamSlug:"",teamName:"",clubCursors:[null],teamNextCursor:null,busy:false,blockedUntil:0};
 const SEARCH_TTL = 10*60*1000;
 function cacheKey(query,page){return "sfs-search-v3:"+query.toLocaleLowerCase("es").replace(/\s+/g," ").trim()+":"+page;}
@@ -218,11 +266,18 @@ function visiblePlayers(){
 function playerActions(p){
  const actions=create("div","actions");
  const detail=create("button","btn outline tiny","Ver ficha"),add=create("button","btn tiny",state.selected.includes(p.slug)?"Seleccionado ✓":"Comparar");
- detail.type=add.type="button";
+ const saved=poolRead().some(item=>item.slug===p.slug);
+ const addPool=create("button","btn tiny save-pool",saved?"↻ Actualizar en optimizador":"+ Optimizador");
+ detail.type=add.type=addPool.type="button";
  detail.addEventListener("click",()=>showDetail(p));
  add.disabled=state.selected.includes(p.slug);
  add.addEventListener("click",()=>choose(p.slug));
- actions.append(detail,add);
+ addPool.addEventListener("click",()=>{
+   const outcome=poolSaveItem(p);
+   poolMessage(outcome.ok?(outcome.newItem?"Jugador añadido. ":"Medias actualizadas. ")+"Abre el optimizador cuando quieras.":outcome.error);
+   updatePoolIndicator();renderPlayers();
+ });
+ actions.append(detail,add,addPool);
  return actions;
 }
 function renderCards(players,container){
@@ -258,6 +313,7 @@ function renderTable(players,container){
 }
 function renderPlayers(){
  const players=visiblePlayers();
+ updatePoolIndicator();
  $("count").textContent=state.mode==="team" ? players.length+" visibles · "+state.teamName+" (plantilla Sorare, página "+state.page+")" : players.length+" visibles · "+state.hits+" coincidencias en Sorare (página actual)";
  const list=$("players");list.replaceChildren();
  $("cards-view").classList.toggle("active",state.view==="cards");
@@ -460,6 +516,19 @@ $("team-select").addEventListener("change",()=>{if(state.busy)return;state.teamS
 $("position").addEventListener("change",renderPlayers);
 $("club").addEventListener("change",renderPlayers);
 $("sort").addEventListener("change",renderPlayers);
+$("add-visible").addEventListener("click",()=>{
+ const players=visiblePlayers();
+ if(!players.length){poolMessage("Primero busca jugadores o carga una plantilla.");return;}
+ let added=0,updated=0,errors=0;
+ for(const player of players){
+   const result=poolSaveItem(player);
+   if(result.ok){if(result.newItem)added++;else updated++;}else errors++;
+ }
+ poolMessage(added+" añadidos · "+updated+" actualizados"+(errors?" · "+errors+" no añadidos":"")+".");
+ updatePoolIndicator();renderPlayers();
+});
+window.addEventListener("storage",e=>{if(e.key===OPTIMIZER_KEY){updatePoolIndicator();renderPlayers();}});
+
 for(const id of ["min-l5","min-l10","min-l15","only-club"]){
   $(id).addEventListener("input",renderPlayers);
   $(id).addEventListener("change",renderPlayers);
