@@ -35,6 +35,24 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 .table-actions{display:flex;gap:6px}.table-actions button{font-size:11px;min-width:73px}
 .compare-name{display:flex;align-items:center;gap:11px}.compare-name .avatar{height:44px;width:44px;flex:0 0 44px;border-radius:11px;font-size:14px}
 @media(max-width:700px){.view-tools .filter{width:100%;justify-content:space-between}.view-tools .filter select{flex:1;min-width:0}.view-options{width:100%}.view-options button{flex:1}.table-wrap{margin:0 -4px}}
+
+/* Fase 2.2: filtros de puntuación e historial gráfico */
+.advanced-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:15px 16px;border:1px solid var(--line);background:#111c2b;border-radius:13px;margin:4px 0 14px}
+.advanced-filters .field-sm{min-width:108px;flex:0 1 130px}
+.advanced-filters .field-sm input{width:100%;border:1px solid #435874;background:#111e2c;color:white;border-radius:10px;padding:10px 12px;min-height:44px}
+.advanced-filters .check{display:flex;align-items:center;gap:8px;font-size:12px;color:#d8e7f6;padding-bottom:12px;white-space:nowrap}
+.advanced-filters .check input{accent-color:var(--accent);width:17px;height:17px}
+.advanced-filters button{padding:10px 13px;margin-bottom:0}
+.filter-help{color:#a5b9ce;font-size:12px;line-height:1.5;margin:0 0 14px}
+.history-chart{display:flex;align-items:flex-end;justify-content:space-between;gap:9px;min-height:142px;margin-top:14px;padding:10px 8px 4px;background:#111c2b;border:1px solid #2c3d52;border-radius:12px}
+.history-col{min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
+.history-value{font-size:11px;color:#e8f4ff;font-weight:700;min-height:18px}
+.history-track{height:85px;width:min(100%,42px);border-radius:7px 7px 3px 3px;background:#273747;display:flex;align-items:flex-end;justify-content:stretch;overflow:hidden}
+.history-bar{display:block;width:100%;background:linear-gradient(180deg,var(--accent),#508f47);border-radius:7px 7px 0 0;min-height:2px}
+.history-bar.missing{background:#526071;min-height:2px}
+.history-index{color:#8da4ba;font-size:10px}
+.history-notice{color:#8ca3b8;font-size:11px;line-height:1.5;margin-top:10px}
+@media(max-width:700px){.advanced-filters .field-sm{flex:1 1 90px}.advanced-filters .check{padding:5px 0}.advanced-filters button{width:100%}}
 </style>
 </head>
 <body>
@@ -59,6 +77,14 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 <label class="filter">Club <select id="club"><option value="">Todos los clubes</option></select></label>
 <div class="count" id="count"></div>
 </div>
+<div class="advanced-filters" role="group" aria-label="Filtros de puntuación">
+<label class="filter field-sm" for="min-l5">L5 mínimo <input id="min-l5" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="Sin mínimo"></label>
+<label class="filter field-sm" for="min-l10">L10 mínimo <input id="min-l10" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="Sin mínimo"></label>
+<label class="filter field-sm" for="min-l15">L15 mínimo <input id="min-l15" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="Sin mínimo"></label>
+<label class="check"><input id="only-club" type="checkbox"> Solo con club</label>
+<button class="btn outline tiny" type="button" id="reset-filters">Limpiar filtros</button>
+</div>
+<p class="filter-help">Los filtros y el orden se aplican solo a los jugadores cargados en esta página (máximo 12 resultados por página); no son un ranking global de Sorare.</p>
 <div class="view-tools">
 <div class="view-options" role="group" aria-label="Vista de resultados"><button type="button" id="cards-view" class="active" aria-pressed="true">▦ Tarjetas</button><button type="button" id="table-view" aria-pressed="false">☷ Tabla avanzada</button></div>
 <label class="filter" for="sort">Ordenar <select id="sort"><option value="l5-desc">Mayor L5</option><option value="l10-desc">Mayor L10</option><option value="l15-desc">Mayor L15</option><option value="name-asc">Nombre (A–Z)</option></select></label>
@@ -72,7 +98,7 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 <div class="compare-pane"><p>Selecciona el primer jugador desde los resultados.</p></div>
 <div class="compare-pane"><p>Selecciona el segundo jugador para comparar sus medias.</p></div>
 </div>
-<p class="subline" style="margin-top:13px">Las puntuaciones L5, L10 y L15 se solicitan individualmente a Sorare. Las cifras pueden variar cuando se actualizan sus partidos.</p>
+<p class="subline" style="margin-top:13px">Las medias se obtienen de Sorare. Las últimas cinco puntuaciones se consultan al abrir cada ficha. Los valores pueden actualizarse al disputarse nuevos partidos.</p>
 </section>
 <footer>SorareFutScout es un proyecto independiente y no oficial. Esta página utiliza exclusivamente valores obtenidos de la API de Sorare; si el servicio falla, mostramos un error y nunca inventamos puntuaciones.</footer>
 </main>
@@ -137,7 +163,15 @@ function updateClubs(){
 }
 function visiblePlayers(){
  const position=$("position").value,club=$("club").value;
- const filtered=state.players.filter(p=>(!position||String(p.position).toLowerCase()===position.toLowerCase())&&(!club||p.club===club));
+ const minimums=["l5","l10","l15"].map(key=>{
+   const field=$("min-"+key),raw=field.value.trim();
+   if(raw==="")return {key,value:null};
+   const n=Number(raw);
+   return {key,value:Number.isFinite(n)&&n>=0&&n<=100?n:null};
+ });
+ const onlyClub=$("only-club").checked;
+ const filtered=state.players.filter(p=>(!position||String(p.position).toLowerCase()===position.toLowerCase())&&(!club||p.club===club)&&
+   (!onlyClub||Boolean(p.club&&p.club!=="Sin club"))&&minimums.every(m=>m.value===null||(typeof p[m.key]==="number"&&p[m.key]>=m.value)));
  const order=$("sort").value;
  if(order==="name-asc")return filtered.sort((a,b)=>a.name.localeCompare(b.name,"es"));
  const metric=order.split("-")[0];
@@ -260,6 +294,22 @@ function renderDetailPane(parent,p,index,error){
   const last=(p.lastScores||[]).slice(0,5);
   last.length?last.forEach(n=>scoreList.append(create("span","score",fmt(n)))):scoreList.append(create("span","subline","Sin datos recientes"));
   parent.append(scoreList);
+  if(last.length){
+    const chart=create("div","history-chart");
+    chart.setAttribute("role","img");
+    chart.setAttribute("aria-label","Últimas puntuaciones disponibles, en el orden entregado por Sorare: "+last.map(v=>typeof v==="number"?fmt(v):"sin dato").join(", "));
+    last.forEach((value,i)=>{
+      const valid=typeof value==="number"&&Number.isFinite(value);
+      const col=create("div","history-col"),top=create("span","history-value",valid?fmt(value):"—");
+      const track=create("div","history-track"),bar=create("span","history-bar"+(valid?"":" missing"));
+      // Each column is a 0-100 point score. Null remains visibly missing.
+      bar.style.height=valid?(Math.max(2,Math.min(100,value))+"%"):"2px";
+      track.appendChild(bar);
+      col.append(top,track,create("span","history-index",String(i+1)));
+      chart.appendChild(col);
+    });
+    parent.append(chart,create("p","history-notice","Escala de 0 a 100 puntos. Columnas en el orden que devuelve Sorare; «—» indica un dato no disponible."));
+  }
 }
 function compare(){
   const container=$("compare");container.replaceChildren();
@@ -289,6 +339,17 @@ $("search-form").addEventListener("submit",e=>{e.preventDefault();search(1);});
 $("position").addEventListener("change",renderPlayers);
 $("club").addEventListener("change",renderPlayers);
 $("sort").addEventListener("change",renderPlayers);
+for(const id of ["min-l5","min-l10","min-l15","only-club"]){
+  $(id).addEventListener("input",renderPlayers);
+  $(id).addEventListener("change",renderPlayers);
+}
+$("reset-filters").addEventListener("click",()=>{
+  $("position").value="";$("club").value="";
+  $("min-l5").value="";$("min-l10").value="";$("min-l15").value="";
+  $("only-club").checked=false;
+  $("sort").value="l5-desc";
+  renderPlayers();
+});
 $("cards-view").addEventListener("click",()=>{state.view="cards";renderPlayers();});
 $("table-view").addEventListener("click",()=>{state.view="table";renderPlayers();});
 $("prev").addEventListener("click",()=>{if(state.page>1)search(state.page-1);});
