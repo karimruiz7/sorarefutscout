@@ -81,3 +81,15 @@ Referencias oficiales:
 - https://sorare.com/es/game-rules
 
 **Prueba pendiente:** confirmar despliegue en Cloudflare y marcar cinco jugadores Arcade (portero/defensa/medio/delantero/extra) antes de optimizar.
+
+## Fase 3.2 · Próximos partidos en el optimizador (18-11-2026)
+
+- Nueva función `functions/api/next-games.js`, ruta `/api/next-games?slugs=slug1,slug2`.
+- Usa una consulta GraphQL agrupada `players(slugs) { nextGame(so5FixtureEligible: true) { date homeTeam awayTeam so5Fixture ... } }` con hasta 12 futbolistas por petición.
+- `optimizador-real.html` muestra el próximo partido registrado de cada futbolista y los datos de GW asociados, cuando Sorare los ofrece.
+- Botón de consulta voluntaria, caché de 15 minutos en el servidor y en la pestaña del usuario para reducir límites 429.
+- Checkbox opcional «solo jugadores con un partido en los próximos 7 días». Se desactiva hasta que todos los jugadores **del modo elegido** tengan una respuesta; un encuentro desconocido nunca se trata como partido confirmado.
+- Este filtro temporal **no equivale** necesariamente a la Game Week de Sorare, ni determina si una carta es válida para Arcade, Pro o Arena, ni predice titularidad/participación. Sigue siendo orientación previa a la integración oficial de cada competición.
+- **Validación:** sintaxis y casos de filtrado +1 día / +10 días probados. El endpoint de producción aún debe verificarse tras el despliegue, ya que Sorare puede cambiar el esquema o limitar consultas.
+
+Esquema de referencia: https://api.sorare.com/graphql/schema
