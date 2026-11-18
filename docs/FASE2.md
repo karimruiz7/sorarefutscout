@@ -113,3 +113,13 @@ La API de Sorare documenta `Player.pictureUrl(derivative: "avatar")`. El uso de 
 - [ ] Incorporar un selector de Game Week real y reglas de elegibilidad particulares de cada modo, tras verificar en el backend los fixtures oficiales.
 
 No afirmar que se puede predecir titularidad o que «próximo partido puntuable» garantiza que la carta pueda entrar en cualquier competición.
+
+## Fase 3.3 — Etiquetas de dificultad (18-11-2026)
+- [x] Incorporar etiquetas con cinco niveles por colores y texto: muy favorable, favorable, equilibrado, difícil y muy difícil.
+- [x] Calcular nivel desde el puesto del jugador (atacante vs portero/defensa) y las estadísticas de goles del rival, con umbrales documentados.
+- [x] Mostrar estado neutro «Sin evaluar» cuando no haya tres partidos válidos o el rival no esté identificado.
+- [x] Añadir explicación accesible «¿Por qué esta dificultad?» junto al partido.
+- [x] Mantener el modelo experimental opcional sin afectar el cálculo por medias si no está activado.
+- [x] Comprobar sintaxis y clasificación de cinco escenarios sintéticos + desconocido.
+- [ ] Confirmar en Cloudflare el aspecto y la consulta real de `/api/matchups`.
+- [ ] Valorar mejoras futuras: local/visitante, goles esperados, fuerza de rivales, racha ponderada y Game Week oficial. No añadir métricas sin fuente.
