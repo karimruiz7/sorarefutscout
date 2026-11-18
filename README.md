@@ -6,7 +6,8 @@ Plataforma independiente y no oficial de análisis, comparación de futbolistas 
 **https://sorarefutscout.pages.dev/**
 
 - [Demo principal](https://sorarefutscout.pages.dev/) — explorador, comparador y optimizador basados en **datos simulados**.
-- [Explorador real — beta](https://sorarefutscout.pages.dev/explorador.html) — búsqueda, tarjetas o tabla, retratos, filtros avanzados, gráfico de historial y comparador. Los filtros nuevos están pendientes de validar en producción.
+- [Explorador real — beta](https://sorarefutscout.pages.dev/explorador.html) — búsquedas por jugador/equipo, tablas, retratos, filtros y comparador. Desde aquí se añaden jugadores reales a la selección del optimizador.
+- [Optimizador real — beta](https://sorarefutscout.pages.dev/optimizador-real.html) — alineaciones orientativas SO5 / SO7 maximizando la suma de medias históricas L5, L10 o L15 sobre los jugadores elegidos.
 - [Datos reales — beta](https://sorarefutscout.pages.dev/datos-reales.html) — página original de consulta de Sorare, verificada por el propietario el 18-11-2026.
 
 ## Fase 1 · Demo
@@ -49,3 +50,17 @@ Los retratos proceden de URLs devueltas por la API de Sorare; la existencia de u
 - Los futbolistas devueltos con un `activeClub.slug` distinto del equipo solicitado se excluyen, para no mezclarlos.
 - **Precisión:** Sorare ofrece el campo `activePlayers`, pero este listado es «plantilla activa según Sorare», no prueba independiente de la inscripción oficial o convocatoria de un club. Para esas verificaciones se consultará también el sitio oficial de cada equipo.
 - **Validación:** código y sintaxis listos en GitHub; la nueva ruta `/api/club` debe probarse después de publicarse en Cloudflare.
+
+## Fase 3 · Primer optimizador estadístico (18-11-2026)
+- Página: `optimizador-real.html`.
+- El explorador `explorador.html` permite **Añadir al optimizador** por jugador o **Añadir jugadores visibles** en bloque, incluyendo resultados de búsqueda por club.
+- La selección se conserva solo en el navegador del visitante mediante `localStorage` (clave `sorarefutscout:optimizer-pool:v1`), hasta 120 futbolistas. No solicita acceso a colecciones ni contraseñas.
+- SO5: portero, defensa, centrocampista, delantero y extra de campo.
+- SO7: portero, dos defensas, dos centrocampistas, delantero y extra de campo.
+- Calcula el máximo exacto de la **suma de medias históricas**, según L5/L10/L15, con programación dinámica y sin repetir futbolistas en la alineación.
+- Si faltan posiciones o puntuaciones, muestra un aviso y **no** inventa jugadores.
+- El estado se congela al añadir el jugador; actualizarlo desde el explorador reemplaza sus medias guardadas.
+- **Limitaciones:** no lee cartas poseídas, temporada/escasez, XP, capitán, límite L10, múltiples alineaciones, encuentros de la próxima Game Week, DNP, lesiones, sustituciones ni elegibilidad real. No es una predicción de puntuaciones, ni registra alineaciones en Sorare.
+- **Validación:** archivos de GitHub publicados y sintaxis JS comprobada; algoritmo validado con casos SO5/SO7 y ausencia de portero. Pendiente confirmar el despliegue en Cloudflare y una prueba de usuario.
+
+Reglas oficiales para las posiciones: https://sorare.com/es/game-rules
