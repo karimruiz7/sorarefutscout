@@ -2,6 +2,7 @@
 
 **Status:** draft for submission; not yet sent or approved.  
 **Application:** SorareFutScout  
+**Professional contact:** sorarescoutfut@gmail.com  
 **Website:** https://sorarefutscout.pages.dev  
 **Privacy policy (provisional):** https://sorarefutscout.pages.dev/privacidad.html  
 **OAuth callback (exact URL):** https://sorarefutscout.pages.dev/auth/sorare/callback
@@ -19,6 +20,7 @@ Hello Sorare Developer Support,
 I would like to request OAuth credentials for SorareFutScout, an independent football scouting and lineup-analysis web application currently available as a public beta.
 
 Website: https://sorarefutscout.pages.dev
+Contact: sorarescoutfut@gmail.com
 
 SorareFutScout already offers player search, historical Sorare scoring averages (L5/L10/L15), fixture and Game Week information, matchup analysis, and comparisons of alternative SO5/SO7 lineups based on selected players. The tool clearly distinguishes real Sorare data from our own experimental indices and does not claim to predict results.
 
@@ -39,6 +41,7 @@ Thank you for your time and for making Sorare's developer API available.
 
 Best regards,
 The SorareFutScout developer
+sorarescoutfut@gmail.com
 
 ## Form fields
 
@@ -48,6 +51,7 @@ The SorareFutScout developer
 | Type | Public web application; independent, unofficial beta |
 | Category | Sorare Football analytics / player scouting / lineup optimization |
 | Website | https://sorarefutscout.pages.dev |
+| Contact | sorarescoutfut@gmail.com |
 | Callback URL | https://sorarefutscout.pages.dev/auth/sorare/callback |
 | Privacy | https://sorarefutscout.pages.dev/privacidad.html (provisional; must be finalized) |
 | Permissions | OAuth user basic information and cards, read-only |
@@ -63,7 +67,7 @@ The SorareFutScout developer
 - [x] Exact production callback agreed in code.
 - [x] PNG logo prepared for review.
 - [ ] Owner approves final logo.
-- [ ] Privacy page finalized with correct identity, contact address and legally required disclosures; beta privacy text is still provisional.
+- [ ] Privacy page finalized with correct controller identity and legally required disclosures; the public contact email is now provided, but the beta privacy text is still provisional.
 - [ ] Owner verifies Sorare's branding requirements for a third-party name containing 'Sorare'.
 - [ ] Owner confirms the wording, selects the API/OAuth category in Sorare's official request form, attaches the PNG, and submits the request.
 - [ ] Sorare issues OAuth Client ID and Client Secret; configure privately in Cloudflare, NEVER in GitHub or chat.
