@@ -161,7 +161,7 @@ function renderTable(players,container){
    person.append(makeAvatar(p.name,p.avatar),create("strong","",p.name));personCell.append(person);tr.appendChild(personCell);
    tr.append(create("td","",p.club||"Sin club"),create("td","",positions[p.position]||p.position||"—"));
    for(const key of ["l5","l10","l15"]){const cell=create("td","table-score",fmt(p[key]));tr.appendChild(cell);}
-   const cell=create("td","table-actions");
+   const cell=create("td");
    const actions=playerActions(p);actions.classList.add("table-actions");cell.appendChild(actions);tr.appendChild(cell);tbody.appendChild(tr);
  }
  table.append(thead,tbody);outer.appendChild(table);container.appendChild(outer);
