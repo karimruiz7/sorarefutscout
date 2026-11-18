@@ -1,261 +1,89 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SorareFutScout · Demo de Sorare Fútbol</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b111a">
+<meta name="description" content="Panel de SorareFutScout: explora futbolistas, optimiza alineaciones y consulta novedades de disponibilidad.">
+<title>SorareFutScout | Panel principal</title>
 <style>
-:root{color-scheme:dark;--bg:#0b101a;--panel:#121b2a;--panel2:#172235;--line:#29364a;--muted:#94a3b8;--text:#f2f6fc;--accent:#b5ff65;--blue:#79b8ff;--orange:#f6bd60;--red:#f18484}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}button,select,input{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{display:grid;grid-template-columns:245px minmax(0,1fr);min-height:100vh}.sidebar{background:#101826;border-right:1px solid var(--line);padding:30px 18px;position:sticky;top:0;height:100vh}.brand{display:flex;align-items:center;gap:12px;padding:0 12px 32px}.brand-mark{width:39px;height:39px;border-radius:11px;background:var(--accent);color:#111827;display:grid;place-items:center;font-size:21px;font-weight:900;transform:rotate(-6deg)}.brand-name{font-weight:900;letter-spacing:.1px;font-size:16px}.brand-sub{color:var(--muted);font-size:10px;letter-spacing:1.4px;font-weight:700}.nav{display:grid;gap:8px}.nav button{width:100%;display:flex;align-items:center;gap:12px;padding:14px;border:1px solid transparent;border-radius:12px;background:transparent;color:#b5c1d2;text-align:left;font-weight:650}.nav button.active{background:#243624;color:var(--accent);border-color:#426139}.nav button:hover:not(.active){background:#1a2636}.nav-ico{font-size:19px;width:23px;text-align:center}.side-bottom{position:absolute;left:18px;right:18px;bottom:24px;background:#192638;padding:16px;border:1px solid var(--line);border-radius:15px}.side-bottom b{font-size:12px}.side-bottom p{font-size:12px;line-height:1.55;color:var(--muted);margin:8px 0 0}
-main{min-width:0;padding:30px max(24px,4vw) 60px}.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;gap:12px}.eyebrow{font-weight:800;letter-spacing:2px;color:var(--accent);font-size:11px;text-transform:uppercase}.right-top{font-size:12px;display:flex;align-items:center;gap:9px;color:var(--muted)}.dot{width:8px;height:8px;background:#ffc76f;border-radius:50%}.status{padding:9px 13px;border:1px solid var(--line);border-radius:24px;background:#161e2c}.page{display:none}.page.active{display:block}.hero{display:flex;gap:22px;justify-content:space-between;align-items:center;background:radial-gradient(ellipse at 85% 40%,#253d2d 0%,transparent 48%),linear-gradient(135deg,#1e293a,#101b2c);border:1px solid #3b4c53;border-radius:24px;padding:30px 34px;min-height:195px}.hero h1{font-size:clamp(27px,3.4vw,45px);letter-spacing:-1.4px;line-height:1.12;margin:8px 0 12px;max-width:610px}.hero p{color:#b6c5d2;line-height:1.65;font-size:14px;max-width:570px;margin:0}.hero-symbol{font-size:93px;opacity:.9;filter:drop-shadow(0 10px 20px #0006)}.btn{border:0;padding:12px 17px;border-radius:10px;background:var(--accent);color:#10191e;font-weight:850;white-space:nowrap}.btn:hover{filter:brightness(1.08)}.btn.secondary{background:#273a4b;color:#f7faff;border:1px solid #42566b}.title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:30px 0 17px}.title-row h2{font-size:20px;letter-spacing:-.45px;margin:0}.muted{color:var(--muted);font-size:12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stat{border:1px solid var(--line);background:var(--panel);border-radius:17px;padding:19px}.stat .mini{font-size:12px;color:#a9b8c8}.stat strong{display:block;margin:10px 0 5px;font-size:29px;letter-spacing:-1px}.stat em{font-style:normal;color:var(--accent);font-size:12px}.stat span{color:var(--muted);font-size:12px}.two-col{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;min-width:0}.card h3{font-size:16px;margin:0 0 6px}.quick-list{display:grid;gap:10px;margin-top:20px}.quick{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px;background:var(--panel2);border-radius:12px}.player-id{display:flex;align-items:center;gap:11px;min-width:0}.avatar{width:39px;height:39px;border-radius:11px;background:linear-gradient(145deg,#36547c,#24394e);display:grid;place-items:center;font-weight:850;color:white;font-size:13px;flex-shrink:0}.player-id b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player-id small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.score{color:var(--accent);font-size:18px;font-weight:900}.tag{font-size:11px;font-weight:800;white-space:nowrap;background:#243c37;color:#aaf1bf;border-radius:6px;padding:6px 8px}.note{border-left:3px solid var(--accent);padding-left:15px;color:#b9c5d4;line-height:1.65;font-size:13px;margin-top:18px}.subheader{margin:0 0 8px;font-size:clamp(24px,2.4vw,34px);letter-spacing:-.8px}.subdesc{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 26px}.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:17px 0 20px}.field{display:flex;flex-direction:column;gap:7px;min-width:155px}.field label{font-size:12px;color:#bac7d7;font-weight:650}.field select,.field input{height:41px;border:1px solid #40506a;background:#1a2638;border-radius:9px;color:white;padding:0 12px;max-width:100%}.field.search{flex:1}.field.search input{width:100%}.checks{display:flex;gap:8px;align-items:center;padding:11px 4px;font-size:13px;color:#c8d6e5}.checks input{accent-color:#a9f45e;width:17px;height:17px}.lineup{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:16px}.lineup.seven{grid-template-columns:repeat(7,minmax(0,1fr))}.lineup-slot{border-radius:14px;border:1px solid #435644;background:linear-gradient(165deg,#243d37,#192736 80%);padding:14px 8px;text-align:center;min-width:0}.lineup-slot .position{color:#b6e9af;font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:1px}.lineup-slot .avatar{margin:15px auto 11px;width:49px;height:49px;border-radius:50%}.lineup-slot strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lineup-slot small{display:block;color:#a6b6c3;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px 0 10px}.lineup-slot .score{font-size:20px}.results{display:flex;gap:15px;flex-wrap:wrap;margin-top:18px;padding:16px 20px;background:#1b2b32;border-radius:13px}.result-item{flex:1;min-width:120px}.result-item b{font-size:23px;display:block;margin-top:5px}.results .muted{font-size:11px}.data-table{width:100%;border-collapse:collapse}.data-table th{font-size:11px;color:#94a6bd;text-transform:uppercase;letter-spacing:.6px;text-align:left;padding:13px 10px;border-bottom:1px solid var(--line)}.data-table td{font-size:13px;border-bottom:1px solid #243144;padding:12px 10px}.data-table tr:last-child td{border-bottom:none}.data-table .player-id b{font-size:12px}.data-table .avatar{width:34px;height:34px}.table-scroll{overflow-x:auto}.progress{background:#2a3850;border-radius:4px;height:9px;overflow:hidden}.progress>span{height:100%;display:block;background:var(--accent);border-radius:4px}.pill{padding:5px 8px;background:#273549;border-radius:9px;color:#cbd5e2;display:inline-block;font-size:11px;font-weight:800}.number{font-weight:850;font-variant-numeric:tabular-nums}.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}.compare-panel{padding:21px;border:1px solid var(--line);background:var(--panel2);border-radius:15px}.compare-panel .big{display:flex;align-items:center;gap:14px}.compare-panel .avatar{width:65px;height:65px;font-size:23px}.compare-panel h3{margin:0 0 5px;font-size:19px}.barline{display:grid;grid-template-columns:115px 1fr 48px;gap:12px;align-items:center;margin:17px 0;font-size:12px}.barline strong{text-align:right;font-size:13px}.barline.blue .progress>span{background:var(--blue)}.empty{padding:27px;text-align:center;color:var(--muted)}footer{margin-top:32px;color:#6f8197;font-size:11px;line-height:1.6}.small-badge{background:#293c26;border:1px solid #4a6940;color:#cbffb4;padding:6px 9px;border-radius:9px;font-size:11px;font-weight:800}.filters{display:flex;flex-wrap:wrap;gap:8px}.filter{border:1px solid var(--line);background:#172235;border-radius:9px;color:#b7c8da;padding:9px 13px}.filter.active{border-color:var(--accent);color:var(--accent);background:#263628}.fav{border:0;background:transparent;color:#6c8096;font-size:22px;padding:4px 9px}.fav.active{color:var(--orange)}
-@media(max-width:1150px){.lineup.seven{grid-template-columns:repeat(4,minmax(0,1fr))}.lineup{grid-template-columns:repeat(3,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:780px){.app{display:block}.sidebar{position:static;height:auto;padding:14px;border-right:none;border-bottom:1px solid var(--line)}.brand{padding:5px 8px 13px}.nav{display:flex;gap:4px;overflow-x:auto}.nav button{width:auto;flex-shrink:0;padding:10px 13px;font-size:12px}.nav-ico{font-size:14px;width:auto}.side-bottom{display:none}main{padding:23px 16px 48px}.hero{padding:23px}.hero-symbol{display:none}.two-col,.compare{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{padding:14px}.lineup,.lineup.seven{grid-template-columns:repeat(2,minmax(0,1fr))}.topbar{align-items:flex-start}.status{white-space:nowrap;font-size:10px}}
-
-/* Fase 1: colección local e importación */
-.notice {padding:14px 16px;border:1px solid #4c6336;background:#1c2c24;border-radius:12px;color:#d9f8ce;font-size:13px;line-height:1.6;margin-bottom:22px}
-.notice strong {color:var(--accent)}
-.stack {display:grid;gap:16px}
-.upload {border:1px dashed #66815e;border-radius:14px;padding:22px;background:#15242a}
-.upload input[type=file] {width:100%;margin:12px 0;color:var(--text);max-width:100%}
-.upload code {color:var(--accent);word-break:break-word}
-.helper {font-size:12px;line-height:1.65;color:var(--muted)}
-.action-row {display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.action-row .btn {font-size:13px}
-.btn.danger {background:#412729;color:#ffb5b5;border:1px solid #8b4949}
-.form-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
-.form-grid .field {min-width:0}
-.form-grid input,.form-grid select {width:100%}
-.form-grid .field.wide {grid-column:span 2}
-#collection-status {font-size:13px;line-height:1.6;margin-top:12px;min-height:21px}
-.badge-in {background:#28442a;color:#c2fba6}.badge-classic {background:#343347;color:#cdc9ff}
-/* A real project needs a responsive base before any real user accounts. */
-@media(max-width:1120px){.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:620px){.form-grid{grid-template-columns:1fr}.form-grid .field.wide{grid-column:span 1}.action-row .btn{white-space:normal}}
-
-.nav a.real-nav{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #4b7440;border-radius:12px;background:#223a2b;color:var(--accent);font-weight:800;font-size:13px;text-decoration:none}.nav a.real-nav:hover{background:#2c4930}@media(max-width:780px){.nav a.real-nav{flex-shrink:0;padding:10px 13px}}
+:root{color-scheme:dark;--bg:#0a111b;--side:#101927;--panel:#141e2e;--line:#2d4056;--muted:#a8bed2;--accent:#b5ff65}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 90% -15%,#1b332c,var(--bg) 60%);color:#f5f9ff;font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}a{text-decoration:none;color:inherit}a:hover{text-decoration:none}a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}.sidebar{background:var(--side);border-right:1px solid var(--line);padding:27px 14px;display:flex;flex-direction:column;gap:15px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;font-weight:950;letter-spacing:-.5px;padding:4px 9px 24px}.brand .mark{background:var(--accent);color:#142009;border-radius:10px;padding:9px 10px;transform:rotate(-5deg)}.brand small{display:block;font-size:10px;font-weight:700;color:#a9bad1;letter-spacing:1.1px}
+.menu{display:grid;gap:7px}.menu a{display:flex;gap:13px;align-items:center;padding:12px 13px;border:1px solid transparent;border-radius:11px;color:#b8c9da;font-size:14px;font-weight:700}.menu a:hover{background:#203146}.menu a.active{background:#253b2a;border-color:#477342;color:var(--accent)}.symbol{width:19px;text-align:center;font-size:17px}
+.menu-header{font-size:10px;letter-spacing:1.7px;color:#7f96ab;font-weight:900;padding:13px 12px 3px}.side-note{margin-top:auto;border:1px solid var(--line);background:#182738;border-radius:13px;padding:13px;font-size:11px;color:#aebfd0;line-height:1.6}
+main{padding:32px max(24px,4vw) 65px;min-width:0;max-width:1800px}
+.overline{color:var(--accent);font-size:11px;font-weight:900;letter-spacing:1.9px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:26px}.smallpill{border:1px solid #4b5e70;border-radius:30px;color:#bbd0e0;padding:7px 11px;font-size:12px}
+.hero{background:radial-gradient(ellipse at right,#244a32,#172536 65%);border:1px solid #3d5d55;border-radius:21px;padding:31px;display:flex;justify-content:space-between;align-items:center;gap:18px}
+h1{font-size:clamp(29px,4.3vw,48px);line-height:1.12;letter-spacing:-1.25px;margin:9px 0 13px}h1 em{font-style:normal;color:var(--accent)}h2{font-size:20px;margin:0 0 15px;letter-spacing:-.3px}.hero p{font-size:14px;color:#c5d5e2;max-width:620px;margin:0 0 20px}
+.illustration{font-size:85px;opacity:.85}.buttons{display:flex;gap:9px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#142109;border-radius:10px;padding:12px 15px;font-weight:900;font-size:13px;gap:7px}.btn.subtle{background:#2a3c50;border:1px solid #49637a;color:#f7faff}.btn:hover{filter:brightness(1.1)}
+.heading{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:29px 0 14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.stat{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:19px}.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{display:block;font-size:29px;font-variant-numeric:tabular-nums;margin:8px 0 2px}.stat small{font-size:11px;color:#9ab0c1}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{border:1px solid #30455c;border-radius:17px;background:#151f2e;padding:22px;min-width:0}.card .emoji{font-size:25px}.card h3{font-size:17px;margin:13px 0 8px}.card p{font-size:12px;color:#a9bdcd;min-height:62px;line-height:1.65}.card a{font-size:13px;font-weight:900;color:var(--accent)}
+.footnote{border-left:3px solid var(--accent);margin:24px 0 0;padding:5px 0 5px 14px;color:#c4d5df;font-size:12px;line-height:1.65}
+footer{margin-top:35px;color:#8ea3b4;font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.app{display:block}.sidebar{position:static;height:auto;padding:12px}.brand{padding:5px 8px}.menu{display:flex;gap:5px;overflow-x:auto}.menu a{padding:9px 12px;white-space:nowrap}.menu-header,.side-note{display:none}main{padding:20px 14px}.hero{padding:22px}.illustration{display:none}.cards{grid-template-columns:1fr}}
 </style>
 </head>
-<body><div class="app"><aside class="sidebar"><div class="brand"><div class="brand-mark">SF</div><div><div class="brand-name">SORAREFUTSCOUT</div><div class="brand-sub">SORARE FOOTBALL LAB</div></div></div><nav class="nav" aria-label="Secciones"><button data-page="dashboard" class="active"><span class="nav-ico">◫</span> Panel general</button><button data-page="optimizer"><span class="nav-ico">✦</span> Optimizador demo</button><button data-page="players"><span class="nav-ico">⚽</span> Jugadores</button><button data-page="compare"><span class="nav-ico">⇄</span> Comparador</button><button data-page="collection"><span class="nav-ico">▤</span> Mis datos</button><a class="real-nav" href="/explorador.html"><span class="nav-ico">⌕</span> Jugadores reales <span style="margin-left:auto;font-size:10px">BETA</span></a><a class="real-nav" href="/optimizador-real.html"><span class="nav-ico">✦</span> Optimizador real <span style="margin-left:auto;font-size:10px">BETA</span></a></nav><div class="side-bottom"><b>⚡ DEMO INTERACTIVA</b><p>Incluye datos ficticios y opción de importar tus propios CSV. Todo se guarda en tu navegador.</p></div></aside>
-<main><div class="topbar"><div class="eyebrow" id="crumb">Panel de control / Inicio</div><div class="right-top"><span class="dot"></span><span class="status" id="source-mode">Modo demostración</span></div></div>
-<section class="page active" id="dashboard"><div class="hero"><div><div class="eyebrow">TU ASISTENTE PARA SORARE FÚTBOL</div><h1>Menos dudas.<br>Mejores alineaciones.</h1><p>Analiza la forma, compara futbolistas y construye tu mejor equipo. Empieza con la demo o importa tus propios jugadores: sin registro.</p><div style="margin-top:22px"><a href="/explorador.html" class="btn" style="display:inline-block;text-decoration:none;margin:0 8px 8px 0">Explorar datos reales ↗</a><a href="/optimizador-real.html" class="btn" style="display:inline-block;text-decoration:none;margin:0 8px 8px 0">Optimizar jugadores reales ↗</a><button class="btn secondary" data-goto="optimizer">Optimizador demo</button> <button class="btn secondary" data-goto="collection">Cargar mis jugadores</button></div></div><div class="hero-symbol">⚽</div></div>
-<div class="title-row"><h2>Resumen de la jornada</h2><span class="small-badge" id="dataset-tag">DATOS DE EJEMPLO</span></div><div class="stats"><div class="stat"><div class="mini">Jugadores analizados</div><strong id="stat-players">—</strong><span id="stat-source">Base de prueba</span></div><div class="stat"><div class="mini">Cartas de tu colección</div><strong id="stat-owned">—</strong><span>Marcados como propios</span></div><div class="stat"><div class="mini">Mayor proyección</div><strong id="stat-best">—</strong><em> puntos estimados</em></div><div class="stat"><div class="mini">Candidatos destacados</div><strong id="stat-top">—</strong><span>Más de 65 pts proyectados</span></div></div>
-<div class="title-row"><h2>Scouting rápido</h2><span class="muted">Ordenadas por proyección ilustrativa</span></div><div class="two-col"><div class="card"><h3>⚡ Jugadores en el radar</h3><div class="muted">Ordenados por proyección estimada</div><div class="quick-list" id="quick-list"></div></div><div class="card"><h3>🧠 Tu centro de decisiones</h3><div class="muted">Qué podremos conectar en la siguiente versión</div><div class="note"><b>1. Colección real</b><div>Sincronización con la cuenta de Sorare mediante autorización oficial.</div></div><div class="note"><b>2. Calendario y rivales</b><div>Partidos, dificultad y estado de disponibilidad.</div></div><div class="note"><b>3. Alineaciones inteligentes</b><div>Optimización por puntuación prevista, riesgo y reglas de cada competición.</div></div></div></div></section>
-<section class="page" id="optimizer"><h1 class="subheader">Optimizador de alineaciones</h1><p class="subdesc">Prueba cómo generar automáticamente un equipo según las posiciones y la estrategia seleccionada. La fórmula y los datos son ilustrativos.</p><div class="card"><h3>⚙️ Configurar alineación</h3><div class="controls"><div class="field"><label for="format">Formato de alineación</label><select id="format"><option value="5">In-Season · 5 cartas</option><option value="7">Classic · 7 cartas</option></select></div><div class="field"><label for="strategy">Estrategia</label><select id="strategy"><option value="balance">Equilibrada</option><option value="safe">Priorizar fiabilidad</option><option value="ceiling">Buscar techo alto</option></select></div><label class="checks"><input type="checkbox" id="owned-only" checked> Solo cartas marcadas como propias</label><button class="btn" id="optimize">✦ Generar alineación</button></div><div class="muted">Modelo de fase 1: In-Season = POR, DEF, MED, DEL, extra y como máximo 1 Classic. Classic = POR, 2 DEF, 2 MED, DEL y extra. No contempla ligas elegibles, límites específicos, cap, bonificaciones, sustituciones ni rarezas. Usa el reglamento oficial antes de registrar una alineación.</div></div><div class="title-row"><h2>Alineación recomendada</h2><span class="small-badge">PROYECCIÓN DE PRUEBA</span></div><div class="lineup" id="lineup"></div><div class="results" id="lineup-results"></div><p class="note">Las proyecciones son de ejemplo o introducidas por quien usa la web. No representan pronósticos validados ni garantizan resultados.</p></section>
-<section class="page" id="players"><h1 class="subheader">Explorador de futbolistas</h1><p class="subdesc">Busca, filtra y ordena jugadores para analizar rendimiento y perspectivas antes de alinearlos.</p><div class="card"><div class="controls"><div class="field search"><label for="search">Buscar jugador o equipo</label><input id="search" type="search" placeholder="Ej. Daniel, Ciudad, ..."></div><div class="field"><label for="sort">Ordenar por</label><select id="sort"><option value="projection">Proyección</option><option value="l5">Media últimos 5</option><option value="l15">Media últimos 15</option><option value="prob">Probabilidad de jugar</option></select></div><label class="checks"><input type="checkbox" id="only-owned-players"> Mi colección</label></div><div class="filters" id="pos-filter"><button class="filter active" data-pos="all">Todos</button><button class="filter" data-pos="POR">Porteros</button><button class="filter" data-pos="DEF">Defensas</button><button class="filter" data-pos="MED">Medios</button><button class="filter" data-pos="DEL">Delanteros</button></div><div class="table-scroll" style="margin-top:20px"><table class="data-table"><thead><tr><th>Jugador</th><th>Pos.</th><th>Tipo</th><th>L5</th><th>L15</th><th>Prob. juego</th><th>Proyección</th><th>Seguir</th></tr></thead><tbody id="players-body"></tbody></table></div><div id="players-count" class="muted" style="margin-top:12px"></div></div></section>
-<section class="page" id="compare"><h1 class="subheader">Comparador de jugadores</h1><p class="subdesc">Pon a dos jugadores frente a frente y compara sus métricas en segundos.</p><div class="controls"><div class="field" style="flex:1"><label for="compare-a">Jugador A</label><select id="compare-a"></select></div><div class="field" style="flex:1"><label for="compare-b">Jugador B</label><select id="compare-b"></select></div></div><div id="compare-view"></div><div class="note">Las métricas predeterminadas son ficticias. Si cargas un CSV, se muestran los valores que tú hayas proporcionado; no los verifica Sorare.</div></section>
-<section class="page" id="collection">
-<h1 class="subheader">Mis datos y colección</h1>
-<p class="subdesc">Importa una lista de jugadores, añade nombres manualmente o recupera la demo. Los datos quedan guardados <strong>solo en este navegador</strong>. SorareFutScout no recibe tus archivos.</p>
-<div class="notice"><strong>Primera fase — sin cuenta Sorare.</strong> Nunca introduzcas aquí tu contraseña o token. No hay sincronización, precios de mercado ni estadísticas oficiales. Las proyecciones las introduces tú y solo sirven para probar el optimizador.</div>
-<div class="two-col">
-<div class="card upload">
-<h3>⬆ Importar jugadores CSV</h3>
-<p class="helper">Descarga la plantilla, rellena tus jugadores y súbela. La importación sustituye la tabla actual de este navegador.</p>
-<div class="action-row"><button id="template-csv" class="btn secondary" type="button">Descargar plantilla CSV</button><button id="export-csv" class="btn secondary" type="button">Exportar mis datos</button></div>
-<label class="helper" for="file-csv" style="display:block;margin-top:15px">Archivo CSV con cabecera</label><input type="file" id="file-csv" accept=".csv,text/csv,text/plain">
-<p class="helper">Columnas: <code>nombre,equipo,posicion,l5,l15,probabilidad,proyeccion,techo,coleccion,temporada</code>.<br>Posición POR/DEF/MED/DEL; colección sí/no; temporada actual/classic. Máximo 1.000 filas por archivo (hasta 1 MB).</p>
-</div>
-<div class="card">
-<h3>🗂 Gestiona tu colección</h3>
-<p class="helper">Solo se marcan como propias las cartas con la columna <b>coleccion</b> en “si”. El optimizador puede trabajar también con todas las filas.</p>
-<div class="stat" style="margin-top:18px"><div class="mini">Jugadores cargados</div><strong id="collection-total">—</strong><span id="collection-origin">Datos de ejemplo</span></div>
-<div class="action-row" style="margin-top:18px"><button id="restore-demo" class="btn secondary" type="button">Restablecer demo</button><button id="remove-last" class="btn danger" type="button">Eliminar último añadido</button></div>
-</div>
-</div>
-<div class="card" style="margin-top:18px">
-<h3>＋ Añadir un futbolista</h3><p class="helper">Crea una fila nueva sin necesidad de CSV. Los números son estimaciones manuales, no estadísticas Sorare.</p>
-<form id="add-player"><div class="form-grid">
-<div class="field wide"><label for="add-name">Nombre</label><input id="add-name" name="name" required maxlength="80" placeholder="Nombre del jugador"></div>
-<div class="field wide"><label for="add-team">Equipo</label><input id="add-team" name="team" required maxlength="80" placeholder="Club"></div>
-<div class="field"><label for="add-pos">Posición</label><select id="add-pos" name="pos"><option>POR</option><option>DEF</option><option>MED</option><option>DEL</option></select></div>
-<div class="field"><label for="add-season">Tipo de carta</label><select id="add-season" name="season"><option value="in">In-Season actual</option><option value="classic">Classic</option></select></div>
-<div class="field"><label for="add-l5">Media L5</label><input id="add-l5" name="l5" type="number" min="0" max="100" value="50" required></div>
-<div class="field"><label for="add-l15">Media L15</label><input id="add-l15" name="l15" type="number" min="0" max="100" value="50" required></div>
-<div class="field"><label for="add-prob">Probabilidad de jugar %</label><input id="add-prob" name="prob" type="number" min="0" max="100" value="90" required></div>
-<div class="field"><label for="add-projection">Proyección</label><input id="add-projection" name="projection" type="number" min="0" max="100" value="50" required></div>
-<div class="field"><label for="add-ceiling">Techo</label><input id="add-ceiling" name="ceiling" type="number" min="0" max="100" value="80" required></div>
-<div class="field"><label for="add-owned">Carta en mi colección</label><select id="add-owned" name="owned"><option value="true">Sí</option><option value="false">No</option></select></div>
-</div><div class="action-row" style="margin-top:20px"><button class="btn" type="submit">＋ Añadir jugador</button></div></form>
-<div role="status" aria-live="polite" id="collection-status"></div>
-</div>
+<body>
+<div class="app">
+<aside class="sidebar">
+<a class="brand" href="/"><span class="mark">SF</span><span>SORAREFUTSCOUT<small>SORARE FOOTBALL LAB</small></span></a>
+<nav class="menu" aria-label="Menú principal">
+<a class="active" href="/" aria-current="page"><span class="symbol">▣</span> Panel general</a>
+<a href="/explorador.html"><span class="symbol">⚽</span> Jugadores reales</a>
+<a href="/optimizador-real.html"><span class="symbol">✦</span> Optimizador</a>
+<a href="/disponibilidad.html"><span class="symbol">🩺</span> Disponibilidad y noticias</a>
+<div class="menu-header">OTRAS HERRAMIENTAS</div>
+<a href="/demo.html"><span class="symbol">◈</span> Demo interactiva</a>
+<a href="/datos-reales.html"><span class="symbol">⌁</span> Prueba de API</a>
+</nav>
+<div class="side-note"><b>Datos reales, límites claros</b><p>Los índices son experimentales. Las noticias no equivalen a lesiones verificadas. La colección guardada es local de este navegador.</p></div>
+</aside>
+<main>
+<div class="top"><span class="overline">PANEL DE CONTROL / INICIO</span><span class="smallpill">Versión beta pública</span></div>
+<section class="hero">
+<div>
+<div class="overline">TU ASISTENTE PARA SORARE FÚTBOL</div>
+<h1>Menos dudas.<br><em>Mejores decisiones.</em></h1>
+<p>Un espacio para explorar futbolistas, preparar alineaciones con estadísticas de Sorare y revisar las últimas noticias antes de elegir tus cartas.</p>
+<div class="buttons"><a class="btn" href="/optimizador-real.html">Optimizar alineación</a><a class="btn subtle" href="/disponibilidad.html">Consultar disponibilidad</a><a class="btn subtle" href="/explorador.html">Buscar jugadores</a></div>
+</div><div class="illustration" aria-hidden="true">⚽</div>
 </section>
-<footer>SORAREFUTSCOUT — Prototipo independiente y no oficial. No afiliado a Sorare. La demo usa estadísticas ficticias; los valores importados son responsabilidad de quien los carga. No conectado a Sorare. Nunca introduzcas contraseñas ni credenciales.</footer>
-</main></div><script>
-const demoPlayers=[
-{id:1,n:'Daniel Costa',team:'Atlético Norte',pos:'POR',l5:61,l15:54,prob:98,projection:62,ceiling:88,owned:true,season:"in"},
-{id:2,n:'Álex Romero',team:'Real Costa',pos:'POR',l5:57,l15:51,prob:96,projection:57,ceiling:79,owned:true,season:"classic"},
-{id:3,n:'Mateo Ruiz',team:'Ciudad Sur',pos:'POR',l5:65,l15:56,prob:84,projection:60,ceiling:93,owned:false,season:"in"},
-{id:4,n:'Lucas Pereira',team:'Unión Azul',pos:'DEF',l5:71,l15:64,prob:94,projection:71,ceiling:102,owned:true,season:"in"},
-{id:5,n:'Hugo Serrano',team:'Real Costa',pos:'DEF',l5:68,l15:63,prob:97,projection:69,ceiling:89,owned:true,season:"in"},
-{id:6,n:'Nicolás Vidal',team:'Sporting Oeste',pos:'DEF',l5:61,l15:60,prob:99,projection:65,ceiling:79,owned:true,season:"classic"},
-{id:7,n:'Bruno Almeida',team:'Atlético Norte',pos:'DEF',l5:74,l15:58,prob:77,projection:66,ceiling:105,owned:false,season:"in"},
-{id:8,n:'Iker Molina',team:'Ciudad Sur',pos:'DEF',l5:60,l15:58,prob:92,projection:61,ceiling:81,owned:true,season:"in"},
-{id:9,n:'Gabriel Martin',team:'Unión Azul',pos:'MED',l5:76,l15:70,prob:95,projection:77,ceiling:109,owned:true,season:"in"},
-{id:10,n:'Adrián Silva',team:'Atlético Norte',pos:'MED',l5:72,l15:67,prob:98,projection:73,ceiling:99,owned:true,season:"classic"},
-{id:11,n:'Rafael Gómez',team:'Real Costa',pos:'MED',l5:67,l15:64,prob:95,projection:69,ceiling:93,owned:true,season:"in"},
-{id:12,n:'Leo Navarro',team:'Sporting Oeste',pos:'MED',l5:81,l15:59,prob:72,projection:69,ceiling:115,owned:false,season:"in"},
-{id:13,n:'Sergio Camacho',team:'Ciudad Sur',pos:'MED',l5:65,l15:62,prob:91,projection:65,ceiling:94,owned:true,season:"classic"},
-{id:14,n:'Tomás Ferrer',team:'Sporting Oeste',pos:'MED',l5:60,l15:57,prob:86,projection:59,ceiling:84,owned:false,season:"in"},
-{id:15,n:'Enzo Duarte',team:'Ciudad Sur',pos:'DEL',l5:83,l15:72,prob:91,projection:82,ceiling:122,owned:true,season:"in"},
-{id:16,n:'Pablo Montes',team:'Unión Azul',pos:'DEL',l5:75,l15:66,prob:97,projection:77,ceiling:112,owned:true,season:"in"},
-{id:17,n:'Thiago Sousa',team:'Atlético Norte',pos:'DEL',l5:70,l15:68,prob:90,projection:73,ceiling:104,owned:true,season:"classic"},
-{id:18,n:'Alan Castro',team:'Real Costa',pos:'DEL',l5:86,l15:62,prob:69,projection:74,ceiling:128,owned:false,season:"in"},
-{id:19,n:'Javier Moreno',team:'Ciudad Sur',pos:'DEL',l5:62,l15:59,prob:98,projection:65,ceiling:92,owned:false,season:"in"}
-];
-const STORAGE_KEY='sorarefutscout_phase1_data_v1';
-const FAV_KEY='sorarefutscout_phase1_favorites_v1';
-const posNames={POR:'Portero',DEF:'Defensa',MED:'Mediocentro',DEL:'Delantero'};
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const initials=n=>String(n).split(' ').filter(Boolean).map(p=>p[0]).slice(0,2).join('').toUpperCase();
-const normalize=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-const num=(x,a=0,b=100)=>Math.min(b,Math.max(a,Number(x)||0));
-const cloneDemo=()=>demoPlayers.map(p=>({...p}));
-let players=cloneDemo(),dataset='demo',pos='all';
-let favorites=new Set();
-try{
-  const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-  if(s && Array.isArray(s.players) && s.players.length<=1000 && s.players.every(p=>p&&typeof p.n==='string'&&posNames[p.pos])){
-    players=s.players.map((p,i)=>({...p,id:i+1,n:String(p.n).slice(0,80),team:String(p.team).slice(0,80),season:p.season==='classic'?'classic':'in',l5:num(p.l5),l15:num(p.l15),prob:num(p.prob),projection:num(p.projection),ceiling:num(p.ceiling),owned:Boolean(p.owned)}));
-    dataset='personalizado';
-  }
-  const f=JSON.parse(localStorage.getItem(FAV_KEY)||'[]');if(Array.isArray(f))favorites=new Set(f.map(Number));
-}catch(e){console.warn('Datos locales no disponibles');}
-function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({players}));}catch(e){setStatus('Aviso: el navegador no ha podido guardar estos datos.',true);}}
-function saveFav(){try{localStorage.setItem(FAV_KEY,JSON.stringify([...favorites]));}catch(e){}}
-function profile(p){return `<div class="player-id"><span class="avatar">${esc(initials(p.n))}</span><span><b>${esc(p.n)}</b><small>${esc(p.team)}</small></span></div>`;}
-const navNames={dashboard:'Panel de control / Inicio',optimizer:'Herramientas / Optimizador',players:'Scouting / Jugadores',compare:'Scouting / Comparador',collection:'Datos / Mi colección'};
-function navigate(page){if(!navNames[page])return;document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id===page));document.querySelectorAll('.nav button').forEach(el=>el.classList.toggle('active',el.dataset.page===page));$('#crumb').textContent=navNames[page];if(location.hash!==`#${page}`)history.replaceState(null,'',`#${page}`);window.scrollTo({top:0,behavior:'smooth'});}
-document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));
-document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.goto)));
-window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)||'dashboard'));
-function scoreFor(p,style){if(style==='safe')return p.projection*.55 + p.l15*.30 + p.prob*.15;if(style==='ceiling')return p.projection*.55+p.ceiling*.4+p.prob*.05;return p.projection*.72+p.l5*.2+p.prob*.08;}
-/* Exact assignment optimization for the sample constraints, including unique cards and current-season limit */
-function bestLineup(list,count,style){
- const slots=count===5?['POR','DEF','MED','DEL','COM']:['POR','DEF','DEF','MED','MED','DEL','COM'];
- const all=(1<<slots.length)-1;
- let dp=new Map([[`0:0`,{score:0,chosen:[]}]]);
- for(const p of list){
-   const next=new Map(dp);
-   for(const [key,state] of dp){
-     const [maskStr,classicStr]=key.split(':'),mask=Number(maskStr),classic=Number(classicStr);
-     for(let k=0;k<slots.length;k++){
-       if(mask&(1<<k))continue;
-       if(slots[k]==='COM'?p.pos==='POR':p.pos!==slots[k])continue;
-       const newClassic=classic+(p.season==='classic'?1:0);
-       if(count===5&&newClassic>1)continue;
-       const newMask=mask|(1<<k),nk=`${newMask}:${count===5?newClassic:0}`;
-       const newScore=state.score+scoreFor(p,style);
-       if(!next.has(nk)||newScore>next.get(nk).score){next.set(nk,{score:newScore,chosen:[...state.chosen,{p,role:slots[k]}]});}
-     }
-   }
-   dp=next;
+<div class="heading"><h2>Tu actividad en este navegador</h2><span style="color:#9badbb;font-size:12px">Sin datos de ejemplo</span></div>
+<div class="stats">
+<div class="stat"><span>Jugadores seleccionados</span><strong id="players">0</strong><small>Del explorador real</small></div>
+<div class="stat"><span>Marcados Arcade</span><strong id="arcade">0</strong><small>Tu colección manual</small></div>
+<div class="stat"><span>Marcados Pro / Arena</span><strong id="pro">0</strong><small>Tu colección manual</small></div>
+<div class="stat"><span>Notas de disponibilidad</span><strong id="statuses">0</strong><small>Vigentes en este navegador</small></div>
+</div>
+<div class="heading"><h2>Herramientas de SorareFutScout</h2></div>
+<div class="cards">
+<article class="card"><div class="emoji">🔎</div><h3>Explorador de jugadores</h3><p>Busca por club o futbolista, consulta medias reales, compara opciones y crea tu selección de cartas.</p><a href="/explorador.html">Abrir explorador</a></article>
+<article class="card"><div class="emoji">📊</div><h3>Optimizador de alineaciones</h3><p>SO5 y SO7, Game Weeks, análisis de rivales, oportunidad individual y tres alternativas para comparar.</p><a href="/optimizador-real.html">Preparar mi alineación</a></article>
+<article class="card"><div class="emoji">📰</div><h3>Disponibilidad y noticias</h3><p>Consulta titulares recientes con fuente y fecha. Registra tus propias notas de bajas, sanciones o dudas sin confundirlas con un parte oficial.</p><a href="/disponibilidad.html">Abrir seguimiento</a></article>
+</div>
+<div class="footnote">Para una actualización continua con la página cerrada necesitaremos conectar un proveedor de noticias y ausencias con licencia y configurar un proceso programado. De momento, las noticias se consultan al abrir la ficha y se pueden refrescar mientras la página está abierta.</div>
+<footer>SorareFutScout es independiente y no oficial. No inventamos puntuaciones futuras ni damos por confirmadas las bajas a partir de titulares. La demo ficticia queda separada del análisis real.</footer>
+</main></div>
+<script>
+(()=>{
+ const KEY="sorarefutscout:optimizer-pool:v1",NOTE_KEY="sorarefutscout:availability:v1";
+ function paint(){
+  let arr=[],notes={};
+  try{const v=JSON.parse(localStorage.getItem(KEY)||"[]");if(Array.isArray(v))arr=v;}catch(_){}
+  try{const v=JSON.parse(localStorage.getItem(NOTE_KEY)||"{}");if(v&&typeof v==="object"&&!Array.isArray(v))notes=v;}catch(_){}
+  document.getElementById("players").textContent=arr.length;
+  document.getElementById("arcade").textContent=arr.filter(p=>p?.ownedArcade===true).length;
+  document.getElementById("pro").textContent=arr.filter(p=>p?.ownedCompetitive===true).length;
+  document.getElementById("statuses").textContent=arr.filter(p=>{
+   const n=notes[p.slug];return n&&["available","doubt","out"].includes(n.status)&&
+    Number.isFinite(n.updatedAt)&&n.updatedAt<=Date.now()&&Date.now()-n.updatedAt<72*3600000;
+  }).length;
  }
- const finalists=[...dp].filter(([key])=>Number(key.split(':')[0])===all);
- if(!finalists.length)return null;
- return finalists.sort((a,b)=>b[1].score-a[1].score)[0][1].chosen.sort((a,b)=>slots.indexOf(a.role)-slots.indexOf(b.role));
-}
-function optimize(){
- const count=Number($('#format').value),style=$('#strategy').value;
- const eligible=players.filter(p=>!$('#owned-only').checked||p.owned);
- const chosen=bestLineup(eligible,count,style);
- $('#lineup').className='lineup'+(count===7?' seven':'');
- if(!chosen){$('#lineup').innerHTML='<div class="empty">No hay suficientes cartas que cumplan las posiciones y el límite de 1 Classic en In-Season. Prueba a incluir todas las cartas o añade más jugadores.</div>';$('#lineup-results').innerHTML='';return;}
- $('#lineup').innerHTML=chosen.map(({p,role})=>`<div class="lineup-slot"><span class="position">${role==='COM'?'Comodín':posNames[role]}</span><div class="avatar">${esc(initials(p.n))}</div><strong title="${esc(p.n)}">${esc(p.n)}</strong><small>${esc(p.team)}</small><small>${p.season==='classic'?'Classic':'In-Season'}</small><div class="score">${p.projection}</div><small>pts estimados</small></div>`).join('');
- const total=chosen.reduce((s,x)=>s+x.p.projection,0),prob=chosen.reduce((s,x)=>s+x.p.prob,0)/chosen.length;
- $('#lineup-results').innerHTML=`<div class="result-item"><span class="muted">Proyección total</span><b style="color:var(--accent)">${total.toFixed(0)} pts</b></div><div class="result-item"><span class="muted">Media por carta</span><b>${(total/chosen.length).toFixed(1)} pts</b></div><div class="result-item"><span class="muted">Disponibilidad media manual</span><b>${prob.toFixed(0)}%</b></div><div class="result-item"><span class="muted">Estrategia</span><b style="font-size:17px">${{balance:'Equilibrada',safe:'Fiabilidad',ceiling:'Techo alto'}[style]}</b></div>`;
-}
-['#optimize','#format','#strategy','#owned-only'].forEach(sel=>$(sel).addEventListener(sel==='#optimize'?'click':'change',optimize));
-function renderPlayers(){
- const q=normalize($('#search').value),sort=$('#sort').value,owned=$('#only-owned-players').checked;
- const list=players.filter(p=>(pos==='all'||p.pos===pos)&&(!owned||p.owned)&&normalize(`${p.n} ${p.team}`).includes(q)).sort((a,b)=>b[sort]-a[sort]);
- $('#players-body').innerHTML=list.length?list.map(p=>`<tr><td>${profile(p)}</td><td><span class="pill">${p.pos}</span></td><td><span class="pill ${p.season==='classic'?'badge-classic':'badge-in'}">${p.season==='classic'?'Classic':'Actual'}</span></td><td class="number">${p.l5}</td><td class="number">${p.l15}</td><td><div style="display:flex;align-items:center;gap:9px;min-width:110px"><div class="progress" style="width:62px"><span style="width:${p.prob}%"></span></div><span>${p.prob}%</span></div></td><td class="number" style="color:var(--accent)">${p.projection}</td><td><button type="button" class="fav ${favorites.has(p.id)?'active':''}" aria-label="${favorites.has(p.id)?'Quitar de':'Añadir a'} favoritos ${esc(p.n)}" data-fav="${p.id}">${favorites.has(p.id)?'★':'☆'}</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty">No hay futbolistas con esos filtros.</td></tr>';
- $('#players-count').textContent=`Mostrando ${list.length} de ${players.length} jugadores`;
- document.querySelectorAll('[data-fav]').forEach(b=>b.addEventListener('click',()=>{const id=Number(b.dataset.fav);favorites.has(id)?favorites.delete(id):favorites.add(id);saveFav();renderPlayers();}));
-}
-['#search','#sort','#only-owned-players'].forEach(sel=>$(sel).addEventListener(sel==='#search'?'input':'change',renderPlayers));
-document.querySelectorAll('#pos-filter button').forEach(b=>b.addEventListener('click',()=>{pos=b.dataset.pos;document.querySelectorAll('#pos-filter button').forEach(x=>x.classList.toggle('active',x===b));renderPlayers();}));
-function renderCompare(){
- const a=players.find(p=>p.id===Number($('#compare-a').value)),b=players.find(p=>p.id===Number($('#compare-b').value));
- if(!a||!b){$('#compare-view').innerHTML='<div class="empty">Carga al menos dos jugadores para utilizar el comparador.</div>';return;}
- const metrics=[['Proyección','projection',100],['Media L5','l5',100],['Media L15','l15',100],['Probabilidad de jugar','prob',100],['Techo potencial','ceiling',100]];
- const panel=p=>`<div class="compare-panel"><div class="big"><div class="avatar">${esc(initials(p.n))}</div><div><h3>${esc(p.n)}</h3><span class="muted">${esc(p.team)} · ${posNames[p.pos]} · ${p.owned?'Marcado como propio':'No marcado como propio'}</span></div></div></div>`;
- $('#compare-view').innerHTML=`<div class="compare">${panel(a)}${panel(b)}</div><div class="card"><h3>Comparativa de métricas</h3><p class="muted">Verde: jugador A · Azul: jugador B</p>${metrics.map(([name,key,max])=>`<div style="margin-top:22px"><b style="font-size:13px">${name}</b><div class="barline"><span>${esc(a.n.split(' ')[0])}</span><div class="progress"><span style="width:${Math.min(100,100*a[key]/max)}%"></span></div><strong>${a[key]}${key==='prob'?'%':''}</strong></div><div class="barline blue"><span>${esc(b.n.split(' ')[0])}</span><div class="progress"><span style="width:${Math.min(100,100*b[key]/max)}%"></span></div><strong>${b[key]}${key==='prob'?'%':''}</strong></div></div>`).join('')}</div>`;
-}
-function updateCompareOptions(){
- for(const sel of ['#compare-a','#compare-b']){
-  const e=$(sel),prior=e.value;
-  e.innerHTML=players.map(p=>`<option value="${p.id}">${esc(p.n)} (${p.pos})</option>`).join('');
-  if(players.some(p=>String(p.id)===prior))e.value=prior;
- }
- if($('#compare-a').value===$('#compare-b').value&&players.length>1)$('#compare-b').selectedIndex=1;
- renderCompare();
-}
-$('#compare-a').addEventListener('change',renderCompare);$('#compare-b').addEventListener('change',renderCompare);
-function refresh(){
- $('#stat-players').textContent=players.length;
- $('#stat-owned').textContent=players.filter(p=>p.owned).length;
- $('#stat-best').textContent=players.length?Math.max(...players.map(p=>p.projection)):'—';
- $('#stat-top').textContent=players.filter(p=>p.projection>65).length;
- $('#source-mode').textContent=dataset==='demo'?'Modo demostración':'Datos de tu navegador';
- $('#dataset-tag').textContent=dataset==='demo'?'DATOS DE EJEMPLO':'DATOS IMPORTADOS / MANUALES';
- $('#stat-source').textContent=dataset==='demo'?'Base de prueba':'Datos de tu navegador';
- $('#collection-total').textContent=players.length;
- $('#collection-origin').textContent=dataset==='demo'?'Datos de ejemplo':'Datos personalizados, guardados localmente';
- $('#quick-list').innerHTML=[...players].sort((a,b)=>b.projection-a.projection).slice(0,5).map(p=>`<div class="quick">${profile(p)}<span class="tag">${p.pos}</span><span class="score">${p.projection}</span></div>`).join('')||'<div class="empty">Sin jugadores cargados.</div>';
- renderPlayers();updateCompareOptions();optimize();
-}
-function setStatus(msg,isError=false){const node=$('#collection-status');node.textContent=msg;node.style.color=isError?'#ffb3b3':'#b5ff65';}
-const COLS=['nombre','equipo','posicion','l5','l15','probabilidad','proyeccion','techo','coleccion','temporada'];
-function csvEscape(x){let s=String(x??'');if(/^[=+@-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
-function toCSV(list){return '\ufeff'+COLS.join(',')+'\r\n'+list.map(p=>[p.n,p.team,p.pos,p.l5,p.l15,p.prob,p.projection,p.ceiling,p.owned?'si':'no',p.season==='classic'?'classic':'actual'].map(csvEscape).join(',')).join('\r\n');}
-function download(name,contents){const b=new Blob([contents],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-$('#template-csv').addEventListener('click',()=>download('sorarefutscout_plantilla.csv',toCSV(cloneDemo().slice(0,3))));
-$('#export-csv').addEventListener('click',()=>download('sorarefutscout_mis_jugadores.csv',toCSV(players)));
-function parseCSV(raw){
-  const s=raw.replace(/^\ufeff/,'').trim();if(!s)throw new Error('El CSV está vacío.');
-  const first=s.split(/\r?\n/,1)[0];const sep=first.includes(';')&&!first.includes(',')?';':',';
-  let rows=[],row=[],field='',quoted=false;
-  for(let i=0;i<s.length;i++){
-    const c=s[i];if(quoted){if(c==='"'&&s[i+1]==='"'){field+='"';i++;}else if(c==='"')quoted=false;else field+=c;}
-    else if(c==='"')quoted=true;
-    else if(c===sep){row.push(field);field='';}
-    else if(c==='\r'||c==='\n'){if(c==='\r'&&s[i+1]==='\n')i++;row.push(field);if(row.some(v=>v.trim()))rows.push(row);row=[];field='';}
-    else field+=c;
-  }
-  if(quoted)throw new Error('Hay comillas sin cerrar en el CSV.');row.push(field);if(row.some(v=>v.trim()))rows.push(row);
-  const header=rows.shift()?.map(v=>normalize(v.trim()))||[];
-  if(!COLS.every(col=>header.includes(col)))throw new Error('Faltan columnas. Descarga la plantilla de SorareFutScout para ver el formato correcto.');
-  if(rows.length<1||rows.length>1000)throw new Error('El archivo debe incluir entre 1 y 1.000 futbolistas.');
-  const result=rows.map((r,i)=>{
-    const o=Object.fromEntries(COLS.map(c=>[c,(r[header.indexOf(c)]||'').trim()]));
-    const nr=Number(o.l5),nl15=Number(o.l15),np=Number(o.probabilidad),nproj=Number(o.proyeccion),nt=Number(o.techo);
-    const owned=normalize(o.coleccion),season=normalize(o.temporada);
-    if(!o.nombre||!o.equipo||!posNames[o.posicion])throw new Error(`Fila ${i+2}: faltan datos o la posición no es POR, DEF, MED o DEL.`);
-    if([nr,nl15,np,nproj,nt].some(n=>!Number.isFinite(n)||n<0||n>100)||[o.l5,o.l15,o.probabilidad,o.proyeccion,o.techo].some(v=>v===''))throw new Error(`Fila ${i+2}: las métricas deben estar entre 0 y 100.`);
-    if(!['si','sí','no','true','false','1','0'].includes(owned))throw new Error(`Fila ${i+2}: colección debe ser si/no.`);
-    if(!['actual','in','in-season','classic','clásica','clasica'].includes(season))throw new Error(`Fila ${i+2}: temporada debe ser actual/classic.`);
-    return {id:i+1,n:o.nombre.slice(0,80),team:o.equipo.slice(0,80),pos:o.posicion,l5:nr,l15:nl15,prob:np,projection:nproj,ceiling:nt,owned:['si','sí','true','1'].includes(owned),season:['classic','clasica','clásica'].includes(season)?'classic':'in'};
-  });
-  return result;
-}
-$('#file-csv').addEventListener('change',async e=>{
- const file=e.target.files?.[0];if(!file)return;
- try{
-  if(file.size>1024*1024)throw new Error('Archivo demasiado grande: máximo 1 MB.');
-  const list=parseCSV(await file.text());players=list;dataset='personalizado';favorites.clear();save();saveFav();refresh();setStatus(`Importados ${list.length} jugadores. Se guardan únicamente en este navegador.`);
- }catch(err){setStatus(err.message,true);}
- e.target.value='';
-});
-$('#add-player').addEventListener('submit',e=>{
- e.preventDefault();if(players.length>=1000){setStatus('Límite de 1.000 jugadores.',true);return;}
- const f=e.target;const n=f.elements.name.value.trim(),team=f.elements.team.value.trim();
- if(!n||!team){setStatus('Nombre y equipo son obligatorios.',true);return;}
- const id=players.reduce((max,p)=>Math.max(max,p.id),0)+1;
- players.push({id,n:n.slice(0,80),team:team.slice(0,80),pos:f.elements.pos.value,season:f.elements.season.value, l5:num(f.elements.l5.value),l15:num(f.elements.l15.value),prob:num(f.elements.prob.value),projection:num(f.elements.projection.value),ceiling:num(f.elements.ceiling.value),owned:f.elements.owned.value==='true'});
- dataset='personalizado';save();refresh();setStatus(`Añadido: ${n}. Ya aparece en el explorador y el optimizador.`);f.reset();
-});
-$('#restore-demo').addEventListener('click',()=>{if(!confirm('¿Sustituir los datos actuales por la demo? Exporta primero el CSV si quieres conservarlos.'))return;players=cloneDemo();dataset='demo';favorites.clear();try{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(FAV_KEY);}catch(e){}refresh();setStatus('Restablecida la demo con 19 futbolistas de ejemplo.');});
-$('#remove-last').addEventListener('click',()=>{if(!players.length){setStatus('No hay jugadores que eliminar.',true);return;}const p=players[players.length-1];if(!confirm(`¿Eliminar el último jugador, ${p.n}?`))return;players.pop();dataset='personalizado';favorites.delete(p.id);save();saveFav();refresh();setStatus(`Eliminado: ${p.n}.`);});
-refresh();if(navNames[location.hash.slice(1)])navigate(location.hash.slice(1));
-</script></body></html>
+ window.addEventListener("storage",paint);paint();
+})();
+</script>
+</body></html>
