@@ -1,0 +1,41 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacidad y datos | SorareFutScout</title><meta name="theme-color" content="#0b111a">
+<meta name="description" content="Información sobre los datos utilizados por SorareFutScout y la futura conexión de cuentas Sorare.">
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b111a;color:#eef5ff;font:15px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:#101b27;border-bottom:1px solid #30475c}main,nav{max-width:880px;margin:auto;padding:18px 23px}
+nav{display:flex;flex-wrap:wrap;gap:20px;align-items:center}nav strong{color:#b5ff65;margin-right:auto}a{color:#b5ff65;text-decoration:none}a:hover{text-decoration:underline}h1{font-size:clamp(29px,4.5vw,44px);letter-spacing:-1.1px;line-height:1.2}h2{font-size:21px;margin-top:27px}.intro{color:#b1c5d5}
+.notice{padding:16px;border:1px solid #a6853d;background:#3c301e;border-radius:12px;color:#ffe4a2;font-size:14px}.panel{border:1px solid #30475c;background:#152235;border-radius:15px;padding:21px;margin:22px 0}ul{padding-left:23px}li{margin:8px 0}
+code{color:#b5ff65}footer{border-top:1px solid #30475c;padding:23px;color:#a5bacb;font-size:12px}
+</style></head><body>
+<header><nav aria-label="Navegación"><a href="/"><strong>SF · SorareFutScout</strong></a><a href="/mi-club.html">Mi club</a><a href="/disponibilidad.html">Disponibilidad</a><a href="/optimizador-real.html">Optimizador</a></nav></header>
+<main>
+<p class="intro">Transparencia y uso de datos · Actualizado el 18 de noviembre de 2026</p>
+<h1>Privacidad y tratamiento de datos</h1>
+<div class="notice"><strong>Documento informativo provisional.</strong> La conexión OAuth de cuentas Sorare todavía está en preparación. Antes de habilitarla públicamente, necesitamos completar la identidad y el contacto privado del responsable del servicio y revisar esta política conforme a la normativa aplicable, incluida la protección de datos de la UE.</div>
+<section class="panel">
+<h2>1. Qué hace SorareFutScout actualmente</h2>
+<p>SorareFutScout es una herramienta no oficial de análisis de jugadores de fútbol. Las búsquedas y cálculos se basan en datos publicados mediante la API de Sorare. Las notas de disponibilidad son introducidas por el propio usuario; no certificamos lesiones ni alineaciones.</p>
+<p>En las funciones ya disponibles se guardan en el <strong>almacenamiento local de tu navegador</strong> las selecciones manuales de futbolistas, las marcas de colección, los calendarios recientes y las notas de disponibilidad que introduces. Esos datos no se sincronizan todavía con una cuenta de SorareFutScout.</p>
+<h2>2. Solicitudes a servicios externos</h2>
+<p>Al consultar jugadores, partidos o rivales, el navegador solicita datos a las funciones de Cloudflare de SorareFutScout, que consultan la API de Sorare. Al buscar noticias, se pueden enviar nombre y club al servicio público RSS de Google Noticias. El proveedor y Cloudflare pueden procesar datos técnicos de conexión conforme a sus propias políticas.</p>
+<h2>3. Conexión OAuth (función en preparación)</h2>
+<p>Cuando se active, Sorare te solicitará autorización directamente en su web. SorareFutScout no te pedirá la contraseña. El permiso previsto permitirá consultar tu identificador de usuario y cartas de Sorare; no autoriza compras, ventas ni presentar alineaciones en tu nombre.</p>
+<p>Las credenciales OAuth de la aplicación permanecerán en los secretos de Cloudflare. Los tokens de acceso y renovación recibidos tras la autorización se cifrarán en el servidor antes de guardarlos en un almacenamiento de sesiones Cloudflare KV. El navegador recibirá únicamente una cookie de sesión aleatoria, protegida con <code>Secure</code>, <code>HttpOnly</code> y <code>SameSite=Lax</code>; los tokens no estarán disponibles para JavaScript.</p>
+<p>La duración máxima prevista de una sesión guardada es de siete días. El cierre de sesión eliminará su registro en nuestro almacenamiento y solicitará revocar el token en Sorare cuando el servicio esté disponible. Las colecciones introducidas manualmente en el navegador no se eliminarán automáticamente al desconectar la cuenta.</p>
+<h2>4. Qué no almacenamos de Sorare</h2>
+<p>No necesitamos tu contraseña de Sorare, email de acceso, claves privadas de cartera o datos bancarios. El mecanismo OAuth documentado no concede acceso al correo electrónico ni operaciones de compraventa.</p>
+<h2>5. Control de tus datos</h2>
+<ul>
+<li>Puedes borrar las selecciones locales desde el optimizador y las notas desde Disponibilidad y noticias.</li>
+<li>Los calendarios y estadísticas guardados en tu navegador también pueden eliminarse desde las opciones de almacenamiento del propio navegador.</li>
+<li>Cuando OAuth esté habilitado, «Desconectar cuenta» invalidará la sesión local registrada en el servidor. Si deseas revocar autorizaciones de terceros, comprueba también los controles de tu cuenta Sorare.</li>
+</ul>
+<h2>6. Responsable y contacto</h2>
+<p>Antes de habilitar el acceso OAuth al público, el operador de SorareFutScout deberá publicar sus datos de identificación y un canal de contacto privado para ejercer derechos y formular solicitudes sobre datos personales. No utilices incidencias públicas de GitHub para enviar datos privados o credenciales.</p>
+<h2>7. Cambios y límites</h2>
+<p>Esta información refleja el desarrollo de la beta y puede cambiar cuando añadamos sincronización de cartas, un sistema de cuentas completo o nuevos proveedores de noticias. Los visitantes deben consultar la versión actualizada antes de conectar su cuenta.</p>
+</section>
+<p class="intro">SorareFutScout es independiente y no está afiliada oficialmente a Sorare.</p>
+</main><footer>© SorareFutScout · <a href="/">Inicio</a> · <a href="/mi-club.html">Mi club</a></footer></body></html>
