@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b101a"><meta name="description" content="Consulta noticias recientes y guarda tus notas de disponibilidad en SorareFutScout.">
+<title>Disponibilidad y noticias | SorareFutScout</title>
+<style>
+:root{color-scheme:dark;--bg:#0b111a;--panel:#141e2d;--panel2:#1b2a3b;--line:#304459;--muted:#a9bdce;--text:#f5f9ff;--accent:#b5ff65}
+*{box-sizing:border-box}body{background:radial-gradient(ellipse at 90% -20%,#1d382d,#0b111a 60%);margin:0;color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,select,input,textarea{font:inherit}button,a{cursor:pointer}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+header{background:#0d151fe8;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:8;backdrop-filter:blur(12px)}
+.wrap{max-width:1240px;padding:0 22px;margin:0 auto}.head{display:flex;align-items:center;justify-content:space-between;gap:15px;min-height:77px}.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:900;color:#f6f9ff}.mark{background:var(--accent);color:#11220c;border-radius:10px;padding:8px 10px;transform:rotate(-5deg)}.brand em{font-style:normal;color:var(--accent)}
+.nav{display:flex;flex-wrap:wrap;gap:16px;font-size:13px}.nav a{color:var(--muted)}.nav a.active{color:var(--accent);font-weight:800}
+main{padding:36px 0 70px}h1{margin:9px 0 10px;font-size:clamp(29px,4.7vw,47px);line-height:1.17;letter-spacing:-1.2px}h1 em{font-style:normal;color:var(--accent)}h2{font-size:21px;margin:0 0 8px}h3{font-size:16px;margin:0 0 8px}.eyebrow{color:var(--accent);font-size:11px;letter-spacing:1.4px;font-weight:900}.intro{max-width:790px;color:#b6c7d7;font-size:14px;margin:0 0 22px}
+.panel{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:21px;margin:0 0 20px}.panel p{color:var(--muted);font-size:13px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:21px}.stat{padding:16px;background:var(--panel2);border:1px solid var(--line);border-radius:14px}.stat b{display:block;font-size:25px;color:var(--accent)}.stat span{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(330px,.9fr);gap:20px;align-items:start}.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:15px 0}
+.btn{border:0;border-radius:10px;background:var(--accent);padding:11px 16px;color:#112008;font-weight:850}.btn.secondary{background:#26384d;border:1px solid #4b637d;color:#f6f9ff}.btn.danger{background:#4a2b32;border:1px solid #824e5b;color:#ffdad8}.btn:disabled{opacity:.5;cursor:not-allowed}
+label{display:grid;gap:7px;font-size:12px;font-weight:750;color:#c7d7e6}input,select,textarea{width:100%;min-width:0;background:#0f1927;color:var(--text);border:1px solid #486077;border-radius:10px;padding:11px;min-height:44px}textarea{min-height:74px;resize:vertical}input[type="checkbox"]{width:auto;min-height:auto}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.status-msg{min-height:21px;color:#b8d4e8;font-size:12px;margin-top:10px;line-height:1.6}.help{font-size:12px;color:var(--muted);line-height:1.65}
+.roster{display:grid;gap:9px;max-height:530px;overflow:auto}.player{display:flex;align-items:center;gap:12px;border:1px solid #34475d;background:#172435;border-radius:13px;padding:11px;text-align:left;color:white;width:100%}.player[aria-pressed="true"]{border-color:var(--accent);background:#243a32}.avatar{width:43px;height:43px;border-radius:11px;background:#30545b;display:grid;place-items:center;font-weight:800;flex:0 0 43px;overflow:hidden}.avatar img{width:100%;height:100%;object-fit:cover}.who{flex:1;min-width:0}.who b{display:block;font-size:13px}.who small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-size:11px;font-weight:800;border:1px solid #51657a;padding:5px 8px;border-radius:8px;background:#2d3c4d;color:#dbe9fa;white-space:nowrap}
+.chip.doubt{background:#4a3b1d;color:#ffdb8e;border-color:#86703c}.chip.out{background:#512a2c;color:#ffbfba;border-color:#985657}.chip.good{background:#243f32;color:#c2fac6;border-color:#4e7951}
+.news{display:grid;gap:11px;margin-top:15px}.story{border:1px solid #354c61;background:#172637;border-radius:12px;padding:13px 15px}.story a{font-size:14px;font-weight:800;color:#e6f2ff}.story .meta{color:#a8c2d2;font-size:11px;margin:5px 0 0}.story .tag{font-size:10px;color:#b9f6b1;letter-spacing:.5px;font-weight:800}
+.note-card{padding:12px;background:#162b29;border:1px solid #416059;border-radius:11px;color:#c6e9dc;font-size:12px;line-height:1.6;margin-bottom:14px}
+.notice{border:1px solid #695b39;background:#302919;color:#f3dca1;border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.6;margin-bottom:16px}
+.divider{height:1px;background:var(--line);margin:18px 0}footer{border-top:1px solid var(--line);padding-top:16px;font-size:12px;color:#93a6b8;line-height:1.7}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.roster{max-height:390px}}
+@media(max-width:650px){.wrap{padding:0 14px}.head{flex-direction:column;align-items:flex-start;padding:14px 0}.nav{gap:10px}.summary{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.panel{padding:16px}}
+</style>
+</head>
+<body>
+<header><div class="wrap head"><a class="brand" href="/"><span class="mark">SF</span><span>Sorare<em>FutScout</em></span></a>
+<nav class="nav" aria-label="Navegación principal"><a href="/">Inicio</a><a href="/explorador.html">Jugadores</a><a href="/optimizador-real.html">Optimizador</a><a class="active" href="/disponibilidad.html" aria-current="page">Disponibilidad</a><a href="/demo.html">Demo</a></nav></div></header>
+<main class="wrap">
+<div class="eyebrow">CENTRO DE SEGUIMIENTO · BETA</div>
+<h1>Disponibilidad <em>y noticias</em></h1>
+<p class="intro">Sigue las novedades de tus futbolistas, consulta titulares con fecha y fuente y guarda tus propias notas. Una noticia no confirma por sí sola una lesión, baja, sanción ni titularidad.</p>
+<div class="summary">
+<div class="stat"><b id="total-players">0</b><span>Futbolistas de tu selección</span></div>
+<div class="stat"><b id="manual-records">0</b><span>Notas manuales recientes</span></div>
+<div class="stat"><b id="news-count">—</b><span>Titulares del jugador abierto</span></div>
+</div>
+<div class="layout">
+<section class="panel">
+<h2>Mi colección vigilada</h2>
+<p>Se recupera de los futbolistas seleccionados en el optimizador de este navegador. Selecciona uno para consultar sus noticias y registrar tu valoración.</p>
+<div class="tools"><a class="btn secondary" href="/explorador.html">+ Añadir futbolistas</a><a class="btn secondary" href="/optimizador-real.html">Volver al optimizador</a></div>
+<div id="roster" class="roster" aria-label="Futbolistas seleccionados"></div>
+<p id="roster-info" class="status-msg" role="status"></p>
+<div class="divider"></div>
+<h3>Reglas de esta sección</h3>
+<div class="help">Las noticias se buscan al abrir un futbolista y se pueden actualizar mientras esta página permanezca abierta. La consulta tiene una caché de 15 minutos; no funciona como alerta permanente con la web cerrada. Las notas son privadas de este navegador, no son bajas verificadas por SorareFutScout y caducan a efectos del optimizador tras 72 horas.</div>
+</section>
+<div>
+<section class="panel" aria-labelledby="selected-title">
+<h2 id="selected-title">Ficha de seguimiento</h2>
+<p id="selected-sub">Selecciona un futbolista.</p>
+<div id="current-note" class="note-card" hidden></div>
+<div class="notice">Estado oficial sin verificar: las fuentes de prensa deben contrastarse con el club, la convocatoria y las comunicaciones oficiales antes de descartar una carta.</div>
+<form id="status-form">
+<div class="form-grid">
+<label>Mi valoración manual
+<select id="status-choice">
+<option value="unknown">Sin información contrastada</option>
+<option value="available">Disponible según mi fuente</option>
+<option value="doubt">Duda según mi fuente</option>
+<option value="out">Baja según mi fuente</option>
+</select></label>
+<label>Enlace a la fuente (obligatorio si marcas un estado)
+<input id="source-url" type="url" placeholder="https://..."></label>
+</div>
+<label style="margin-top:11px">Nota personal (opcional)
+<textarea id="status-note" maxlength="300" placeholder="Ej.: parte médico o convocatoria del club y fecha"></textarea></label>
+<div class="tools"><button class="btn" type="submit">Guardar mi valoración</button><button class="btn danger" type="button" id="clear-note">Borrar nota</button></div>
+</form>
+<div class="status-msg" id="note-feedback" role="status" aria-live="polite"></div>
+</section>
+<section class="panel" aria-labelledby="news-title">
+<h2 id="news-title">Noticias recientes</h2>
+<p id="news-description">Titulares públicos encontrados para el futbolista, no confirmaciones automáticas de disponibilidad.</p>
+<div class="tools">
+<button type="button" class="btn secondary" id="refresh-news">Buscar noticias</button>
+<a id="open-news-search" class="btn secondary" href="https://news.google.com/" target="_blank" rel="noopener noreferrer">Buscar en Google Noticias</a>
+</div>
+<div class="help" id="news-status" role="status" aria-live="polite">Selecciona un futbolista para buscar titulares.</div>
+<div class="news" id="news"></div>
+</section>
+</div>
+</div>
+<footer>SorareFutScout es una herramienta independiente y no oficial. Los titulares son resultados de un servicio RSS externo y pueden contener errores, referencias a otra persona o noticias desactualizadas. No ofrecemos partes médicos, probabilidades de jugar ni confirmación de titularidad. Consulta siempre las fuentes enlazadas.</footer>
+</main>
+<script>
+(()=>{
+"use strict";
+const KEY="sorarefutscout:optimizer-pool:v1",NOTE_KEY="sorarefutscout:availability:v1",TTL=72*3600000;
+const $=id=>document.getElementById(id);
+const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
+function readPlayers(){try{
+ const list=JSON.parse(localStorage.getItem(KEY)||"[]");
+ if(!Array.isArray(list))return [];
+ const seen=new Set();
+ return list.filter(p=>typeof p?.slug==="string"&&typeof p.name==="string"&&!seen.has(p.slug)&&seen.add(p.slug)).slice(0,120);
+}catch(_){return [];}}
+function notes(){try{
+ const v=JSON.parse(localStorage.getItem(NOTE_KEY)||"{}");
+ return v&&typeof v==="object"&&!Array.isArray(v)?v:{};
+}catch(_){return {};}}
+function freshNote(p){const n=notes()[p.slug];return n&&Number.isFinite(n.updatedAt)&&Date.now()-n.updatedAt<TTL&&n.updatedAt<=Date.now()?n:null;}
+const statusNames={available:"Disponible (manual)",doubt:"Duda (manual)",out:"Baja (manual)"};
+const colors={available:"good",doubt:"doubt",out:"out"};
+let players=readPlayers(),selected=players[0]?.slug||null;
+let busy=false,lastCheck=null;
+function selectedPlayer(){return players.find(p=>p.slug===selected);}
+function displayDate(value){const t=Date.parse(value)||Number(value);return Number.isFinite(t)?new Date(t).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"fecha desconocida";}
+function imageFor(p){
+ const node=make("span","avatar",(p.name||"?").split(" ").slice(0,2).map(v=>v[0]||"").join("").toUpperCase());
+ try{
+  const u=new URL(p.avatar);
+  if(u.protocol==="https:"&&(u.hostname==="sorare.com"||u.hostname.endsWith(".sorare.com"))){
+   const im=make("img");im.src=u.href;im.alt="";im.loading="lazy";im.addEventListener("error",()=>im.remove(),{once:true});node.append(im);
+  }
+ }catch(_){}
+ return node;
+}
+function paint(){
+ players=readPlayers();
+ if(!players.some(p=>p.slug===selected))selected=players[0]?.slug||null;
+ $("total-players").textContent=players.length;
+ $("manual-records").textContent=players.filter(p=>freshNote(p)).length;
+ const roster=$("roster");roster.replaceChildren();
+ if(!players.length){roster.append(make("div","help","No hay futbolistas guardados. Añádelos desde el explorador real."));}
+ for(const p of players){
+  const btn=make("button","player");btn.type="button";btn.setAttribute("aria-pressed",String(p.slug===selected));
+  const words=make("span","who");words.append(make("b","",p.name),make("small","",p.club||"Club no indicado"));
+  const chip=make("span","chip"),note=freshNote(p);
+  chip.textContent=note?statusNames[note.status]:"Sin verificar";if(note)chip.classList.add(colors[note.status]);
+  btn.append(imageFor(p),words,chip);
+  btn.addEventListener("click",()=>{if(selected!==p.slug){selected=p.slug;lastCheck=null;$("news").replaceChildren();$("news-count").textContent="—";paint();loadNews();}});
+  roster.append(btn);
+ }
+ const p=selectedPlayer(),note=p&&freshNote(p);
+ $("roster-info").textContent=players.length+" futbolistas guardados localmente. Los estados de terceros no se comparten entre usuarios.";
+ $("selected-title").textContent=p?"Seguimiento · "+p.name:"Ficha de seguimiento";
+ $("selected-sub").textContent=p?(p.club||"Club sin verificar")+" · Situación oficial no consultada automáticamente":"Selecciona un futbolista.";
+ $("status-form").querySelectorAll("input,select,textarea,button").forEach(el=>el.disabled=!p);
+ $("clear-note").disabled=!note;
+ $("current-note").hidden=!note;
+ if(note){
+  $("current-note").replaceChildren();
+  $("current-note").append(make("b","",statusNames[note.status]+" · guardado "+displayDate(note.updatedAt)),
+   make("p","",note.text||"Sin comentario"));
+  const link=make("a","","Ver fuente aportada");link.href=note.source;link.target="_blank";link.rel="noopener noreferrer";$("current-note").append(link);
+ }
+ $("status-choice").value=note?.status||"unknown";
+ $("source-url").value=note?.source||"";
+ $("status-note").value=note?.text||"";
+ $("refresh-news").disabled=!p;
+ $("open-news-search").href="https://news.google.com/search?q="+encodeURIComponent((p?.name||"fútbol")+" "+(p?.club||"")+" lesión convocatoria");
+}
+function setNewsMessage(msg){$("news-status").textContent=msg;}
+function newsItems(data){
+ const root=$("news");root.replaceChildren();
+ if(!data.news?.length){root.append(make("div","help","No se encontraron titulares recientes para esta búsqueda. Eso no significa que el futbolista esté disponible."));return;}
+ for(const article of data.news){
+  const card=make("article","story"),a=make("a","",article.title);
+  try{const url=new URL(article.url);if(url.hostname!=="news.google.com"||url.protocol!=="https:")continue;a.href=url.href;}catch(_){continue;}
+  a.target="_blank";a.rel="noopener noreferrer";
+  card.append(a,make("div","meta",article.source+" · "+displayDate(article.publishedAt)));
+  root.append(card);
+ }
+}
+async function loadNews(force=false){
+ const p=selectedPlayer();if(!p||busy)return;
+ if(!force&&lastCheck&&lastCheck.slug===p.slug&&Date.now()-lastCheck.time<15*60000)return;
+ busy=true;$("refresh-news").disabled=true;setNewsMessage("Buscando titulares recientes con fecha y fuente…");
+ const slug=p.slug;
+ try{
+  const uri="/api/news?name="+encodeURIComponent(p.name)+(p.club?"&club="+encodeURIComponent(p.club):"");
+  const response=await fetch(uri,{headers:{accept:"application/json"}});
+  const data=await response.json();
+  if(!response.ok||!data.ok)throw Error(data.error||"Servicio de noticias no disponible.");
+  if(selected!==slug)return;
+  lastCheck={slug,time:Date.now()};
+  newsItems(data);$("news-count").textContent=data.news.length;
+  setNewsMessage(data.news.length+" titulares encontrados · consultados "+displayDate(data.fetchedAt)+
+    " · Google Noticias (RSS). No son confirmaciones de baja o titularidad.");
+ }catch(e){
+  if(selected===slug){setNewsMessage("No se han podido recuperar titulares: "+e.message+
+    " Puedes utilizar el enlace «Buscar en Google Noticias».");$("news-count").textContent="—";}
+ }finally{busy=false;$("refresh-news").disabled=!selectedPlayer();}
+}
+$("status-form").addEventListener("submit",e=>{
+ e.preventDefault();
+ const p=selectedPlayer();if(!p)return;
+ const status=$("status-choice").value,link=$("source-url").value.trim(),text=$("status-note").value.trim();
+ const all=notes();
+ if(status==="unknown"){delete all[p.slug];}
+ else{
+  try{
+   const url=new URL(link);
+   if(url.protocol!=="https:"||!url.hostname.includes("."))throw Error();
+  }catch(_){$("note-feedback").textContent="Incluye un enlace https válido a la fuente antes de marcar una baja, duda o disponibilidad.";return;}
+  all[p.slug]={status,source:link,text:text.slice(0,300),updatedAt:Date.now()};
+ }
+ try{localStorage.setItem(NOTE_KEY,JSON.stringify(all));$("note-feedback").textContent=status==="unknown"?"Se ha limpiado tu nota.":"Valoración manual guardada durante 72 horas (no verificada automáticamente).";paint();}
+ catch(_){$("note-feedback").textContent="Tu navegador no ha permitido guardar esta nota.";}
+});
+$("clear-note").addEventListener("click",()=>{$("status-choice").value="unknown";$("status-form").requestSubmit();});
+$("refresh-news").addEventListener("click",()=>loadNews(true));
+window.addEventListener("storage",e=>{if([KEY,NOTE_KEY].includes(e.key))paint();});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadNews();});
+setInterval(()=>{if(!document.hidden)loadNews();},15*60*1000);
+paint();if(selected)loadNews();
+})();
+</script>
+</body></html>
