@@ -3,8 +3,10 @@
 ## Estado
 - Web pública principal: https://sorarefutscout.pages.dev/
 - Demo original: `index.html` (datos ficticios)
-- Nueva vista beta: `datos-reales.html` (solo presenta información auténtica si la API responde)
+- Nueva vista beta: `datos-reales.html` (consulta individual verificada con Haaland)
+- Nuevo explorador: `explorador.html` (búsqueda + filtros locales + ficha + comparador, pendiente de verificación en producción)
 - Backend: `functions/api/player.js`, ruta `/api/player?slug=erling-haland`
+- Backend de búsqueda: `functions/api/search.js`, ruta `/api/search?q=haaland&page=0` (12 jugadores por página)
 - Código fuente: `karimruiz7/sorarefutscout`
 
 ## Implementado en el repositorio
@@ -17,10 +19,12 @@
 **Pendiente:** confirmar en Cloudflare que la Function ha sido desplegada y que Sorare permite estas consultas públicas. La subida a GitHub no equivale a una conexión verificada. Si la API rechaza peticiones o cambia el esquema, ajustar el backend sin tocar la demo existente.
 
 ## Próximos hitos
-- [ ] Verificar que `/datos-reales.html` carga desde Cloudflare.
-- [ ] Consultar a Haaland y Mbappé y verificar la respuesta real de la API.
+- [x] Verificar que `/datos-reales.html` carga desde Cloudflare.
+- [x] Consultar a Haaland y verificar la respuesta real de la API.
+- [ ] Probar el nuevo buscador `explorador.html` con Haaland y Mbappé y corregir posibles errores de GraphQL.
 - [ ] Resolver permisos/límites de la API y las condiciones para uso público a escala.
-- [ ] Incorporar datos auténticos al explorador y comparador de la página principal.
+- [x] Añadir un enlace desde la página principal al explorador de datos reales (beta).
+- [ ] Integrar los datos reales en todos los módulos del panel original y eliminar datos simulados cuando cada módulo esté validado.
 - [ ] Implementar filtros e historial.
 - [ ] Estudiar OAuth para importar la colección personal del usuario con su autorización.
 - [ ] Adaptar el optimizador a las reglas efectivas de cada competición.
