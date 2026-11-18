@@ -388,6 +388,12 @@ function updateMatchupControl(){
 async function analyzeOpponents(){
  if(!filteredByMode().length){$("matchup-status").textContent="Añade futbolistas a tu colección primero.";return;}
  const candidates=filteredByMode();
+ const wait=cooldownRemaining();
+ if(wait>0){
+  $("matchup-status").textContent="Sorare ha solicitado una pausa. Quedan aproximadamente "+wait+" segundos. Conservamos los resultados que ya tenemos y no repetimos la petición.";
+  render();
+  return;
+ }
  const missingFixture=candidates.filter(p=>!games.has(p.slug));
  if(missingFixture.length){
   $("matchup-status").textContent="Primero pulsa «Consultar próximos partidos» para obtener los rivales y sus identificadores.";
@@ -411,6 +417,10 @@ async function analyzeOpponents(){
   try{
    const response=await fetch("/api/matchups?slugs="+encodeURIComponent(group.join(",")),{headers:{accept:"application/json"}});
    const data=await response.json();
+   if(response.status===429){
+    const seconds=keepCooldown(data.retryAfter||response.headers.get("retry-after")||60);
+    throw Error("Sorare ha limitado las peticiones. Pausa recomendada: aproximadamente "+seconds+" segundos.");
+   }
    if(!response.ok||!data.ok)throw Error(data.error||"Consulta rechazada.");
    for(const rival of data.opponents||[]){
     if(group.includes(rival.slug)){opponents.set(rival.slug,rival);read++;}
@@ -421,9 +431,9 @@ async function analyzeOpponents(){
  $("analyze-opponents").disabled=false;
  updateMatchupControl();render();$("result").hidden=true;
  const total=filteredByMode().filter(p=>matchAdjustment(p)!==null).length;
- $("matchup-status").textContent="Datos de rivales recibidos: "+read+". "+total+" de "+candidates.length+
-  " jugadores tienen un ajuste calculable."+(errors.length?" Error: "+errors[0]:"")+
-  " Los demás se mantienen sin ajuste.";
+ $("matchup-status").textContent="Rivales recibidos en esta consulta: "+read+". "+total+" de "+candidates.length+
+  " jugadores tienen un ajuste calculable."+(errors.length?" "+errors[0]:"")+
+  (total<candidates.length?" Los demás continúan pendientes o carecen de datos suficientes.":"");
 }
 const GAME_CACHE="sorarefutscout:next-games:v2";
 const GAME_TTL=15*60*1000;
