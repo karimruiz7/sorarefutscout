@@ -46,3 +46,12 @@
 
 ## Derechos de imagen
 La API de Sorare documenta `Player.pictureUrl(derivative: "avatar")`. El uso de una imagen en una web pública está sujeto a los derechos de los titulares y a los términos de la API: disponer de la URL no equivale a una licencia general de reutilización. Verificar autorizaciones antes de lanzamiento/promoción comercial o desactivar las miniaturas si es necesario.
+
+
+## Mejoras de estabilidad tras pruebas del 18-11-2026
+- [x] Comprobado en la web pública: miniatura de Haaland y tabla avanzada con medias L5/L10/L15.
+- [x] Detectado límite HTTP 429 al buscar Rayan; no indica que la consulta sea incorrecta.
+- [x] `functions/api/search.js`: caché compartida local a cada centro de datos de Cloudflare (15 minutos en resultados válidos), respeto de cabecera `Retry-After` de Sorare y periodo de enfriamiento para evitar reconsultas inmediatas.
+- [x] `explorador.html`: caché de sesión de 10 minutos para búsquedas repetidas, mantiene últimos resultados si una consulta falla y muestra el tiempo de espera aproximado.
+- [ ] Validar el despliegue más reciente y probar una búsqueda repetida de Rayan, sabiendo que el límite de Sorare puede seguir aplicando a búsquedas nuevas.
+- [ ] Para tráfico público a escala, evaluar permiso o API key de Sorare que permita mayor tasa de peticiones; guardar la clave solo como secreto de Cloudflare.
