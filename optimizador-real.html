@@ -55,6 +55,15 @@ tbody tr:hover{background:#1b2a3b}
 footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:#8c9eaf;line-height:1.7}
 @media(max-width:1000px){.toolbar{grid-template-columns:1fr 1fr}.toolbar .btn{width:100%}.lineup{grid-template-columns:repeat(3,minmax(0,1fr))}.lineup.seven{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.head{align-items:flex-start;flex-direction:column;padding:15px 0}.wrap{padding:0 14px}.nav{gap:10px;flex-wrap:wrap}.brand{font-size:16px}main{padding-top:28px}.panel,.result{padding:16px}.instructions{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.lineup,.lineup.seven{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Fase 3.1: contextos Arcade / Pro / Arena */
+.mode-hint{font-size:13px;line-height:1.65;color:#cbd9ec;margin-top:12px;padding:12px 15px;background:#1b2b39;border:1px solid #35516a;border-radius:11px}
+.league-list{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0}
+.league-list span{background:#233d31;border:1px solid #436d47;color:#cbfac6;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800}
+.ownership{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.ownership label{display:flex;align-items:center;gap:6px;white-space:nowrap;color:#d7e4f4;font-size:12px}
+.ownership input{accent-color:var(--accent);width:17px;height:17px}
+@media(max-width:700px){.ownership{gap:10px}}
 </style>
 </head>
 <body>
@@ -72,9 +81,14 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <section class="panel">
 <div class="actions" style="justify-content:space-between"><h2>Configuración del optimizador</h2><span class="badge" id="pool-count">0 jugadores</span></div>
 <div class="toolbar">
+<label class="field">Contexto de juego <select id="game-mode">
+<option value="all">Análisis libre · sin cartas verificadas</option>
+<option value="arcade">Arcade · mi colección de sobres</option>
+<option value="competitive">Pro / Arena · mis cartas</option>
+</select></label>
 <label class="field">Formato de alineación <select id="format">
-<option value="so5">SO5 · In-Season (5)</option>
-<option value="so7">SO7 · Classic (7)</option>
+<option value="so5">SO5 · 5 futbolistas</option>
+<option value="so7">SO7 · 7 futbolistas</option>
 </select></label>
 <label class="field">Criterio estadístico <select id="metric">
 <option value="l10">Media L10</option>
@@ -84,10 +98,15 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <a class="btn secondary" href="/explorador.html">+ Añadir futbolistas</a>
 <button type="button" class="btn" id="optimize">Calcular mejor alineación</button>
 </div>
-<p class="help">Este cálculo usa las medias históricas guardadas al seleccionar cada jugador. No comprueba propiedad de cartas, escasez, temporada, elegibilidad, partido próximo, lesiones, cap, XP, capitán ni bonificaciones. No predice puntuaciones futuras ni envía alineaciones a Sorare.</p>
+<div class="mode-hint" id="game-mode-hint">En análisis libre se usan todos los jugadores seleccionados, aunque no tengas sus cartas.</div>
+<div id="arcade-leagues" hidden>
+<p class="help">Para el set WNTR que nos has mostrado, Sorare publicó sobres de estas cuatro ligas (puede cambiar en otros sets):</p>
+<div class="league-list"><span>🇪🇸 LaLiga</span><span>🇩🇪 Bundesliga</span><span>🏴 Premier League</span><span>🇫🇷 Ligue 1</span></div>
+</div>
+<p class="help">Marca manualmente en la tabla qué futbolistas tienes en cada colección. Las marcas son tuyas y no están verificadas con Sorare; tampoco comprobamos la liga de cada carta. El motor no valida escasez, temporada, elegibilidad, encuentros, lesiones, cap, XP, capitán ni bonificaciones. No predice puntos ni registra alineaciones.</p>
 </section>
 <section class="panel" aria-labelledby="pool-title">
-<div class="pool-meta"><div><h2 id="pool-title">Mi selección de futbolistas</h2><p class="sub">Guardada localmente en este navegador. Puedes combinar jugadores de varios clubes.</p></div>
+<div class="pool-meta"><div><h2 id="pool-title">Mi selección de futbolistas</h2><p class="sub">Guardada en este navegador. Marca las cartas que posees para que Arcade o Pro/Arena utilicen solo tu colección indicada manualmente.</p></div>
 <div class="actions"><button type="button" class="btn secondary tiny" id="reload">Actualizar lista</button><button type="button" class="btn danger tiny" id="clear">Vaciar selección</button></div></div>
 <div id="position-counts" class="positions"></div>
 <div id="pool"></div>
@@ -125,7 +144,7 @@ function normalize(raw){
  const position=normPos(raw.position),name=String(raw.name||"").trim().slice(0,100);
  if(!name||!position)return null;
  const score=k=>typeof raw[k]==="number"&&Number.isFinite(raw[k])&&raw[k]>=0&&raw[k]<=100?raw[k]:null;
- return {slug:raw.slug,name,club:String(raw.club||"Sin club").slice(0,100),position,l5:score("l5"),l10:score("l10"),l15:score("l15"),avatar:validPhoto(raw.avatar),savedAt:typeof raw.savedAt==="number"?raw.savedAt:Date.now()};
+ return {slug:raw.slug,name,club:String(raw.club||"Sin club").slice(0,100),position,l5:score("l5"),l10:score("l10"),l15:score("l15"),avatar:validPhoto(raw.avatar),ownedArcade:raw.ownedArcade===true,ownedCompetitive:raw.ownedCompetitive===true,savedAt:typeof raw.savedAt==="number"?raw.savedAt:Date.now()};
 }
 function readPool(){
  try{const parsed=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(parsed))return [];
@@ -133,6 +152,32 @@ function readPool(){
  }catch(_){return [];}
 }
 let pool=readPool();
+function filteredByMode(){
+ const mode=$("game-mode").value;
+ return mode==="arcade"?pool.filter(p=>p.ownedArcade):mode==="competitive"?pool.filter(p=>p.ownedCompetitive):pool;
+}
+function updateModeUi(){
+ const mode=$("game-mode").value;
+ const arcade=mode==="arcade";
+ $("arcade-leagues").hidden=!arcade;
+ $("format").disabled=arcade;
+ if(arcade)$("format").value="so5";
+ const text=mode==="arcade"?
+ "Arcade: se calcula una alineación de cinco jugadores usando SOLO los que tú hayas marcado como cartas Arcade obtenidas. Esto no valida propiedad ni elegibilidad.":
+ mode==="competitive"?
+ "Pro/Arena: se usan SOLO los futbolistas marcados por ti como cartas competitivas. No se verifica rareza ni si las cartas valen para una competición concreta.":
+ "Análisis libre: se pueden utilizar todos los futbolistas de tu selección, aunque no tengas sus cartas.";
+ $("game-mode-hint").textContent=text;
+}
+function tagCard(slug,key,checked){
+ const item=pool.find(p=>p.slug===slug);
+ if(!item)return;
+ item[key]=checked;
+ const ok=persist();
+ $("result").hidden=true;
+ render();
+ notice(ok?"Colección actualizada en este navegador.":"No se pudo guardar en este navegador.");
+}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(pool));return true;}catch(_){return false;}}
 function notice(t){$("status").textContent=t;}
 function playerLabel(p){
@@ -142,19 +187,28 @@ function playerLabel(p){
 function render(){
  const summary={Goalkeeper:0,Defender:0,Midfielder:0,Forward:0};
  pool.forEach(p=>{if(summary[p.position]!==undefined)summary[p.position]++;});
- $("pool-count").textContent=pool.length+" jugadores";
+ $("pool-count").textContent=filteredByMode().length+" disponibles de "+pool.length+" seleccionados";
  const counts=$("position-counts");counts.replaceChildren();
  for(const key of ["Goalkeeper","Defender","Midfielder","Forward"])counts.append(make("span","position-badge",label[key]+": "+summary[key]));
  const target=$("pool");target.replaceChildren();
  if(!pool.length){target.append(make("div","empty","Todavía no has añadido futbolistas. Ve al explorador real, busca un equipo y pulsa «Añadir visibles al optimizador»."));return;}
  const wrap=make("div","tablewrap"),table=make("table"),thead=make("thead"),row=make("tr");
- for(const col of ["Jugador","Posición","L5","L10","L15","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
+ for(const col of ["Jugador","Posición","L5","L10","L15","Mis cartas (manual)","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
  thead.append(row);
  const body=make("tbody");
  const list=[...pool].sort((a,b)=>a.position.localeCompare(b.position)||a.name.localeCompare(b.name,"es"));
  for(const p of list){
    const tr=make("tr"),td=make("td");td.append(playerLabel(p));tr.append(td,make("td","",posName(p.position)));
    for(const metric of ["l5","l10","l15"])tr.append(make("td","score",fmt(p[metric])));
+   const ownCell=make("td"),own=make("div","ownership");
+   for(const [key,modeLabel] of [["ownedArcade","Arcade"],["ownedCompetitive","Pro/Arena"]]){
+     const labelEl=make("label"),input=make("input");
+     input.type="checkbox";input.checked=p[key]===true;
+     input.setAttribute("aria-label",modeLabel+" en mi colección: "+p.name);
+     input.addEventListener("change",()=>tagCard(p.slug,key,input.checked));
+     labelEl.append(input,make("span","",modeLabel));own.append(labelEl);
+   }
+   ownCell.append(own);tr.append(ownCell);
    const action=make("td"),btn=make("button","btn secondary tiny","Quitar");
    btn.type="button";btn.addEventListener("click",()=>{pool=pool.filter(q=>q.slug!==p.slug);persist();$("result").hidden=true;render();notice("Jugador eliminado.");});
    action.append(btn);tr.append(action);body.append(tr);
@@ -199,12 +253,14 @@ function card(slot,p,metric){
 }
 function run(){
  const format=$("format").value,metric=$("metric").value;
- const result=optimize(pool,format,metric);
+ const candidates=filteredByMode();
+ const result=optimize(candidates,format,metric);
  const target=$("result"),lineup=$("lineup");lineup.replaceChildren();target.hidden=false;
  if(!result){
    const required=format==="so7"?"1 portero, 2 defensas, 2 centrocampistas, 1 delantero y 1 extra":"1 portero, 1 defensa, 1 centrocampista, 1 delantero y 1 extra";
    $("total").textContent="Faltan posiciones";
-   lineup.className="lineup";lineup.append(make("div","alert","No hay suficientes jugadores con media "+metric.toUpperCase()+" disponible para completar el equipo. Necesitas "+required+". Añade más futbolistas desde el explorador."));
+   const msg=$("game-mode").value==="all"?"Añade más futbolistas desde el explorador.":"Marca en la tabla los futbolistas que realmente tienes en esta colección.";
+   lineup.className="lineup";lineup.append(make("div","alert","No hay suficientes jugadores de esta selección con media "+metric.toUpperCase()+" disponible. Necesitas "+required+". "+msg));
    return;
  }
  $("result-metric").textContent=metric.toUpperCase();
@@ -217,8 +273,10 @@ $("optimize").addEventListener("click",run);
 $("reload").addEventListener("click",()=>{pool=readPool();render();notice("Selección recargada desde este navegador.");});
 $("clear").addEventListener("click",()=>{if(!pool.length)return;if(!confirm("¿Vaciar los futbolistas seleccionados para el optimizador en este navegador?"))return;pool=[];persist();$("result").hidden=true;render();notice("Selección vaciada.");});
 $("format").addEventListener("change",()=>{$("result").hidden=true;});
+$("game-mode").addEventListener("change",()=>{updateModeUi();render();$("result").hidden=true;});
 $("metric").addEventListener("change",()=>{$("result").hidden=true;});
 window.addEventListener("storage",event=>{if(event.key===KEY){pool=readPool();render();$("result").hidden=true;}});
+updateModeUi();
 render();
 notice(pool.length?"Listo para optimizar. Puedes añadir más futbolistas desde el explorador.":"Selecciona jugadores en el explorador para comenzar.");
 })();
