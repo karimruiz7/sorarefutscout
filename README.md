@@ -60,7 +60,24 @@ Los retratos proceden de URLs devueltas por la API de Sorare; la existencia de u
 - Calcula el máximo exacto de la **suma de medias históricas**, según L5/L10/L15, con programación dinámica y sin repetir futbolistas en la alineación.
 - Si faltan posiciones o puntuaciones, muestra un aviso y **no** inventa jugadores.
 - El estado se congela al añadir el jugador; actualizarlo desde el explorador reemplaza sus medias guardadas.
-- **Limitaciones:** no lee cartas poseídas, temporada/escasez, XP, capitán, límite L10, múltiples alineaciones, encuentros de la próxima Game Week, DNP, lesiones, sustituciones ni elegibilidad real. No es una predicción de puntuaciones, ni registra alineaciones en Sorare.
+- **Limitaciones:** permite marcar manualmente cartas supuestamente poseídas, pero no las comprueba en Sorare; tampoco valida temporada/escasez, XP, capitán, límite L10, múltiples alineaciones, encuentros de la próxima Game Week, DNP, lesiones, sustituciones ni elegibilidad real. No es una predicción de puntuaciones, ni registra alineaciones en Sorare.
 - **Validación:** archivos de GitHub publicados y sintaxis JS comprobada; algoritmo validado con casos SO5/SO7 y ausencia de portero. Pendiente confirmar el despliegue en Cloudflare y una prueba de usuario.
 
 Reglas oficiales para las posiciones: https://sorare.com/es/game-rules
+
+## Fase 3.1 · Colecciones Arcade y Pro/Arena (18-11-2026)
+
+Sorare describe tres modos: **Arcade** (colecciones y packs), **Pro** (Hot Streaks) y **Arena** (rankings). La compra de cartas no supone que todas las competiciones tengan cuota de entrada; Sorare indica que no hay fee por inscribir alineaciones. Los formatos SO5 y SO7 se aplican según la competición, no son sinónimos de gratuito y de pago.
+
+- `optimizador-real.html` incorpora «Análisis libre», «Arcade · mi colección de sobres» y «Pro/Arena · mis cartas».
+- El análisis libre conserva todos los seleccionados. Arcade filtra exclusivamente los futbolistas marcados manualmente como cartas Arcade y fuerza alineación de cinco. Pro/Arena filtra los marcados como cartas competitivas y permite SO5 o SO7 como análisis básico.
+- La tabla permite marcar y desmarcar las cartas por jugador. Se guardan localmente (sin conectar cuentas); modificar las puntuaciones desde el explorador conserva las marcas.
+- El set de packs WNTR publicado por Sorare incluía **LaLiga, Bundesliga, Premier League y Ligue 1**, conforme a la captura compartida. Otros sets pueden tener otras ligas. Esto se muestra como información del set, no como validación automática del club de cada jugador.
+- **Aún no se comprueba** si una carta realmente pertenece a la colección del usuario, si juega en una de esas ligas, si es elegible para un tablero, ni los objetivos/bonus Arcade.
+
+Referencias oficiales:
+- https://sorare.com/es/help/a/17629357197341/What%20are%20the%203%20game%20modes%20in%20Sorare%20Football
+- https://sorare.com/blog/football/%F0%9F%86%95-introducing-sorare-set
+- https://sorare.com/es/game-rules
+
+**Prueba pendiente:** confirmar despliegue en Cloudflare y marcar cinco jugadores Arcade (portero/defensa/medio/delantero/extra) antes de optimizar.
