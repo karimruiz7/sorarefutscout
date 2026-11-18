@@ -61,7 +61,7 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const state={query:"",page:0,nbPages:0,hits:0,players:[],selected:[],details:new Map(),busy:false};
+const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),busy:false};
 const positions={Goalkeeper:"Portero",Defender:"Defensa",Midfielder:"Centrocampista",Forward:"Delantero",GOALKEEPER:"Portero",DEFENDER:"Defensa",MIDFIELDER:"Centrocampista",FORWARD:"Delantero"};
 const fmt=n=>typeof n==="number"&&Number.isFinite(n)?n.toLocaleString("es-ES",{maximumFractionDigits:1}):"—";
 const initials=name=>(name||"?").trim().split(/\s+/).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join("");
@@ -100,11 +100,11 @@ function renderPlayers(){
   }
   const total=Math.min(21,Math.max(1,state.nbPages));
   $("paging").hidden=state.nbPages<=1;
-  $("page-label").textContent="Página "+(state.page+1)+" de "+total;
-  $("prev").disabled=state.busy||state.page<=0;
-  $("next").disabled=state.busy||state.page+1>=total;
+  $("page-label").textContent="Página "+state.page+" de "+total;
+  $("prev").disabled=state.busy||state.page<=1;
+  $("next").disabled=state.busy||state.page>=total;
 }
-async function search(page=0){
+async function search(page=1){
   const q=$("query").value.trim();
   if(q.length<2){status("Introduce al menos dos letras.",true);return;}
   state.busy=true;state.query=q;state.page=page;
@@ -164,11 +164,11 @@ async function showDetail(p){
   if(state.selected.length>2)state.selected=state.selected.slice(-2);
   renderPlayers();compare();$("compare-section").scrollIntoView({behavior:"smooth"});
 }
-$("search-form").addEventListener("submit",e=>{e.preventDefault();search(0);});
+$("search-form").addEventListener("submit",e=>{e.preventDefault();search(1);});
 $("position").addEventListener("change",renderPlayers);
 $("club").addEventListener("change",renderPlayers);
-$("prev").addEventListener("click",()=>{if(state.page>0)search(state.page-1);});
-$("next").addEventListener("click",()=>{if(state.page+1<Math.min(state.nbPages,21))search(state.page+1);});
+$("prev").addEventListener("click",()=>{if(state.page>1)search(state.page-1);});
+$("next").addEventListener("click",()=>{if(state.page<Math.min(state.nbPages,20))search(state.page+1);});
 $("clear").addEventListener("click",()=>{state.selected=[];renderPlayers();compare();});
 compare();
 })();
