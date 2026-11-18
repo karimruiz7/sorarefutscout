@@ -20,6 +20,21 @@ main{padding:44px 0 80px}.flag{font-size:11px;letter-spacing:1.3px;font-weight:9
 footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c9db0;font-size:12px;line-height:1.7}
 @media(max-width:950px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.nav{gap:8px}.nav a{font-size:12px}.brand{font-size:15px}.head{min-height:70px}.wrap{padding:0 14px}main{padding-top:26px}.grid,.compare{grid-template-columns:1fr}.box{padding:16px}.findbox{flex-wrap:wrap}.findbox .btn{width:100%}.filters .filter{flex:1}.filter select{width:100%;min-width:125px}.count{width:100%;margin-left:0}}
+
+/* Fase 2.1: miniaturas opcionales y tabla avanzada. */
+.avatar{position:relative;overflow:hidden}.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;background:#213749}
+.view-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 15px}
+.view-options{display:flex;align-items:center;gap:8px}.view-options button{border:1px solid #435874;background:#1d2d40;border-radius:9px;padding:10px 14px;color:#dce8f5;font-weight:750}
+.view-options button.active{background:#2b412b;border-color:var(--accent);color:var(--accent)}
+.view-tools .filter{display:flex;align-items:center;gap:9px}.view-tools select{min-width:175px}
+.grid.table-mode{display:block}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.advanced-table{border-collapse:collapse;width:100%;min-width:850px}.advanced-table th{background:#1c2a3b;color:#b5c8df;text-align:left;white-space:nowrap;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:15px 13px;border-bottom:1px solid #35495f}
+.advanced-table td{border-bottom:1px solid #27374a;padding:12px 13px;font-size:13px}.advanced-table tr:last-child td{border-bottom:none}.advanced-table tbody tr:hover{background:#1d3041}
+.table-player{display:flex;align-items:center;gap:11px;min-width:145px}.table-player .avatar{height:42px;width:42px;flex:0 0 42px;border-radius:11px;font-size:13px}
+.table-player strong{white-space:nowrap}.table-score{font-size:16px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums}
+.table-actions{display:flex;gap:6px}.table-actions button{font-size:11px;min-width:73px}
+.compare-name{display:flex;align-items:center;gap:11px}.compare-name .avatar{height:44px;width:44px;flex:0 0 44px;border-radius:11px;font-size:14px}
+@media(max-width:700px){.view-tools .filter{width:100%;justify-content:space-between}.view-tools .filter select{flex:1;min-width:0}.view-options{width:100%}.view-options button{flex:1}.table-wrap{margin:0 -4px}}
 </style>
 </head>
 <body>
@@ -44,6 +59,10 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 <label class="filter">Club <select id="club"><option value="">Todos los clubes</option></select></label>
 <div class="count" id="count"></div>
 </div>
+<div class="view-tools">
+<div class="view-options" role="group" aria-label="Vista de resultados"><button type="button" id="cards-view" class="active" aria-pressed="true">▦ Tarjetas</button><button type="button" id="table-view" aria-pressed="false">☷ Tabla avanzada</button></div>
+<label class="filter" for="sort">Ordenar <select id="sort"><option value="l5-desc">Mayor L5</option><option value="l10-desc">Mayor L10</option><option value="l15-desc">Mayor L15</option><option value="name-asc">Nombre (A–Z)</option></select></label>
+</div>
 <div class="grid" id="players"><div class="empty" style="grid-column:1/-1">Los resultados aparecerán aquí.</div></div>
 <div class="paging" id="paging" hidden><button class="btn outline tiny" id="prev" type="button">← Anterior</button><span id="page-label"></span><button class="btn outline tiny" id="next" type="button">Siguiente →</button></div>
 </section>
@@ -61,10 +80,23 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),busy:false};
+const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),photoBySlug:new Map(),view:"cards",busy:false};
 const positions={Goalkeeper:"Portero",Defender:"Defensa",Midfielder:"Centrocampista",Forward:"Delantero",GOALKEEPER:"Portero",DEFENDER:"Defensa",MIDFIELDER:"Centrocampista",FORWARD:"Delantero"};
 const fmt=n=>typeof n==="number"&&Number.isFinite(n)?n.toLocaleString("es-ES",{maximumFractionDigits:1}):"—";
 const initials=name=>(name||"?").trim().split(/\s+/).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join("");
+function safePhoto(url){
+ if(typeof url!=="string")return null;
+ try{const u=new URL(url);if(u.protocol!=="https:")return null;const host=u.hostname.toLowerCase();return host==="sorare.com"||host.endsWith(".sorare.com")?u.href:null;}catch(_){return null;}
+}
+function makeAvatar(name,url){
+ const avatar=create("div","avatar",initials(name));
+ const safe=safePhoto(url);
+ if(safe){
+   const img=create("img");img.src=safe;img.alt="Retrato de "+name;img.loading="lazy";img.decoding="async";img.referrerPolicy="no-referrer";
+   img.addEventListener("error",()=>img.remove(),{once:true});avatar.appendChild(img);
+ }
+ return avatar;
+}
 const create=(tag,className,text)=>{const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;};
 function status(msg,error=false){$("status").textContent=msg;$("status").classList.toggle("error",error);}
 async function getJson(url){
@@ -82,27 +114,76 @@ function updateClubs(){
   clubs.forEach(club=>{const opt=create("option","",club);opt.value=club;select.appendChild(opt)});
   select.value=clubs.includes(selected)?selected:"";
 }
+function visiblePlayers(){
+ const position=$("position").value,club=$("club").value;
+ const filtered=state.players.filter(p=>(!position||String(p.position).toLowerCase()===position.toLowerCase())&&(!club||p.club===club));
+ const order=$("sort").value;
+ if(order==="name-asc")return filtered.sort((a,b)=>a.name.localeCompare(b.name,"es"));
+ const metric=order.split("-")[0];
+ return filtered.sort((a,b)=>{
+   const x=typeof a[metric]==="number"?a[metric]:-Infinity,y=typeof b[metric]==="number"?b[metric]:-Infinity;
+   return y-x||a.name.localeCompare(b.name,"es");
+ });
+}
+function playerActions(p){
+ const actions=create("div","actions");
+ const detail=create("button","btn outline tiny","Ver ficha"),add=create("button","btn tiny",state.selected.includes(p.slug)?"Seleccionado ✓":"Comparar");
+ detail.type=add.type="button";
+ detail.addEventListener("click",()=>showDetail(p));
+ add.disabled=state.selected.includes(p.slug);
+ add.addEventListener("click",()=>choose(p.slug));
+ actions.append(detail,add);
+ return actions;
+}
+function renderCards(players,container){
+ container.classList.remove("table-mode");
+ for(const p of players){
+   const card=create("article","player");
+   const person=create("div","person"),avatar=makeAvatar(p.name,p.avatar),data=create("div");
+   data.append(create("b","",p.name),create("small","",p.club||"Sin club"));person.append(avatar,data);
+   const meta=create("div","meta");
+   meta.append(create("span","tag",positions[p.position]||p.position||"Sin posición"),create("strong","l5","L5 "+fmt(p.l5)));
+   const others=create("div","subline","L10: "+fmt(p.l10)+" · L15: "+fmt(p.l15));
+   card.append(person,meta,others,playerActions(p));container.appendChild(card);
+ }
+}
+function renderTable(players,container){
+ container.classList.add("table-mode");
+ const outer=create("div","table-wrap"),table=create("table","advanced-table");
+ const thead=create("thead"),head=create("tr");
+ for(const title of ["Jugador","Club","Posición","L5","L10","L15","Acciones"]){
+   const th=create("th","",title);th.scope="col";head.appendChild(th);
+ }
+ thead.appendChild(head);
+ const tbody=create("tbody");
+ for(const p of players){
+   const tr=create("tr"),personCell=create("td"),person=create("div","table-player");
+   person.append(makeAvatar(p.name,p.avatar),create("strong","",p.name));personCell.append(person);tr.appendChild(personCell);
+   tr.append(create("td","",p.club||"Sin club"),create("td","",positions[p.position]||p.position||"—"));
+   for(const key of ["l5","l10","l15"]){const cell=create("td","table-score",fmt(p[key]));tr.appendChild(cell);}
+   const cell=create("td","table-actions");
+   const actions=playerActions(p);actions.classList.add("table-actions");cell.appendChild(actions);tr.appendChild(cell);tbody.appendChild(tr);
+ }
+ table.append(thead,tbody);outer.appendChild(table);container.appendChild(outer);
+}
 function renderPlayers(){
-  const position=$("position").value,club=$("club").value;
-  const players=state.players.filter(p=>(!position||String(p.position).toLowerCase()===position.toLowerCase())&&(!club||p.club===club));
-  $("count").textContent=players.length+" visibles · "+state.hits+" coincidencias en Sorare";
-  const list=$("players");list.replaceChildren();
-  if(!players.length){const empty=create("div","empty",state.players.length?"No hay jugadores con estos filtros en esta página. Prueba otros filtros o avanza.":"Sin resultados. Prueba otro nombre.");empty.style.gridColumn="1/-1";list.appendChild(empty);}
-  for(const p of players){
-    const card=create("article","player");
-    const person=create("div","person"),avatar=create("div","avatar",initials(p.name)),data=create("div");
-    data.append(create("b","",p.name),create("small","",p.club||"Sin club"));person.append(avatar,data);
-    const meta=create("div","meta");meta.append(create("span","tag",positions[p.position]||p.position||"Sin posición"),create("strong","l5","L5 "+fmt(p.l5)));
-    const actions=create("div","actions"),detail=create("button","btn outline tiny","Ver ficha"),add=create("button","btn tiny",state.selected.includes(p.slug)?"Seleccionado ✓":"Comparar");
-    detail.type=add.type="button";detail.addEventListener("click",()=>showDetail(p));
-    add.disabled=state.selected.includes(p.slug);add.addEventListener("click",()=>choose(p.slug));
-    actions.append(detail,add);card.append(person,meta,actions);list.appendChild(card);
-  }
-  const total=Math.min(21,Math.max(1,state.nbPages));
-  $("paging").hidden=state.nbPages<=1;
-  $("page-label").textContent="Página "+state.page+" de "+total;
-  $("prev").disabled=state.busy||state.page<=1;
-  $("next").disabled=state.busy||state.page>=total;
+ const players=visiblePlayers();
+ $("count").textContent=players.length+" visibles · "+state.hits+" coincidencias en Sorare (página actual)";
+ const list=$("players");list.replaceChildren();
+ $("cards-view").classList.toggle("active",state.view==="cards");
+ $("table-view").classList.toggle("active",state.view==="table");
+ $("cards-view").setAttribute("aria-pressed",String(state.view==="cards"));
+ $("table-view").setAttribute("aria-pressed",String(state.view==="table"));
+ if(!players.length){
+   list.classList.remove("table-mode");
+   const empty=create("div","empty",state.players.length?"No hay jugadores con estos filtros en esta página. Prueba otros filtros o avanza.":"Sin resultados. Prueba otro nombre.");
+   empty.style.gridColumn="1/-1";list.appendChild(empty);
+ } else if(state.view==="table")renderTable(players,list);else renderCards(players,list);
+ const total=Math.min(20,Math.max(1,state.nbPages));
+ $("paging").hidden=state.nbPages<=1;
+ $("page-label").textContent="Página "+state.page+" de "+total;
+ $("prev").disabled=state.busy||state.page<=1;
+ $("next").disabled=state.busy||state.page>=total;
 }
 async function search(page=1){
   const q=$("query").value.trim();
@@ -111,7 +192,7 @@ async function search(page=1){
   $("search-btn").disabled=true;status("Buscando futbolistas en Sorare…");
   try{
     const d=await getJson("/api/search?q="+encodeURIComponent(q)+"&page="+page);
-    state.players=d.players||[];state.hits=d.nbHits||0;state.nbPages=d.nbPages||0;state.page=d.page||page;
+    state.players=d.players||[];state.players.forEach(p=>{if(p.avatar)state.photoBySlug.set(p.slug,p.avatar);});state.hits=d.nbHits||0;state.nbPages=d.nbPages||0;state.page=d.page||page;
     updateClubs();renderPlayers();
     $("source").textContent="Fuente: "+d.source+" · "+new Date(d.fetchedAt).toLocaleString("es-ES");
     status(state.players.length?"Búsqueda completada. Selecciona un jugador para ver su ficha o compararlo.":"No se han encontrado futbolistas. Prueba otro nombre.");
@@ -121,7 +202,7 @@ async function search(page=1){
 async function details(slug){
   if(state.details.has(slug))return state.details.get(slug);
   const d=await getJson("/api/player?slug="+encodeURIComponent(slug));
-  state.details.set(slug,d.player);
+  if(state.photoBySlug.has(slug))d.player.avatar=state.photoBySlug.get(slug);state.details.set(slug,d.player);
   return d.player;
 }
 function renderDetailPane(parent,p,index,error){
@@ -129,7 +210,8 @@ function renderDetailPane(parent,p,index,error){
   if(error){parent.append(create("h3","", "Jugador "+(index+1)),create("p","",error.message));return;}
   if(!p){parent.append(create("p","", "Selecciona el jugador "+(index+1)+" desde los resultados."));return;}
   const head=create("div","labels"),heading=create("div");
-  heading.append(create("h3","",p.name),create("p","",p.club+" · "+(positions[p.position]||p.position||"—")));
+  const nameRow=create("div","compare-name");nameRow.append(makeAvatar(p.name,p.avatar||state.photoBySlug.get(p.slug)),create("h3","",p.name));
+  heading.append(nameRow,create("p","",p.club+" · "+(positions[p.position]||p.position||"—")));
   const remove=create("button","clear","Quitar");remove.type="button";remove.addEventListener("click",()=>removePlayer(p.slug));
   head.append(heading,remove);parent.appendChild(head);
   const metrics=create("div","metrics");
@@ -167,6 +249,9 @@ async function showDetail(p){
 $("search-form").addEventListener("submit",e=>{e.preventDefault();search(1);});
 $("position").addEventListener("change",renderPlayers);
 $("club").addEventListener("change",renderPlayers);
+$("sort").addEventListener("change",renderPlayers);
+$("cards-view").addEventListener("click",()=>{state.view="cards";renderPlayers();});
+$("table-view").addEventListener("click",()=>{state.view="table";renderPlayers();});
 $("prev").addEventListener("click",()=>{if(state.page>1)search(state.page-1);});
 $("next").addEventListener("click",()=>{if(state.page<Math.min(state.nbPages,20))search(state.page+1);});
 $("clear").addEventListener("click",()=>{state.selected=[];renderPlayers();compare();});
