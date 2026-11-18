@@ -140,6 +140,16 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .opportunity-grid strong{display:block;color:#e3f5f5;margin-bottom:4px}
 .slot .opportunity-summary{display:block;margin-top:9px;font-size:11px;color:#c3f5e8;line-height:1.5}
 @media(max-width:700px){.opportunity-grid{grid-template-columns:1fr}.opportunity-badge{white-space:normal}}
+
+/* Disponibilidad: anotaciones manuales, no verificaciones médicas automáticas */
+.manual-filter{display:flex;gap:9px;align-items:center;color:#dce8f4;font-size:13px;margin:14px 0 0}
+.manual-filter input{accent-color:var(--accent);height:17px;width:17px}
+.manual-note{font-size:11px;color:#d0bd9a;margin-top:6px;line-height:1.6}
+.status-pill{display:inline-block;font-size:11px;white-space:nowrap;padding:5px 7px;border-radius:7px;color:#cbd9e7;border:1px solid #556679}
+.status-pill.out{background:#512b30;border-color:#87515b;color:#ffc1c1}
+.status-pill.doubt{background:#4a3d25;border-color:#867140;color:#ffdfa5}
+.status-pill.good{background:#244034;border-color:#507b5a;color:#c5fac5}
+.status-link{font-size:11px;color:#b5ff65;display:block;margin-top:6px}
 </style>
 </head>
 <body>
@@ -175,6 +185,8 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <button type="button" class="btn" id="optimize">Calcular mejor alineación</button>
 </div>
 <div class="mode-hint" id="game-mode-hint">En análisis libre se usan todos los jugadores seleccionados, aunque no tengas sus cartas.</div>
+<label class="manual-filter"><input id="exclude-manual-out" type="checkbox"> Excluir bajas que yo haya marcado con una fuente reciente</label>
+<div class="manual-note" id="manual-filter-info">Este filtro es opcional y solo utiliza tus anotaciones locales de las últimas 72 horas. <a href="/disponibilidad.html">Gestionar disponibilidad y noticias</a>.</div>
 <div id="arcade-leagues" hidden>
 <p class="help">Para el set WNTR que nos has mostrado, Sorare publicó sobres de estas cuatro ligas (puede cambiar en otros sets):</p>
 <div class="league-list"><span>🇪🇸 LaLiga</span><span>🇩🇪 Bundesliga</span><span>🏴 Premier League</span><span>🇫🇷 Ligue 1</span></div>
@@ -272,6 +284,24 @@ function normalize(raw){
  if(!name||!position)return null;
  const score=k=>typeof raw[k]==="number"&&Number.isFinite(raw[k])&&raw[k]>=0&&raw[k]<=100?raw[k]:null;
  return {slug:raw.slug,name,club:String(raw.club||"Sin club").slice(0,100),position,l5:score("l5"),l10:score("l10"),l15:score("l15"),avatar:validPhoto(raw.avatar),ownedArcade:raw.ownedArcade===true,ownedCompetitive:raw.ownedCompetitive===true,savedAt:typeof raw.savedAt==="number"?raw.savedAt:Date.now()};
+}
+const MANUAL_AVAILABILITY_KEY="sorarefutscout:availability:v1";
+function readManualAvailability(){
+ try{const data=JSON.parse(localStorage.getItem(MANUAL_AVAILABILITY_KEY)||"{}");
+  return data&&typeof data==="object"&&!Array.isArray(data)?data:{};
+ }catch(_){return {};}
+}
+function manualStatus(p){
+ const record=readManualAvailability()[p.slug];
+ if(!record||!["available","doubt","out"].includes(record.status)||
+   !Number.isFinite(record.updatedAt)||record.updatedAt>Date.now()||
+   Date.now()-record.updatedAt>=72*3600000)return null;
+ try{const u=new URL(record.source);if(u.protocol!=="https:")return null;}
+ catch(_){return null;}
+ return record;
+}
+function filteredManualOut(players){
+ return players.filter(p=>manualStatus(p)?.status!=="out");
 }
 function readPool(){
  try{const parsed=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(parsed))return [];
@@ -807,13 +837,21 @@ function render(){
  const target=$("pool");target.replaceChildren();
  if(!pool.length){target.append(make("div","empty","Todavía no has añadido futbolistas. Ve al explorador real, busca un equipo y pulsa «Añadir visibles al optimizador»."));return;}
  const wrap=make("div","tablewrap"),table=make("table"),thead=make("thead"),row=make("tr");
- for(const col of ["Jugador","Posición","L5","L10","L15","Oportunidad individual","Próximo partido","Mis cartas (manual)","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
+ for(const col of ["Jugador","Posición","L5","L10","L15","Disponibilidad (manual)","Oportunidad individual","Próximo partido","Mis cartas (manual)","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
  thead.append(row);
  const body=make("tbody");
  const list=[...pool].sort((a,b)=>a.position.localeCompare(b.position)||a.name.localeCompare(b.name,"es"));
  for(const p of list){
    const tr=make("tr"),td=make("td");td.append(playerLabel(p));tr.append(td,make("td","",posName(p.position)));
    for(const metric of ["l5","l10","l15"])tr.append(make("td","score",fmt(p[metric])));
+   const manual=manualStatus(p),manualCell=make("td");
+   if(manual){
+    const cls=manual.status==="out"?"out":manual.status==="doubt"?"doubt":"good";
+    const labelText=manual.status==="out"?"Baja anotada":manual.status==="doubt"?"Duda anotada":"Disponible (nota)";
+    manualCell.append(make("span","status-pill "+cls,labelText));
+   }else manualCell.append(make("span","status-pill","Sin verificar"));
+   const statusLink=make("a","status-link","Ver noticias / editar");
+   statusLink.href="/disponibilidad.html";manualCell.append(statusLink);tr.append(manualCell);
    const oppCell=make("td"),oppData=opportunityData(p);
    oppCell.append(opportunityBadge(p));
    if(oppData){
@@ -986,6 +1024,11 @@ function run(){
  const format=$("format").value,metric=$("metric").value;
  let candidates=filteredByMode();
  const chosenGw=$("game-week").value;
+ if($("exclude-manual-out").checked){
+   const count=candidates.length;
+   candidates=filteredManualOut(candidates);
+   notice(count===candidates.length?"No hay bajas manuales vigentes que excluir.":"Se han excluido "+(count-candidates.length)+" bajas anotadas manualmente; no verificadas por SorareFutScout.");
+ }
  if(chosenGw){
    const missing=candidates.filter(p=>!fixtureFresh(p.slug));
    if(missing.length){
@@ -1055,6 +1098,7 @@ $("use-opportunity").addEventListener("change",()=>{
  updateOpportunityControl();
  $("result").hidden=true;
 });
+$("exclude-manual-out").addEventListener("change",()=>{$("result").hidden=true;});
 $("only-playing").addEventListener("change",()=>{
  if($("only-playing").checked)$("game-week").value="";
  render();$("result").hidden=true;
