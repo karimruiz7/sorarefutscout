@@ -337,7 +337,15 @@ function matchupWhy(p){
   return box;
  }
  if(!analysis){
-  box.append(make("p","",rival.name+": no hay suficientes resultados confirmados (se requieren al menos 3 de los 5 últimos partidos). La dificultad queda sin evaluar."));
+  const stats=opponents.get(rival.slug);
+  if(!stats){
+   const wait=cooldownRemaining();
+   const message=wait>0?"La API de Sorare ha limitado las peticiones. Espera aproximadamente "+wait+" segundos antes de volver a analizar.":
+     "Aún no se ha recibido el historial del rival. Puedes pulsar Analizar enfrentamientos para consultarlo.";
+   box.append(make("p","",rival.name+": "+message));
+  }else{
+   box.append(make("p","",rival.name+": Sorare ha respondido, pero no hay suficientes resultados válidos para calcular el índice (se requieren al menos tres encuentros). "+(stats.reason||"")));
+  }
   return box;
  }
  const defensive=["Defender","Goalkeeper"].includes(p.position);
@@ -360,7 +368,11 @@ function opponentText(p){
  const rival=fixtureOpponent(p);
  if(!rival)return {text:"Rival sin identificar",available:false};
  const info=matchAdjustment(p);
- if(!info)return {text:rival.name+": datos insuficientes",available:false};
+ if(!info){
+   const known=opponents.get(rival.slug);
+   if(known&&!known.available)return {text:rival.name+": menos de tres partidos válidos",available:false};
+   return {text:rival.name+(cooldownRemaining()>0?": pendiente (límite API)":": pendiente de análisis"),available:false};
+ }
  const stat=p.position==="Defender"||p.position==="Goalkeeper"?
   "Marca "+fmt(info.stats.goalsForPerGame)+" goles/partido":
   "Encaja "+fmt(info.stats.goalsAgainstPerGame)+" goles/partido";
