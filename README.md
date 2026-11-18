@@ -2,31 +2,31 @@
 
 Plataforma independiente y no oficial de análisis, comparación de futbolistas y optimización de alineaciones para Sorare Fútbol.
 
-## Fase 1: demostración interactiva
+## Web pública
+**https://sorarefutscout.pages.dev/**
 
-La web está desarrollada como un único archivo estático `index.html` y puede abrirse directamente desde un navegador. Incluye:
+- [Demo principal](https://sorarefutscout.pages.dev/) — explorador, comparador y optimizador basados en **datos simulados**.
+- [Datos reales — beta](https://sorarefutscout.pages.dev/datos-reales.html) — prueba de consulta a la API oficial de Sorare, pendiente de verificar en producción.
 
-- Panel general con datos de ejemplo.
-- Explorador de jugadores, búsqueda y filtros por posición.
-- Comparación de futbolistas.
-- Optimizador de alineaciones de cinco o siete cartas, con restricciones simplificadas.
+## Fase 1 · Demo
+`index.html` contiene el diseño responsive y herramientas de prueba:
+- Explorador de jugadores y filtros por posición.
+- Comparador de futbolistas.
+- Optimizador de alineaciones de 5 o 7 cartas con restricciones simplificadas.
 - Importación/exportación de CSV y alta manual de jugadores.
-- Almacenamiento local en el navegador, sin servidor ni registro.
 
-**Importante:** las métricas iniciales son ficticias y las proyecciones son ilustrativas. Todavía no existe integración con Sorare, sincronización de colecciones, precios ni estadísticas oficiales. El optimizador no aplica todas las reglas de los concursos reales y debe considerarse una prueba.
+Las puntuaciones iniciales son ficticias. El optimizador no reproduce todas las reglas vigentes de las competiciones.
 
-## Publicación en GitHub Pages
+## Fase 2 · Primera conexión
+- `datos-reales.html`: formulario para consultar futbolistas reales por slug o URL de Sorare.
+- `functions/api/player.js`: Cloudflare Pages Function que solicita, mediante GraphQL, nombre, equipo, posición, L5/L10/L15 y cinco resultados.
+- Usa el endpoint federado oficial, manejo de errores y caché para evitar consultas redundantes.
+- **Importante:** el código está subido; la integración en vivo aún requiere confirmar que Cloudflare despliega la Function y que Sorare responde correctamente. Si no responde, la demo principal permanece disponible.
 
-En este repositorio: **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main → Folder: /(root) → Save**.
+Consulta el [plan de fase 2](docs/FASE2.md).
 
-Cuando GitHub confirme la publicación, la dirección será:
+## Alojamiento
+Cloudflare Pages conectado a GitHub. Los cambios de la rama `main` deberían generar nuevos despliegues si la conexión automática sigue activa. Proyecto HTML estático con funciones serverless; sin servicio local ni contraseña de Sorare.
 
-https://karimruiz7.github.io/sorarefutscout/
-
-## Siguiente etapa
-
-Estudiar las condiciones y disponibilidad de la API oficial de Sorare, diseñar la obtención de datos reales y un backend seguro para cualquier futura autenticación. Nunca compartas credenciales ni tokens de Sorare en el código o en un repositorio público.
-
-## Aviso
-
-Proyecto independiente y no afiliado, patrocinado ni respaldado por Sorare. No utiliza logos oficiales ni imágenes de futbolistas.
+## Seguridad y aviso
+Proyecto independiente, no afiliado ni respaldado por Sorare. No se solicitan contraseñas ni claves personales, y no se almacenan credenciales en el repositorio.
