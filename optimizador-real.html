@@ -113,6 +113,16 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .gw-status.unknown{border-color:#555e71;color:#b8c6d6;background:#293442}
 .gw-banner{padding:9px 12px;border:1px solid #496d4d;border-radius:10px;background:#1d342a;color:#cdf6c9;font-size:12px;margin:12px 0 5px}
 @media(max-width:700px){.gw-control{padding:13px}.gw-control .field{min-width:0;flex:1 1 100%}}
+
+/* Fase 3.5: comparar hasta tres alineaciones genuinamente diferentes. */
+.alternative-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.alt-option{border:1px solid #436149;background:#1a302c;border-radius:12px;padding:13px 11px;color:#e9f8f0;text-align:left;cursor:pointer;min-width:0;display:grid;gap:5px}
+.alt-option[aria-pressed="true"]{border-color:var(--accent);outline:1px solid var(--accent);background:#284431}
+.alt-option strong{font-size:13px;white-space:normal}.alt-option .alt-points{font-size:22px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums}
+.alt-option .alt-delta{font-size:11px;color:#bfced6;line-height:1.4}
+.alternative-explanation{background:#112921;border:1px solid #426049;border-radius:11px;padding:12px 15px;font-size:13px;line-height:1.65;color:#d5ebd9;margin:8px 0 15px}
+.alternative-count{font-size:12px;color:#bad5c1;margin:7px 0 0}
+@media(max-width:700px){.alternative-options{grid-template-columns:1fr}.alt-option{display:flex;align-items:center;justify-content:space-between;gap:10px}.alt-option .alt-points{font-size:17px}}
 </style>
 </head>
 <body>
@@ -197,10 +207,13 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <div id="status" class="help" role="status" aria-live="polite"></div>
 </section>
 <section id="result" class="result" hidden aria-live="polite">
-<h2>Mejor alineación según <span id="result-metric">L10</span></h2>
+<h2>Compara tus mejores alineaciones · <span id="result-metric">L10</span></h2>
 <p class="sub" id="result-description">Máxima suma de medias históricas con las posiciones básicas indicadas.</p>
 <div class="total" id="total">—</div>
 <p class="sub" id="total-caption">Suma de medias (referencia estadística, no resultado pronosticado)</p>
+<div id="alternative-options" class="alternative-options" role="group" aria-label="Opciones de alineación"></div>
+<p class="alternative-count" id="alternative-count"></p>
+<div id="alternative-explanation" class="alternative-explanation" aria-live="polite"></div>
 <div class="lineup" id="lineup"></div>
 <p class="help">Esta alineación es orientativa y no necesariamente válida para una competición concreta de Sorare.</p>
 </section>
@@ -645,31 +658,51 @@ function slots(format){
   [{pos:"Goalkeeper",name:"Portero"},{pos:"Defender",name:"Defensa 1"},{pos:"Defender",name:"Defensa 2"},{pos:"Midfielder",name:"Medio 1"},{pos:"Midfielder",name:"Medio 2"},{pos:"Forward",name:"Delantero"},{pos:"Extra",name:"Extra"}]:
   [{pos:"Goalkeeper",name:"Portero"},{pos:"Defender",name:"Defensa"},{pos:"Midfielder",name:"Centrocampista"},{pos:"Forward",name:"Delantero"},{pos:"Extra",name:"Extra"}];
 }
-// Exact maximum-weight assignment: one player per slot, no player can occupy two slots.
-// Reverse-mask iteration ensures each available player is used at most once.
-function optimize(players,format,metric,scorer=null){
+// K mejores conjuntos de jugadores con posiciones básicas.
+ // Programación dinámica por máscara; el mismo futbolista no puede ocupar dos puestos.
+ // Cada máscara conserva los 3 mejores conjuntos distintos, no permutaciones del mismo XI.
+function optimizeAlternatives(players,format,metric,scorer=null,maxResults=3){
  const lineup=slots(format),length=lineup.length;
- const states=new Array(1<<length).fill(null);
- states[0]={sum:0,picks:[]};
- for(const p of players){
-   const value=scorer?scorer(p,metric):p[metric];
+ const states=Array.from({length:1<<length},()=>[]);
+ states[0]=[{sum:0,picks:[],signature:""}];
+ function insert(bucket,candidate){
+   const prior=bucket.findIndex(q=>q.signature===candidate.signature);
+   if(prior>=0){
+     if(bucket[prior].sum>=candidate.sum-1e-8)return;
+     bucket.splice(prior,1);
+   }
+   bucket.push(candidate);
+   bucket.sort((a,b)=>b.sum-a.sum||a.signature.localeCompare(b.signature));
+   if(bucket.length>maxResults)bucket.length=maxResults;
+ }
+ for(const player of players){
+   const value=scorer?scorer(player,metric):player[metric];
    if(typeof value!=="number"||!Number.isFinite(value))continue;
    for(let mask=states.length-1;mask>=0;mask--){
-     const prev=states[mask];if(!prev)continue;
-     for(let slot=0;slot<length;slot++){
-       if(mask&(1<<slot))continue;
-       const target=lineup[slot].pos;
-       if(target!=="Extra"&&target!==p.position)continue;
-       if(target==="Extra"&&p.position==="Goalkeeper")continue;
-       const next=mask|(1<<slot),sum=prev.sum+value;
-       if(!states[next]||sum>states[next].sum+0.00000001){
-         states[next]={sum,picks:[...prev.picks,{slot,player:p}]};
+     // Descending masks: new states always have a larger mask, already processed for this player.
+     const partial=states[mask];
+     if(!partial.length)continue;
+     for(const previous of partial){
+       for(let slot=0;slot<length;slot++){
+         if(mask&(1<<slot))continue;
+         const needed=lineup[slot].pos;
+         if(needed!=="Extra"&&needed!==player.position)continue;
+         if(needed==="Extra"&&player.position==="Goalkeeper")continue;
+         const picks=[...previous.picks,{slot,player}];
+         const signature=picks.map(x=>x.player.slug).sort().join("|");
+         insert(states[mask|(1<<slot)],{sum:previous.sum+value,picks,signature});
        }
      }
    }
  }
- const best=states[states.length-1];
- return best?{total:best.sum,slots:lineup,picks:best.picks.sort((a,b)=>a.slot-b.slot)}:null;
+ return states[states.length-1].map(item=>({
+   total:item.sum,slots:lineup,
+   picks:[...item.picks].sort((a,b)=>a.slot-b.slot),
+   signature:item.signature,
+ }));
+}
+function optimize(players,format,metric,scorer=null){
+ return optimizeAlternatives(players,format,metric,scorer,1)[0]||null;
 }
 function card(slot,p,metric,withOpponent=false){
  const el=make("div","slot");
@@ -686,6 +719,58 @@ function card(slot,p,metric,withOpponent=false){
    "Sin datos suficientes del rival · índice neutro "+fmt(p[metric])));
  }
  return el;
+}
+let lastComparison=null;
+function compareExplanation(choice,index,reference,useRivals,metric){
+ const unit=useRivals?"unidades de índice":"puntos de media "+metric.toUpperCase();
+ if(index===0){
+   return "Esta combinación ocupa el primer puesto por la máxima suma de "+(useRivals?
+    "medias con el ajuste experimental del rival":"medias históricas")+
+    ". Los enfrentamientos favorables no garantizan minutos ni puntos en Sorare.";
+ }
+ const initial=new Set(reference.picks.map(x=>x.player.slug));
+ const revised=new Set(choice.picks.map(x=>x.player.slug));
+ const entered=choice.picks.filter(x=>!initial.has(x.player.slug)).map(x=>x.player.name);
+ const removed=reference.picks.filter(x=>!revised.has(x.player.slug)).map(x=>x.player.name);
+ const diff=Math.max(0,reference.total-choice.total);
+ const swap=entered.length?"Entran "+entered.join(", ")+"; salen "+removed.join(", ")+". ":"";
+ return swap+(diff<0.05?"Empata en puntuación con la primera alternativa. ":"Queda "+fmt(diff)+" "+unit+" por debajo de la primera opción. ")+
+   "Puedes elegirla si tienes dudas sobre disponibilidad u otros factores que este modelo no contempla.";
+}
+function showComparison(index){
+ const state=lastComparison;
+ if(!state||!state.options[index])return;
+ const selected=state.options[index],best=state.options[0];
+ $("total").textContent=fmt(selected.total)+(state.useRivals?" índice":" pts");
+ const buttons=$("alternative-options").querySelectorAll("button");
+ buttons.forEach((button,n)=>button.setAttribute("aria-pressed",String(n===index)));
+ $("alternative-explanation").textContent=compareExplanation(selected,index,best,state.useRivals,state.metric);
+ const lineup=$("lineup");lineup.replaceChildren();
+ lineup.className="lineup"+(state.format==="so7"?" seven":"");
+ for(const choice of selected.picks){
+   lineup.append(card(selected.slots[choice.slot],choice.player,state.metric,state.useRivals));
+ }
+}
+function renderComparison(options,format,metric,useRivals){
+ lastComparison={options,format,metric,useRivals};
+ const tabs=$("alternative-options");tabs.replaceChildren();
+ for(let i=0;i<options.length;i++){
+   const button=make("button","alt-option");
+   button.type="button";
+   button.setAttribute("aria-pressed",String(i===0));
+   button.setAttribute("aria-label","Mostrar la alineación "+(i+1)+" de "+options.length);
+   button.append(
+     make("strong","",i===0?"Opción 1 · mejor media":"Opción "+(i+1)+" · alternativa"),
+     make("span","alt-points",fmt(options[i].total)+(useRivals?" índice":" pts")),
+     make("span","alt-delta",i===0?"Mayor suma":"-"+fmt(Math.max(0,options[0].total-options[i].total))+(useRivals?" índice":" pts")+" frente a la mejor")
+   );
+   button.addEventListener("click",()=>showComparison(i));
+   tabs.append(button);
+ }
+ $("alternative-count").textContent=options.length<3?
+   (options.length===1?"Solo hay una alineación diferente con las cartas y filtros actuales. Añade más cartas, especialmente de posiciones repetidas, para comparar opciones.":"Hay "+options.length+" alineaciones diferentes posibles con esta selección. Añade más cartas para obtener tres."):
+   "Tres alineaciones distintas ordenadas de mayor a menor suma. Puedes pulsarlas para ver qué jugadores cambian.";
+ showComparison(0);
 }
 function run(){
  const format=$("format").value,metric=$("metric").value;
@@ -709,8 +794,13 @@ function run(){
    candidates=candidates.filter(p=>playsWithinWeek(games.get(p.slug)));
  }
  const useRivals=$("use-matchups").checked;
- const result=optimize(candidates,format,metric,useRivals?matchupValue:null);
+ const options=optimizeAlternatives(candidates,format,metric,useRivals?matchupValue:null,3);
+ const result=options[0]||null;
  const target=$("result"),lineup=$("lineup");lineup.replaceChildren();target.hidden=false;
+ $("alternative-options").replaceChildren();
+ $("alternative-count").textContent="";
+ $("alternative-explanation").textContent="";
+ lastComparison=null;
  $("result").querySelectorAll(".gw-banner").forEach(el=>el.remove());
  if(chosenGw){
    const g=availableGameWeeks(filteredByMode()).find(w=>String(w.id)===chosenGw);
@@ -729,9 +819,7 @@ function run(){
  $("result-metric").textContent=metric.toUpperCase()+(useRivals?" + dificultad del rival":"");
  $("result-description").textContent=useRivals?"Suma de medias ajustadas por un índice experimental de enfrentamiento, sin valor predictivo validado.":"Máxima suma de medias históricas con las posiciones básicas indicadas.";
  $("total-caption").textContent=useRivals?"Índice comparativo total · NO puntos esperados ni probabilidad de acierto":"Suma de medias (referencia estadística, no resultado pronosticado)";
- $("total").textContent=fmt(result.total)+(useRivals?" índice":" pts");
- lineup.className="lineup"+(format==="so7"?" seven":"");
- for(const choice of result.picks)lineup.append(card(result.slots[choice.slot],choice.player,metric,useRivals));
+ renderComparison(options,format,metric,useRivals);
  target.scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("optimize").addEventListener("click",run);
