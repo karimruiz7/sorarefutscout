@@ -137,3 +137,15 @@ El usuario observó que, después de pulsar «Analizar enfrentamientos», Sorare
 Referencia: https://github.com/sorare/api#rate-limit
 
 A escala pública probablemente será necesaria una vía autorizada de mayor capacidad de la API, disponible mediante proceso de Sorare. Nunca guardar claves en el frontend o GitHub.
+
+## Fase 3.4 — Selección por Game Week oficial de Sorare (18-11-2026)
+
+- El optimizador `optimizador-real.html` añade un selector de Game Week a partir de `so5Fixture.gameWeek` y `so5Fixture.displayName` **realmente devueltos** por la API `/api/next-games` de los jugadores seleccionados. No inventa semanas ni sustituye esta numeración por el rango de siete días.
+- El desplegable solo se activa cuando todos los futbolistas disponibles en el contexto elegido (Arcade / Pro-Arena / análisis libre) tienen un estado de calendario consultado; las GW aparecen únicamente para jugadores con el próximo partido puntuable identificado. Si no hay GW disponible, se explica.
+- Al elegir una GW, el motor de optimización utiliza exclusivamente futbolistas cuyo `nextGame` conocido pertenece a ella. Se señala «En GW seleccionada» o «Fuera de GW» en cada fila de la tabla. Se muestra número de candidatos de la jornada y se avisa si falta cualquier posición. El sistema **no** incorpora una carta de otra jornada para completar el equipo.
+- Se conserva el filtro alternativo «partido en los próximos 7 días» pero no se puede activar a la vez que el de GW.
+- **Sin nuevas peticiones** de Sorare al cambiar el selector: se aprovechan los datos de calendario ya disponibles y se conservan las etiquetas de dificultad del rival y la selección de cartas.
+- **Limitación importante:** la API actual consulta solo el **próximo partido puntuable** de cada jugador, no el calendario completo de múltiples semanas ni todas las posibles competiciones. Por tanto, no garantiza elegibilidad real, no descubre partidos adicionales en futuras GW y no indica si la carta podrá inscribirse en Arcade/Pro/Arena.
+- Comprobados sintaxis JavaScript y seis escenarios de selección: varias GW, partida de jugadores en GW, falta de GW, ausencia de partidos, alternancia de selección y equipo incompleto sin posiciones necesarias. Pendiente de validar el flujo en Cloudflare.
+
+Fuente sobre calendario de GW: https://sorare.com/es/help/a/21439051570973/introduction-g-n-rale-sorare-football
