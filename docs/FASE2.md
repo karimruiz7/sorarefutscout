@@ -76,3 +76,15 @@ La API de Sorare documenta `Player.pictureUrl(derivative: "avatar")`. El uso de 
 - [ ] Extender el catálogo con clubes identificados por sus slugs Sorare, sin inventar identificadores.
 
 **Advertencia:** no prometer plantillas oficialmente registradas y actualizadas al instante. `activePlayers` significa jugadores activos de ese club según Sorare; no siempre equivale a una lista oficial de inscritos o convocados. La caché dura 15 minutos y limita las peticiones repetidas.
+
+## Fase 3 — Optimizador con medias reales (18-11-2026)
+- [x] Añadido `optimizador-real.html` independiente de la demo ficticia.
+- [x] Enlazados el explorador, el nuevo optimizador y la portada.
+- [x] Selección local de hasta 120 jugadores a partir de `/api/search` y `/api/club`, sin peticiones nuevas para cada combinación.
+- [x] Motor SO5/SO7 por programación dinámica, máxima suma de L5/L10/L15, posiciones reglamentarias básicas y un jugador por plaza.
+- [x] Probados casos sintéticos SO5, SO7 y equipo imposible sin portero.
+- [ ] Probar flujo real: cargar plantilla desde explorador, añadir visibles, abrir optimizador y generar SO5/SO7.
+- [ ] Validar permisos de miniaturas y condiciones de reutilización antes de promocionar.
+- [ ] Añadir verificación de cartas poseídas mediante OAuth, temporada/escasez, elegibilidad por competición, cap, calendario, lesiones/DNP, sustitutos y proyección futura, tras validar acceso y disponibilidad de datos.
+
+**Nota:** «optimizar» aquí significa maximizar una estadística histórica, no garantizar puntos futuros ni generar automáticamente una alineación válida para todas las competiciones.
