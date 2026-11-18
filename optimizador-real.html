@@ -64,6 +64,17 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .ownership label{display:flex;align-items:center;gap:6px;white-space:nowrap;color:#d7e4f4;font-size:12px}
 .ownership input{accent-color:var(--accent);width:17px;height:17px}
 @media(max-width:700px){.ownership{gap:10px}}
+
+/* Fase 3.2: próximos encuentros (dato de Sorare, no titularidad ni garantía de elegibilidad) */
+.fixtures-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:15px 0}
+.fixtures-status{font-size:12px;line-height:1.5;color:#b9d2e6}
+.match{font-size:12px;line-height:1.55;color:#dbe8f3;min-width:140px}
+.match small{display:block;font-size:11px;color:#a6bccb}
+.match.neutral{color:#e3b879}.match.positive{color:#c9f9bb}
+.match-check{display:flex;gap:8px;align-items:center;font-size:13px;color:#deeffb;margin:12px 0}
+.match-check input{accent-color:var(--accent);width:18px;height:18px}
+.match-details{display:block;margin-top:8px;color:#cbf9c1;font-size:11px;line-height:1.5;min-height:30px}
+@media(max-width:700px){.fixtures-tools .btn{flex:1}}
 </style>
 </head>
 <body>
@@ -104,6 +115,17 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <div class="league-list"><span>🇪🇸 LaLiga</span><span>🇩🇪 Bundesliga</span><span>🏴 Premier League</span><span>🇫🇷 Ligue 1</span></div>
 </div>
 <p class="help">Marca manualmente en la tabla qué futbolistas tienes en cada colección. Las marcas son tuyas y no están verificadas con Sorare; tampoco comprobamos la liga de cada carta. El motor no valida escasez, temporada, elegibilidad, encuentros, lesiones, cap, XP, capitán ni bonificaciones. No predice puntos ni registra alineaciones.</p>
+</section>
+
+<section class="panel" aria-labelledby="fixtures-title">
+<h2 id="fixtures-title">Próximos partidos de tus jugadores</h2>
+<p class="sub">Consulta en Sorare el siguiente partido puntuable registrado para cada futbolista de tu selección. Mostraremos fecha, rival y Game Week si Sorare los facilita.</p>
+<div class="fixtures-tools">
+<button type="button" class="btn secondary" id="load-fixtures">Consultar próximos partidos</button>
+<span class="fixtures-status" id="fixtures-status" role="status" aria-live="polite">Sin consultar. Las puntuaciones históricas siguen funcionando sin este paso.</span>
+</div>
+<label class="match-check"><input id="only-playing" type="checkbox" disabled> Optimizar solo con jugadores que tengan un partido registrado en los próximos 7 días</label>
+<p class="help">El plazo de 7 días es un filtro práctico, <b>no</b> equivale a la Game Week oficial. Un partido programado no garantiza que el jugador participe o puntúe. Este filtro se activa tras consultar los partidos de todos los futbolistas disponibles.</p>
 </section>
 <section class="panel" aria-labelledby="pool-title">
 <div class="pool-meta"><div><h2 id="pool-title">Mi selección de futbolistas</h2><p class="sub">Guardada en este navegador. Marca las cartas que posees para que Arcade o Pro/Arena utilicen solo tu colección indicada manualmente.</p></div>
@@ -184,22 +206,105 @@ function playerLabel(p){
  const wrap=make("div","player"),words=make("div");
  words.append(make("strong","",p.name),make("small","",p.club));wrap.append(avatar(p),words);return wrap;
 }
+
+const GAME_CACHE="sorarefutscout:next-games:v1";
+const GAME_TTL=15*60*1000;
+const WEEK_MS=7*24*3600*1000;
+let games=new Map();
+function readGameCache(){
+ try{
+   const parsed=JSON.parse(sessionStorage.getItem(GAME_CACHE)||"null");
+   if(!parsed||Date.now()-parsed.savedAt>GAME_TTL||!Array.isArray(parsed.fixtures))return;
+   games=new Map(parsed.fixtures.filter(o=>o&&typeof o.slug==="string").map(o=>[o.slug,o]));
+ }catch(_){}
+}
+function writeGameCache(){
+ try{sessionStorage.setItem(GAME_CACHE,JSON.stringify({savedAt:Date.now(),fixtures:[...games.values()]}));}catch(_){}
+}
+function matchSummary(g){
+ if(!g)return"Sin información";
+ const home=g.home||"Local",away=g.away||"Visitante";
+ const date=g.date?new Date(g.date):null;
+ const dateText=date&&!Number.isNaN(date.valueOf())?date.toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"Fecha sin confirmar";
+ return home+" – "+away+" · "+dateText;
+}
+function matchLabel(slug){
+ const info=games.get(slug),node=make("div","match");
+ if(!info){node.classList.add("neutral");node.textContent="Sin consultar";return node;}
+ if(info.status!=="scheduled"||!info.game){
+   node.classList.add("neutral");
+   node.textContent=info.status==="none"?"Sin próximo partido registrado":"Calendario no disponible";
+   return node;
+ }
+ node.classList.add("positive");
+ node.textContent=matchSummary(info.game);
+ if(info.game.fixtureName||info.game.gw!=null){
+   const details=make("small","",(info.game.fixtureName||"")+(info.game.gw!=null?" · GW "+info.game.gw:""));
+   node.append(details);
+ }
+ return node;
+}
+function playsWithinWeek(info){
+ if(info?.status!=="scheduled"||!info.game?.date)return false;
+ const timestamp=Date.parse(info.game.date),now=Date.now();
+ return Number.isFinite(timestamp)&&timestamp>=now-2*3600000&&timestamp<=now+WEEK_MS;
+}
+function updateFixtureFilter(){
+ const candidates=filteredByMode();
+ const complete=candidates.length>0&&candidates.every(p=>games.has(p.slug));
+ $("only-playing").disabled=!complete;
+ if(!complete)$("only-playing").checked=false;
+}
+async function loadFixtures(){
+ const candidates=filteredByMode();
+ if(!candidates.length){$("fixtures-status").textContent="Selecciona futbolistas para consultar sus partidos.";return;}
+ const needed=candidates.filter(p=>!games.has(p.slug));
+ if(!needed.length){
+   $("fixtures-status").textContent="Partidos consultados previamente (caché de 15 minutos).";
+   updateFixtureFilter();render();return;
+ }
+ $("load-fixtures").disabled=true;
+ let total=0,errors=[];
+ $("fixtures-status").textContent="Consultando Sorare por lotes…";
+ for(let i=0;i<needed.length;i+=12){
+   const group=needed.slice(i,i+12);
+   try{
+     const response=await fetch("/api/next-games?slugs="+encodeURIComponent(group.map(p=>p.slug).join(",")),{headers:{accept:"application/json"}});
+     const result=await response.json();
+     if(!response.ok||!result.ok)throw Error(result.error||"Error en la consulta de partidos.");
+     for(const f of result.fixtures||[]){
+       if(group.some(p=>p.slug===f.slug) && ["none","unavailable","scheduled"].includes(f.status)){
+         games.set(f.slug,f);total++;
+       }
+     }
+   }catch(e){errors.push(e.message);break;}
+ }
+ writeGameCache();
+ $("load-fixtures").disabled=false;
+ $("fixtures-status").textContent=errors.length?
+   "Se han cargado "+total+" jugadores. Pendiente: "+errors[0]:
+   "Partidos consultados para "+total+" jugadores. Datos de Sorare; sujetos a cambios.";
+ updateFixtureFilter();render();
+}
+readGameCache();
 function render(){
  const summary={Goalkeeper:0,Defender:0,Midfielder:0,Forward:0};
  pool.forEach(p=>{if(summary[p.position]!==undefined)summary[p.position]++;});
  $("pool-count").textContent=filteredByMode().length+" disponibles de "+pool.length+" seleccionados";
+ updateFixtureFilter();
  const counts=$("position-counts");counts.replaceChildren();
  for(const key of ["Goalkeeper","Defender","Midfielder","Forward"])counts.append(make("span","position-badge",label[key]+": "+summary[key]));
  const target=$("pool");target.replaceChildren();
  if(!pool.length){target.append(make("div","empty","Todavía no has añadido futbolistas. Ve al explorador real, busca un equipo y pulsa «Añadir visibles al optimizador»."));return;}
  const wrap=make("div","tablewrap"),table=make("table"),thead=make("thead"),row=make("tr");
- for(const col of ["Jugador","Posición","L5","L10","L15","Mis cartas (manual)","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
+ for(const col of ["Jugador","Posición","L5","L10","L15","Próximo partido","Mis cartas (manual)","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
  thead.append(row);
  const body=make("tbody");
  const list=[...pool].sort((a,b)=>a.position.localeCompare(b.position)||a.name.localeCompare(b.name,"es"));
  for(const p of list){
    const tr=make("tr"),td=make("td");td.append(playerLabel(p));tr.append(td,make("td","",posName(p.position)));
    for(const metric of ["l5","l10","l15"])tr.append(make("td","score",fmt(p[metric])));
+   const fixtureCell=make("td");fixtureCell.append(matchLabel(p.slug));tr.append(fixtureCell);
    const ownCell=make("td"),own=make("div","ownership");
    for(const [key,modeLabel] of [["ownedArcade","Arcade"],["ownedCompetitive","Pro/Arena"]]){
      const labelEl=make("label"),input=make("input");
@@ -249,11 +354,22 @@ function optimize(players,format,metric){
 function card(slot,p,metric){
  const el=make("div","slot");
  el.append(make("small","",slot.name),avatar(p),make("strong","",p.name),make("span","club",p.club),make("span","value",fmt(p[metric])));
+ const next=games.get(p.slug);
+ if(next?.status==="scheduled" && next.game)el.append(make("span","match-details",matchSummary(next.game)));
  return el;
 }
 function run(){
  const format=$("format").value,metric=$("metric").value;
- const candidates=filteredByMode();
+ let candidates=filteredByMode();
+ if($("only-playing").checked){
+   const missing=candidates.filter(p=>!games.has(p.slug));
+   if(missing.length){
+     $("result").hidden=true;
+     notice("Faltan datos de calendario de "+missing.length+" jugadores. Pulsa «Consultar próximos partidos» para continuar.");
+     return;
+   }
+   candidates=candidates.filter(p=>playsWithinWeek(games.get(p.slug)));
+ }
  const result=optimize(candidates,format,metric);
  const target=$("result"),lineup=$("lineup");lineup.replaceChildren();target.hidden=false;
  if(!result){
@@ -273,6 +389,8 @@ $("optimize").addEventListener("click",run);
 $("reload").addEventListener("click",()=>{pool=readPool();render();notice("Selección recargada desde este navegador.");});
 $("clear").addEventListener("click",()=>{if(!pool.length)return;if(!confirm("¿Vaciar los futbolistas seleccionados para el optimizador en este navegador?"))return;pool=[];persist();$("result").hidden=true;render();notice("Selección vaciada.");});
 $("format").addEventListener("change",()=>{$("result").hidden=true;});
+$("load-fixtures").addEventListener("click",loadFixtures);
+$("only-playing").addEventListener("change",()=>{$("result").hidden=true;});
 $("game-mode").addEventListener("change",()=>{updateModeUi();render();$("result").hidden=true;});
 $("metric").addEventListener("change",()=>{$("result").hidden=true;});
 window.addEventListener("storage",event=>{if(event.key===KEY){pool=readPool();render();$("result").hidden=true;}});
