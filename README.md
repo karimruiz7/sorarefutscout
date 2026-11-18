@@ -5,7 +5,10 @@ Plataforma independiente y no oficial de análisis, comparación de futbolistas 
 ## Web pública
 **https://sorarefutscout.pages.dev/**
 
-- [Demo principal](https://sorarefutscout.pages.dev/) — explorador, comparador y optimizador basados en **datos simulados**.
+- [Panel principal](https://sorarefutscout.pages.dev/) — herramientas y selección local reales.
+- [Demo interactiva](https://sorarefutscout.pages.dev/demo.html) — simulación independiente.
+- [Mi club](https://sorarefutscout.pages.dev/mi-club.html) — conexión OAuth en preparación; no importa cartas todavía.
+- [Privacidad](https://sorarefutscout.pages.dev/privacidad.html) — documento provisional.
 - [Explorador real — beta](https://sorarefutscout.pages.dev/explorador.html) — búsquedas por jugador/equipo, tablas, retratos, filtros y comparador. Desde aquí se añaden jugadores reales a la selección del optimizador.
 - [Optimizador real — beta](https://sorarefutscout.pages.dev/optimizador-real.html) — alineaciones orientativas SO5/SO7 según L5/L10/L15, dificultad de rivales o índice individual experimental, con comparador top-3.
 - [Datos reales — beta](https://sorarefutscout.pages.dev/datos-reales.html) — página original de consulta de Sorare, verificada por el propietario el 18-11-2026.
@@ -188,3 +191,25 @@ Incidencia real: el usuario seleccionó ocho jugadores, pero la siguiente consul
 **Limitación:** esta solución reduce consultas duplicadas, pero no puede eludir el límite de Sorare. Si el usuario abrió una pestaña nueva sin caché ni datos históricos locales, debe respetar `Retry-After`. Para un servicio público con tráfico, estudiar la generación de una API key autorizada en https://sorare.com/settings/developer, guardándola únicamente en secretos de Cloudflare (nunca en GitHub ni frontend).
 
 Referencia oficial: https://github.com/sorare/api#rate-limit
+
+## Fase 4.1 — Preparación de OAuth Sorare (18-11-2026)
+
+Objetivo de producto: conectar Sorare, importar cartas compatibles y preparar las mejores alineaciones en pocos pasos. Diez minutos es un objetivo futuro de experiencia, no una función validada.
+
+### Implementación
+
+- [x] Página `/mi-club.html` con estado de conexión y cierre de sesión.
+- [x] Página `/privacidad.html` informativa provisional; faltan datos del responsable y un canal de contacto antes de permitir OAuth al público.
+- [x] Navegación desde Inicio, Explorador, Optimizador y Disponibilidad.
+- [x] Rutas Cloudflare Pages Functions: `/auth/sorare/start`, `/auth/sorare/callback`, `/api/auth/config`, `/api/auth/session`, `POST /api/auth/logout`.
+- [x] Flujo Authorization Code backend con `state` aleatorio, cookie segura `HttpOnly`/`Secure`/`SameSite=Lax`, comparación de estado y verificación del perfil autenticado.
+- [x] Sesión cifrada AES-GCM con clave derivada mediante HKDF del OAuth Client Secret y persistencia en Cloudflare KV `SFS_SESSIONS` durante 7 días. Tokens no expuestos al navegador. Refresh y cierre de sesión mediante backend.
+- [x] OAuth deshabilitado mientras falten credenciales, KV o el contacto de privacidad. La clave pública de servidor `SORARE_API_KEY` es independiente.
+- [ ] Registrar la aplicación OAuth en Sorare desde https://sorare.com/settings/developer y obtener Client ID y Client Secret.
+- [ ] Configurar nombre SorareFutScout, website `https://sorarefutscout.pages.dev` y callback EXACTO `https://sorarefutscout.pages.dev/auth/sorare/callback`.
+- [ ] En Cloudflare Production: `SORARE_OAUTH_CLIENT_ID` (variable), `SORARE_OAUTH_CLIENT_SECRET` (secreto), `SFS_PRIVACY_CONTACT` (contacto privado mediante correo público) y vincular KV bajo nombre `SFS_SESSIONS`.
+- [ ] Completar revisión de privacidad y probar el flujo OAuth real con autorización, renovación y desconexión.
+- [ ] Implementar importación de cartas de solo lectura con paginación y distinguir si Sorare facilita también el modo Arcade; todavía sin verificar.
+- [ ] Realizar auditoría de seguridad y escala antes de activar OAuth a usuarios públicos.
+
+Sorare OAuth da acceso autorizado a información básica y cartas; no proporciona email, futuras alineaciones privadas ni operaciones de compraventa. Enlaces: https://github.com/sorare/api#oauth-authentication--login-with-sorare
