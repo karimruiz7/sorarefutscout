@@ -82,7 +82,7 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 const $=id=>document.getElementById(id);
 const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),photoBySlug:new Map(),view:"cards",busy:false,blockedUntil:0};
 const SEARCH_TTL = 10*60*1000;
-function cacheKey(query,page){return "sfs-search-v3:"+query.toLocaleLowerCase("es").replace(/\\s+/g," ").trim()+":"+page;}
+function cacheKey(query,page){return "sfs-search-v3:"+query.toLocaleLowerCase("es").replace(/\s+/g," ").trim()+":"+page;}
 function cachedResult(query,page){
   try{
     const raw=sessionStorage.getItem(cacheKey(query,page));
