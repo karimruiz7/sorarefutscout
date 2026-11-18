@@ -160,3 +160,32 @@ Fuente sobre calendario de GW: https://sorare.com/es/help/a/21439051570973/intro
 - No se hacen llamadas adicionales a Sorare para calcular alternativas.
 - **Validación técnica:** sintaxis JS comprobada; los resultados top-3 coinciden con enumeración exhaustiva en 10 escenarios SO5/SO7, con y sin portero, con selección limitada, y con ajuste experimental del rival. Falta confirmar la actualización de Cloudflare con la colección real.
 - El orden es un análisis estadístico histórico, **no una previsión validada** de puntos o elegibilidad; se desconocen cartas verdaderamente poseídas, alineaciones iniciales y posibles bajas.
+
+## Fase 3.6 · Oportunidad individual de los futbolistas (18-11-2026)
+
+Objetivo: evitar interpretar «defensa fuerte del rival» como equivalente a «mal rendimiento probable de todos los atacantes». Separar la **dificultad del rival**, la **forma individual observada** y la **valoración conjunta experimental**, sin confundirla con una predicción.
+
+### Fórmula explícita (experimental, no oficial)
+- Índice inicial de forma: `0.55 × L5 + 0.30 × L10 + 0.15 × L15`, utilizando las **medias reales de Sorare** guardadas desde el explorador. Son pesos elegidos para esta primera versión, no pesos oficiales.
+- Si falta L15, se calcula `(0.55 × L5 + 0.30 × L10) / 0.85`; no se inventa un L15 de cero.
+- Son necesarios L5 y L10 numéricos. Si faltan, índice no disponible y jugador excluido del criterio «Oportunidad individual», no del resto de los cálculos.
+- Ajuste individual del rival (opcional): `0.35 × ajuste de rival` (el índice de enfrentamientos existente está limitado a ±12, por lo que el impacto individual no supera ±4,2).
+- Resultado: `max(0,min(100, forma + ajuste_reducido))`, mostrado con una decimal. Si faltan datos del rival, se mantiene el índice **parcial de forma** y se etiqueta expresamente «Rival sin evaluar».
+- Tendencia mostrada: `L5 − L10`, «En alza» si >= 8, «En descenso» si <= −8, «Estable» en los demás casos. La tendencia es informativa y **no se suma por segunda vez** a la fórmula.
+- Localía: se muestra como contexto (local/visitante cuando Sorare lo identifica); **no se añade bonificación** hasta disponer de evidencia por jugador y localía.
+- **No incorpora** minutos previstos, lesiones, titularidad, estado físico, xG, tiros, recencia por fecha, puntos por carta, escasez ni elegibilidad (no verificados por la app). El índice no representa probabilidad ni puntos esperados.
+
+### Interfaz
+- Se añade un panel «Oportunidad individual · beta» con los pesos visibles y la casilla **Optimizar por oportunidad individual**.
+- La tabla muestra para cada jugador el índice 0–100, tendencia, estado del rival y un desplegable «¿Por qué este índice?» con desglose y localía verificada.
+- Es un **tercer criterio independiente**: al activarlo, se desactiva «Priorizar rivales más favorables», y viceversa. El selector L5/L10/L15 se deshabilita mientras el índice combinado está activado para no dar a entender que influye en la fórmula.
+- Se respetan filtros por colección Arcade/Pro-Arena, selección de Game Week y SO5/SO7, y el comparador top-3 muestra los índices en vez de presentar cifras como «puntos previstos».
+- No se hacen llamadas nuevas a Sorare para calcular el índice: usa datos cargados localmente de jugadores y rivales.
+
+### Validación
+- [x] Sintaxis JS verificada y todos los controles con ID estático encontrados en el HTML.
+- [x] Casos de prueba con jugador en alza y rival exigente (índice 66,4 frente a media L10 58), tendencia opuesta, ausencia de L15, ausencia de L5 o L10, rival no evaluado, explicación y tres alineaciones distintas.
+- [ ] Verificar en producción el despliegue de Cloudflare, los desglose individuales y el cambio entre tres criterios.
+- [ ] Calibrar pesos con históricos observados antes de presentar el índice como una señal estadística validada. Revisar fuentes fiables para minutos/titularidad/localía y acciones específicas.
+
+Contexto de Sorare: https://sorare.com/help/a/4402904001809/how-does-scoring-work-in-sorare-football y https://sorare.com/blog/football/l15-%E2%86%92-l10-update-2.
