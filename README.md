@@ -6,7 +6,8 @@ Plataforma independiente y no oficial de análisis, comparación de futbolistas 
 **https://sorarefutscout.pages.dev/**
 
 - [Demo principal](https://sorarefutscout.pages.dev/) — explorador, comparador y optimizador basados en **datos simulados**.
-- [Datos reales — beta](https://sorarefutscout.pages.dev/datos-reales.html) — prueba de consulta a la API oficial de Sorare, pendiente de verificar en producción.
+- [Explorador real — beta](https://sorarefutscout.pages.dev/explorador.html) — búsqueda de jugadores, filtro por posición/club de los resultados visibles, fichas y comparador. Pendiente de probar la búsqueda en producción.
+- [Datos reales — beta](https://sorarefutscout.pages.dev/datos-reales.html) — página original de consulta de Sorare, verificada por el propietario el 18-11-2026.
 
 ## Fase 1 · Demo
 `index.html` contiene el diseño responsive y herramientas de prueba:
@@ -18,10 +19,12 @@ Plataforma independiente y no oficial de análisis, comparación de futbolistas 
 Las puntuaciones iniciales son ficticias. El optimizador no reproduce todas las reglas vigentes de las competiciones.
 
 ## Fase 2 · Primera conexión
+- `explorador.html`: búsqueda por nombre, páginas de resultados, fichas L5/L10/L15, comparación de dos futbolistas y filtros locales.
+- `functions/api/search.js`: búsqueda real mediante el campo oficial `searchPlayers` (12 resultados/página). Aún pendiente de comprobar en el despliegue.
 - `datos-reales.html`: formulario para consultar futbolistas reales por slug o URL de Sorare.
 - `functions/api/player.js`: Cloudflare Pages Function que solicita, mediante GraphQL, nombre, equipo, posición, L5/L10/L15 y cinco resultados.
 - Usa el endpoint federado oficial, manejo de errores y caché para evitar consultas redundantes.
-- **Importante:** el código está subido; la integración en vivo aún requiere confirmar que Cloudflare despliega la Function y que Sorare responde correctamente. Si no responde, la demo principal permanece disponible.
+- **Importante:** el código está subido; la consulta individual de jugadores se ha probado con éxito. La nueva búsqueda pública todavía requiere una prueba de extremo a extremo. Si falla, la demo principal permanece disponible.
 
 Consulta el [plan de fase 2](docs/FASE2.md).
 
