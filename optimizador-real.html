@@ -102,6 +102,17 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .matchup-why p{font-size:11px;color:#bfd1e2;line-height:1.55;margin:6px 0 0}
 .legend-note{font-size:12px;color:#bbcede;line-height:1.55;margin:8px 0}
 @media(max-width:700px){.difficulty-legend{gap:5px}.difficulty-badge{font-size:10px;padding:5px 6px}}
+
+/* Fase 3.4: filtrado por Game Week Sorare, sin nuevas llamadas a la API */
+.gw-control{display:flex;align-items:end;gap:16px;flex-wrap:wrap;padding:16px;border:1px solid #375366;border-radius:13px;background:#122334;margin:17px 0 12px}
+.gw-control .field{flex:0 1 335px;min-width:220px}
+.gw-control .field select{height:46px}
+.gw-info{flex:1 1 260px;min-width:0;font-size:12px;color:#bdd2e4;line-height:1.65;padding-bottom:5px}
+.gw-status{display:inline-flex;align-items:center;gap:5px;border:1px solid #4d7150;border-radius:7px;color:#c6f4c1;background:#1c3a2a;padding:4px 7px;margin-top:6px;font-size:11px;font-weight:750}
+.gw-status.out{border-color:#805a47;color:#ffd2bc;background:#402b28}
+.gw-status.unknown{border-color:#555e71;color:#b8c6d6;background:#293442}
+.gw-banner{padding:9px 12px;border:1px solid #496d4d;border-radius:10px;background:#1d342a;color:#cdf6c9;font-size:12px;margin:12px 0 5px}
+@media(max-width:700px){.gw-control{padding:13px}.gw-control .field{min-width:0;flex:1 1 100%}}
 </style>
 </head>
 <body>
@@ -151,8 +162,13 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <button type="button" class="btn secondary" id="load-fixtures">Consultar próximos partidos</button>
 <span class="fixtures-status" id="fixtures-status" role="status" aria-live="polite">Sin consultar. Las puntuaciones históricas siguen funcionando sin este paso.</span>
 </div>
-<label class="match-check"><input id="only-playing" type="checkbox" disabled> Optimizar solo con jugadores que tengan un partido registrado en los próximos 7 días</label>
-<p class="help">El plazo de 7 días es un filtro práctico, <b>no</b> equivale a la Game Week oficial. Un partido programado no garantiza que el jugador participe o puntúe. Este filtro se activa tras consultar los partidos de todos los futbolistas disponibles.</p>
+<div class="gw-control">
+<label class="field" for="game-week">Seleccionar Game Week de Sorare
+<select id="game-week" disabled><option value="">Todas las jornadas · sin filtrar</option></select></label>
+<div class="gw-info" id="gw-info" role="status" aria-live="polite">Consulta los próximos partidos para descubrir las Game Weeks disponibles en tu colección.</div>
+</div>
+<label class="match-check"><input id="only-playing" type="checkbox" disabled> Filtro alternativo: partido en los próximos 7 días</label>
+<p class="help">Las Game Weeks se obtienen de Sorare y pueden abarcar varios días. Solo podemos mostrar la <b>próxima</b> Game Week registrada para cada futbolista; no sabemos todavía todos sus partidos de jornadas posteriores. Elegir una GW excluye a quien no tenga un próximo partido identificado en ella. El filtro de siete días y el de Game Week no se aplican simultáneamente. Un partido previsto no garantiza titularidad ni elegibilidad de la carta.</p>
 </section>
 
 <section class="panel" aria-labelledby="matchup-title">
@@ -477,11 +493,66 @@ function playsWithinWeek(info){
  const timestamp=Date.parse(info.game.date),now=Date.now();
  return Number.isFinite(timestamp)&&timestamp>=now-2*3600000&&timestamp<=now+WEEK_MS;
 }
+function availableGameWeeks(candidates){
+ const found=new Map();
+ for(const p of candidates){
+   const info=games.get(p.slug),g=info?.game;
+   if(info?.status!=="scheduled"||!g||!Number.isSafeInteger(g.gw)||g.gw<1)continue;
+   if(!found.has(g.gw)){
+     found.set(g.gw,{
+       id:g.gw,
+       name:typeof g.fixtureName==="string"?g.fixtureName.trim().slice(0,80):"",
+       start:typeof g.fixtureStart==="string"?g.fixtureStart:null,
+       end:typeof g.fixtureEnd==="string"?g.fixtureEnd:null
+     });
+   }
+ }
+ return [...found.values()].sort((a,b)=>a.id-b.id);
+}
+function gameWeekLabel(week){
+ return (week.name?week.name+" · ":"")+"GW "+week.id;
+}
+function hasGameWeek(player,id){
+ const info=games.get(player.slug);
+ return info?.status==="scheduled" && Number.isSafeInteger(info?.game?.gw) && info.game.gw===id;
+}
+function updateGameWeekFilter(){
+ const select=$("game-week"),candidates=filteredByMode();
+ const allQueried=candidates.length>0 && candidates.every(p=>games.has(p.slug));
+ const chosen=select.value;
+ const options=availableGameWeeks(candidates);
+ select.replaceChildren();
+ const all=make("option","","Todas las jornadas · sin filtrar");all.value="";select.append(all);
+ for(const week of options){
+   const opt=make("option","",gameWeekLabel(week));opt.value=String(week.id);select.append(opt);
+ }
+ if(allQueried && options.some(w=>String(w.id)===chosen))select.value=chosen;
+ else select.value="";
+ select.disabled=!allQueried || options.length===0;
+ const info=$("gw-info");
+ if(!candidates.length){
+   info.textContent="Selecciona futbolistas para consultar jornadas.";return;
+ }
+ const missing=candidates.filter(p=>!games.has(p.slug)).length;
+ if(missing){
+   info.textContent="Faltan calendarios de "+missing+" de "+candidates.length+" jugadores. Consulta sus próximos partidos para activar el selector.";return;
+ }
+ if(!options.length){
+   info.textContent="Sorare no ha devuelto una Game Week identificable para estas cartas.";return;
+ }
+ const selected=select.value;
+ if(selected){
+   const id=Number(selected),count=candidates.filter(p=>hasGameWeek(p,id)).length;
+   info.textContent=count+" de "+candidates.length+" jugadores de la colección tienen su próximo partido registrado en esta GW. Los demás quedan fuera del cálculo.";
+ }else{
+   info.textContent=options.length+" Game Week(s) encontradas entre los próximos encuentros de "+candidates.length+" jugadores. Elige una para filtrar.";
+ }
+}
 function updateFixtureFilter(){
  const candidates=filteredByMode();
  const complete=candidates.length>0&&candidates.every(p=>games.has(p.slug));
- $("only-playing").disabled=!complete;
- if(!complete)$("only-playing").checked=false;
+ $("only-playing").disabled=!complete || Boolean($("game-week").value);
+ if(!complete || $("game-week").value)$("only-playing").checked=false;
 }
 async function loadFixtures(){
  const candidates=filteredByMode();
@@ -521,6 +592,7 @@ function render(){
  updateMatchupControl();
  pool.forEach(p=>{if(summary[p.position]!==undefined)summary[p.position]++;});
  $("pool-count").textContent=filteredByMode().length+" disponibles de "+pool.length+" seleccionados";
+ updateGameWeekFilter();
  updateFixtureFilter();
  const counts=$("position-counts");counts.replaceChildren();
  for(const key of ["Goalkeeper","Defender","Midfielder","Forward"])counts.append(make("span","position-badge",label[key]+": "+summary[key]));
@@ -535,6 +607,12 @@ function render(){
    const tr=make("tr"),td=make("td");td.append(playerLabel(p));tr.append(td,make("td","",posName(p.position)));
    for(const metric of ["l5","l10","l15"])tr.append(make("td","score",fmt(p[metric])));
    const fixtureCell=make("td");
+   const chosenGw=$("game-week").value;
+   if(chosenGw){
+     const inWeek=hasGameWeek(p,Number(chosenGw));
+     const state=make("span","gw-status"+(inWeek?"":" out"),inWeek?"✓ En GW seleccionada":"Fuera de GW");
+     fixtureCell.append(state);
+   }
    const matchRow=make("div","match-summary");
    if(games.has(p.slug)){
      matchRow.append(difficultyBadge(p));
@@ -612,7 +690,16 @@ function card(slot,p,metric,withOpponent=false){
 function run(){
  const format=$("format").value,metric=$("metric").value;
  let candidates=filteredByMode();
- if($("only-playing").checked){
+ const chosenGw=$("game-week").value;
+ if(chosenGw){
+   const missing=candidates.filter(p=>!games.has(p.slug));
+   if(missing.length){
+     $("result").hidden=true;
+     notice("Faltan datos del próximo partido para "+missing.length+" futbolistas. Consulta el calendario antes de optimizar por GW.");
+     return;
+   }
+   candidates=candidates.filter(p=>hasGameWeek(p,Number(chosenGw)));
+ }else if($("only-playing").checked){
    const missing=candidates.filter(p=>!games.has(p.slug));
    if(missing.length){
      $("result").hidden=true;
@@ -624,11 +711,19 @@ function run(){
  const useRivals=$("use-matchups").checked;
  const result=optimize(candidates,format,metric,useRivals?matchupValue:null);
  const target=$("result"),lineup=$("lineup");lineup.replaceChildren();target.hidden=false;
+ $("result").querySelectorAll(".gw-banner").forEach(el=>el.remove());
+ if(chosenGw){
+   const g=availableGameWeeks(filteredByMode()).find(w=>String(w.id)===chosenGw);
+   const text=(g?gameWeekLabel(g):"GW "+chosenGw)+": "+candidates.length+" jugadores con próximo partido registrado de "+filteredByMode().length+" en esta selección.";
+   const banner=make("div","gw-banner",text);
+   target.insertBefore(banner,target.querySelector("#lineup"));
+ }
  if(!result){
    const required=format==="so7"?"1 portero, 2 defensas, 2 centrocampistas, 1 delantero y 1 extra":"1 portero, 1 defensa, 1 centrocampista, 1 delantero y 1 extra";
    $("total").textContent="Faltan posiciones";
    const msg=$("game-mode").value==="all"?"Añade más futbolistas desde el explorador.":"Marca en la tabla los futbolistas que realmente tienes en esta colección.";
-   lineup.className="lineup";lineup.append(make("div","alert","No hay suficientes jugadores de esta selección con media "+metric.toUpperCase()+" disponible. Necesitas "+required+". "+msg));
+   const gwNote=chosenGw?" Puede que algunos puestos no tengan jugadores con partido registrado en la Game Week seleccionada.":"";
+   lineup.className="lineup";lineup.append(make("div","alert","No hay suficientes jugadores de esta selección con media "+metric.toUpperCase()+" disponible. Necesitas "+required+". "+msg+gwNote));
    return;
  }
  $("result-metric").textContent=metric.toUpperCase()+(useRivals?" + dificultad del rival":"");
@@ -646,7 +741,14 @@ $("format").addEventListener("change",()=>{$("result").hidden=true;});
 $("load-fixtures").addEventListener("click",loadFixtures);
 $("analyze-opponents").addEventListener("click",analyzeOpponents);
 $("use-matchups").addEventListener("change",()=>{$("result").hidden=true;});
-$("only-playing").addEventListener("change",()=>{$("result").hidden=true;});
+$("only-playing").addEventListener("change",()=>{
+ if($("only-playing").checked)$("game-week").value="";
+ render();$("result").hidden=true;
+});
+$("game-week").addEventListener("change",()=>{
+ if($("game-week").value)$("only-playing").checked=false;
+ render();$("result").hidden=true;
+});
 $("game-mode").addEventListener("change",()=>{updateModeUi();render();$("result").hidden=true;});
 $("metric").addEventListener("change",()=>{$("result").hidden=true;});
 window.addEventListener("storage",event=>{if(event.key===KEY){pool=readPool();render();$("result").hidden=true;}});
