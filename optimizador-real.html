@@ -793,7 +793,7 @@ function optimizeAlternatives(players,format,metric,scorer=null,maxResults=3){
 function optimize(players,format,metric,scorer=null){
  return optimizeAlternatives(players,format,metric,scorer,1)[0]||null;
 }
-function card(slot,p,metric,withOpponent=false){
+function card(slot,p,metric,analysisMode="mean"){
  const el=make("div","slot");
  el.append(make("small","",slot.name),avatar(p),make("strong","",p.name),make("span","club",p.club),make("span","value",fmt(p[metric])));
  const next=games.get(p.slug);
@@ -801,47 +801,54 @@ function card(slot,p,metric,withOpponent=false){
    el.append(make("span","match-details",matchSummary(next.game)));
    el.append(difficultyBadge(p,true));
  }
- if(withOpponent){
+ if(analysisMode==="rivals"){
   const delta=matchAdjustment(p),adjusted=matchupValue(p,metric);
   el.append(make("div","adjustment",delta?
    "Media "+fmt(p[metric])+" · ajuste de rival "+(delta.delta>=0?"+":"")+fmt(delta.delta)+" · índice "+fmt(adjusted):
-   "Sin datos suficientes del rival · índice neutro "+fmt(p[metric])));
+   "Rival sin evaluar · índice basado en media "+fmt(p[metric])));
+ }else if(analysisMode==="opportunity"){
+   const data=opportunityData(p);
+   if(data){
+    el.append(make("span","opportunity-summary","Oportunidad "+fmt(data.value)+"/100 · "+data.trendLabel+
+      (data.rivalKnown?" · ajuste rival "+(data.rivalEffect>=0?"+":"")+fmt(data.rivalEffect):" · rival pendiente")));
+   }
  }
  return el;
 }
 let lastComparison=null;
-function compareExplanation(choice,index,reference,useRivals,metric){
- const unit=useRivals?"unidades de índice":"puntos de media "+metric.toUpperCase();
+function compareExplanation(choice,index,reference,mode,metric){
+ const unit=mode==="mean"?"puntos de media "+metric.toUpperCase():"unidades de índice";
  if(index===0){
-   return "Esta combinación ocupa el primer puesto por la máxima suma de "+(useRivals?
-    "medias con el ajuste experimental del rival":"medias históricas")+
-    ". Los enfrentamientos favorables no garantizan minutos ni puntos en Sorare.";
+  const source=mode==="opportunity"?"oportunidad individual (forma Sorare y un ajuste reducido del rival)":
+    mode==="rivals"?"medias con el ajuste experimental del rival":"medias históricas";
+  return "Esta combinación lidera la suma de "+source+
+    ". Ningún criterio garantiza titularidad, puntos o elegibilidad de la carta.";
  }
  const initial=new Set(reference.picks.map(x=>x.player.slug));
  const revised=new Set(choice.picks.map(x=>x.player.slug));
  const entered=choice.picks.filter(x=>!initial.has(x.player.slug)).map(x=>x.player.name);
  const removed=reference.picks.filter(x=>!revised.has(x.player.slug)).map(x=>x.player.name);
  const diff=Math.max(0,reference.total-choice.total);
- const swap=entered.length?"Entran "+entered.join(", ")+"; salen "+removed.join(", ")+". ":"";
- return swap+(diff<0.05?"Empata en puntuación con la primera alternativa. ":"Queda "+fmt(diff)+" "+unit+" por debajo de la primera opción. ")+
-   "Puedes elegirla si tienes dudas sobre disponibilidad u otros factores que este modelo no contempla.";
+ const change=entered.length?"Entran "+entered.join(", ")+"; salen "+removed.join(", ")+". ":"";
+ return change+(diff<0.05?"Empata con la primera alternativa. ":"Queda "+fmt(diff)+" "+unit+
+   " por debajo de la primera opción. ")+"El orden es experimental y debe contrastarse con disponibilidad y reglas reales.";
 }
 function showComparison(index){
  const state=lastComparison;
  if(!state||!state.options[index])return;
  const selected=state.options[index],best=state.options[0];
- $("total").textContent=fmt(selected.total)+(state.useRivals?" índice":" pts");
+ $("total").textContent=fmt(selected.total)+(state.mode==="mean"?" pts":" índice");
  const buttons=$("alternative-options").querySelectorAll("button");
  buttons.forEach((button,n)=>button.setAttribute("aria-pressed",String(n===index)));
- $("alternative-explanation").textContent=compareExplanation(selected,index,best,state.useRivals,state.metric);
+ $("alternative-explanation").textContent=compareExplanation(selected,index,best,state.mode,state.metric);
  const lineup=$("lineup");lineup.replaceChildren();
  lineup.className="lineup"+(state.format==="so7"?" seven":"");
  for(const choice of selected.picks){
-   lineup.append(card(selected.slots[choice.slot],choice.player,state.metric,state.useRivals));
+   lineup.append(card(selected.slots[choice.slot],choice.player,state.metric,state.mode));
  }
 }
-function renderComparison(options,format,metric,useRivals){
- lastComparison={options,format,metric,useRivals};
+function renderComparison(options,format,metric,mode){
+ lastComparison={options,format,metric,mode};
  const tabs=$("alternative-options");tabs.replaceChildren();
  for(let i=0;i<options.length;i++){
    const button=make("button","alt-option");
@@ -849,9 +856,9 @@ function renderComparison(options,format,metric,useRivals){
    button.setAttribute("aria-pressed",String(i===0));
    button.setAttribute("aria-label","Mostrar la alineación "+(i+1)+" de "+options.length);
    button.append(
-     make("strong","",i===0?"Opción 1 · mejor media":"Opción "+(i+1)+" · alternativa"),
-     make("span","alt-points",fmt(options[i].total)+(useRivals?" índice":" pts")),
-     make("span","alt-delta",i===0?"Mayor suma":"-"+fmt(Math.max(0,options[0].total-options[i].total))+(useRivals?" índice":" pts")+" frente a la mejor")
+     make("strong","",i===0?(mode==="opportunity"?"Opción 1 · mayor oportunidad":mode==="rivals"?"Opción 1 · mejor ajuste":"Opción 1 · mejor media"):"Opción "+(i+1)+" · alternativa"),
+     make("span","alt-points",fmt(options[i].total)+(mode==="mean"?" pts":" índice")),
+     make("span","alt-delta",i===0?"Mayor suma":"-"+fmt(Math.max(0,options[0].total-options[i].total))+(mode==="mean"?" pts":" índice")+" frente a la mejor")
    );
    button.addEventListener("click",()=>showComparison(i));
    tabs.append(button);
@@ -882,8 +889,9 @@ function run(){
    }
    candidates=candidates.filter(p=>playsWithinWeek(games.get(p.slug)));
  }
- const useRivals=$("use-matchups").checked;
- const options=optimizeAlternatives(candidates,format,metric,useRivals?matchupValue:null,3);
+ const mode=$("use-opportunity").checked?"opportunity":$("use-matchups").checked?"rivals":"mean";
+ const score=mode==="opportunity"?opportunityValue:mode==="rivals"?matchupValue:null;
+ const options=optimizeAlternatives(candidates,format,metric,score,3);
  const result=options[0]||null;
  const target=$("result"),lineup=$("lineup");lineup.replaceChildren();target.hidden=false;
  $("alternative-options").replaceChildren();
@@ -905,10 +913,16 @@ function run(){
    lineup.className="lineup";lineup.append(make("div","alert","No hay suficientes jugadores de esta selección con media "+metric.toUpperCase()+" disponible. Necesitas "+required+". "+msg+gwNote));
    return;
  }
- $("result-metric").textContent=metric.toUpperCase()+(useRivals?" + dificultad del rival":"");
- $("result-description").textContent=useRivals?"Suma de medias ajustadas por un índice experimental de enfrentamiento, sin valor predictivo validado.":"Máxima suma de medias históricas con las posiciones básicas indicadas.";
- $("total-caption").textContent=useRivals?"Índice comparativo total · NO puntos esperados ni probabilidad de acierto":"Suma de medias (referencia estadística, no resultado pronosticado)";
- renderComparison(options,format,metric,useRivals);
+ $("result-metric").textContent=metric.toUpperCase()+
+  (mode==="opportunity"?" + oportunidad individual":mode==="rivals"?" + dificultad del rival":"");
+ $("result-description").textContent=mode==="opportunity"?
+  "Suma de índices individuales: forma reciente L5/L10/L15 y 35 % del ajuste del rival, si está disponible.":
+  mode==="rivals"?"Suma de medias ajustadas por un índice experimental de enfrentamiento.":
+  "Máxima suma de medias históricas con las posiciones básicas indicadas.";
+ $("total-caption").textContent=mode==="mean"?
+  "Suma de medias históricas; no es un resultado pronosticado":
+  "Suma de índices experimentales · NO son puntos esperados ni una probabilidad de acierto";
+ renderComparison(options,format,metric,mode);
  target.scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("optimize").addEventListener("click",run);
@@ -917,7 +931,14 @@ $("clear").addEventListener("click",()=>{if(!pool.length)return;if(!confirm("¿V
 $("format").addEventListener("change",()=>{$("result").hidden=true;});
 $("load-fixtures").addEventListener("click",loadFixtures);
 $("analyze-opponents").addEventListener("click",analyzeOpponents);
-$("use-matchups").addEventListener("change",()=>{$("result").hidden=true;});
+$("use-matchups").addEventListener("change",()=>{
+ if($("use-matchups").checked)$("use-opportunity").checked=false;
+ $("result").hidden=true;
+});
+$("use-opportunity").addEventListener("change",()=>{
+ if($("use-opportunity").checked)$("use-matchups").checked=false;
+ $("result").hidden=true;
+});
 $("only-playing").addEventListener("change",()=>{
  if($("only-playing").checked)$("game-week").value="";
  render();$("result").hidden=true;
