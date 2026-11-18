@@ -64,3 +64,15 @@ La API de Sorare documenta `Player.pictureUrl(derivative: "avatar")`. El uso de 
 - Las fichas individuales incluyen gráfico accesible de cinco resultados recientes (`rawPlayerGameScores`), sin inventar las puntuaciones ausentes.
 - Mantener una distinción visible entre medias históricas, elegibilidad y proyecciones futuras: son conceptos distintos.
 - Estado: el código está publicado en GitHub, pendiente de validación en Cloudflare.
+
+## Fase 2.3 — Plantillas por equipo exacto
+- [x] Identificada la causa del error: la búsqueda de texto «Real Madrid» también devolvía jugadores de «Real Oviedo» por similitud de nombre.
+- [x] Creado backend `functions/api/club.js` con `football.club(slug).activePlayers` y paginación por cursor.
+- [x] Añadidos selector de modo y lista inicial de 5 clubes con slugs comprobados en Sorare.
+- [x] Activada detección automática de nombres exactos de clubes conocidos en el buscador general.
+- [x] Evitar mezclar jugadores con `activeClub.slug` ajeno al club seleccionado cuando Sorare incluye ese campo.
+- [ ] Verificar en producción `/api/club?slug=real-madrid-madrid` y confirmar visualmente que aparece la plantilla en vez de resultados difusos.
+- [ ] Contrastar registros oficiales del club para decidir si merece la pena un estado de plantilla confirmado por fuente adicional.
+- [ ] Extender el catálogo con clubes identificados por sus slugs Sorare, sin inventar identificadores.
+
+**Advertencia:** no prometer plantillas oficialmente registradas y actualizadas al instante. `activePlayers` significa jugadores activos de ese club según Sorare; no siempre equivale a una lista oficial de inscritos o convocados. La caché dura 15 minutos y limita las peticiones repetidas.
