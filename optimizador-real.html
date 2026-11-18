@@ -720,33 +720,58 @@ function updateFixtureFilter(){
 async function loadFixtures(){
  const candidates=filteredByMode();
  if(!candidates.length){$("fixtures-status").textContent="Selecciona futbolistas para consultar sus partidos.";return;}
- const needed=candidates.filter(p=>!games.has(p.slug));
+ const needed=candidates.filter(p=>!fixtureFresh(p.slug));
+ const showSummary=(message)=>{
+   const current=candidates.filter(p=>fixtureFresh(p.slug)).length;
+   const saved=candidates.filter(p=>games.has(p.slug)&&!fixtureFresh(p.slug)).length;
+   $("fixtures-status").textContent=current+" de "+candidates.length+" calendarios recientes."+
+     (saved?" "+saved+" guardados sin actualizar.":"")+
+     (message?" "+message:"");
+ };
  if(!needed.length){
-   $("fixtures-status").textContent="Partidos consultados previamente (caché de 15 minutos).";
-   updateFixtureFilter();render();return;
+   showSummary("Información reciente guardada en este navegador: no hacen falta nuevas consultas.");
+   render();return;
+ }
+ const cooldown=fixtureCooldownSeconds();
+ if(cooldown>0){
+   showSummary("Sorare ha solicitado esperar aproximadamente "+cooldown+
+     " segundos. No se han enviado nuevas peticiones. Los calendarios guardados siguen disponibles como referencia.");
+   render();return;
  }
  $("load-fixtures").disabled=true;
- let total=0,errors=[];
- $("fixtures-status").textContent="Consultando Sorare por lotes…";
- for(let i=0;i<needed.length;i+=12){
-   const group=needed.slice(i,i+12);
+ $("fixtures-status").textContent="Comprobando únicamente los calendarios que faltan…";
+ let loaded=0,error="";
+ // Limit the query size to prevent a small change in the collection from reloading everyone.
+ for(let i=0;i<needed.length;i+=6){
+   const group=needed.slice(i,i+6);
    try{
      const response=await fetch("/api/next-games?slugs="+encodeURIComponent(group.map(p=>p.slug).join(",")),{headers:{accept:"application/json"}});
-     const result=await response.json();
-     if(!response.ok||!result.ok)throw Error(result.error||"Error en la consulta de partidos.");
-     for(const f of result.fixtures||[]){
-       if(group.some(p=>p.slug===f.slug) && ["none","unavailable","scheduled"].includes(f.status)){
-         games.set(f.slug,f);total++;
+     let result;
+     try{result=await response.json();}catch(_){throw Error("Respuesta de calendario no válida.");}
+     if(response.status===429){
+       const wait=setFixtureCooldown(result.retryAfter||response.headers.get("retry-after")||60);
+       error="Sorare limita temporalmente las consultas. Espera aproximadamente "+wait+" segundos.";
+       break;
+     }
+     if(!response.ok||!result.ok){throw Error(result.error||"Error en la consulta de partidos.");}
+     const requested=new Set(group.map(p=>p.slug));
+     const fetchedAt=Date.parse(result.fetchedAt||"");
+     const savedAt=Number.isFinite(fetchedAt)&&Math.abs(fetchedAt-Date.now())<60*60*1000?fetchedAt:Date.now();
+     for(const item of result.fixtures||[]){
+       if(requested.has(item?.slug)&&relevantFixture(item)){
+         games.set(item.slug,item);
+         gameFetchedAt.set(item.slug,savedAt);
+         loaded++;
        }
      }
-   }catch(e){errors.push(e.message);break;}
+     writeGameCache(); // Keep partial success if the next group is rate-limited.
+   }catch(e){error=e?.message||"No se pudo completar la consulta.";break;}
  }
  writeGameCache();
  $("load-fixtures").disabled=false;
- $("fixtures-status").textContent=errors.length?
-   "Se han cargado "+total+" jugadores. Pendiente: "+errors[0]:
-   "Partidos consultados para "+total+" jugadores. Datos de Sorare; sujetos a cambios.";
- updateFixtureFilter();render();
+ render();
+ showSummary(error?error:(loaded?loaded+" calendarios recibidos de Sorare.":"Sorare no devolvió nuevos calendarios."));
+ if(error)$("result").hidden=true;
 }
 readGameCache();
 readOppCache();
