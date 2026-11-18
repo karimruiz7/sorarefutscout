@@ -1068,6 +1068,15 @@ $("metric").addEventListener("change",()=>{$("result").hidden=true;});
 window.addEventListener("storage",event=>{if(event.key===KEY){pool=readPool();render();$("result").hidden=true;}});
 updateModeUi();
 render();
+if(pool.length){
+ const candidates=filteredByMode(),fresh=candidates.filter(p=>fixtureFresh(p.slug)).length;
+ const previous=candidates.filter(p=>games.has(p.slug)&&!fixtureFresh(p.slug)).length;
+ if(fresh||previous){
+   $("fixtures-status").textContent="Calendarios recuperados de este navegador: "+fresh+
+    " recientes"+(previous?", "+previous+" anteriores pendientes de actualización":"")+
+    ". Se conserva la fecha de la última consulta para no utilizar jornadas antiguas como confirmadas.";
+ }
+}
 notice(pool.length?"Listo para optimizar. Puedes añadir más futbolistas desde el explorador.":"Selecciona jugadores en el explorador para comenzar.");
 })();
 </script>
