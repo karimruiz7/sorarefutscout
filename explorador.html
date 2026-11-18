@@ -106,7 +106,7 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 <label class="check"><input id="only-club" type="checkbox"> Solo con club</label>
 <button class="btn outline tiny" type="button" id="reset-filters">Limpiar filtros</button>
 </div>
-<p class="filter-help">Los filtros y el orden se aplican solo a los jugadores cargados en esta página (máximo 12 resultados por página); no son un ranking global de Sorare.</p>
+<p class="filter-help">Los filtros y el orden se aplican solo a los jugadores de la página cargada, no a todos los jugadores de Sorare ni a un ranking global.</p>
 <div class="view-tools">
 <div class="view-options" role="group" aria-label="Vista de resultados"><button type="button" id="cards-view" class="active" aria-pressed="true">▦ Tarjetas</button><button type="button" id="table-view" aria-pressed="false">☷ Tabla avanzada</button></div>
 <label class="filter" for="sort">Ordenar <select id="sort"><option value="l5-desc">Mayor L5</option><option value="l10-desc">Mayor L10</option><option value="l15-desc">Mayor L15</option><option value="name-asc">Nombre (A–Z)</option></select></label>
@@ -456,7 +456,7 @@ async function showDetail(p){
 $("search-form").addEventListener("submit",e=>{e.preventDefault();if(state.mode==="team")loadTeam(null,1);else search(1);});
 $("player-mode").addEventListener("click",()=>{if(state.busy)return;setMode("player");});
 $("team-mode").addEventListener("click",()=>{if(state.busy)return;setMode("team");});
-$("team-select").addEventListener("change",()=>{if(state.busy)return;state.teamSlug="";state.teamNextCursor=null;state.clubCursors=[null];state.players=[];updateClubs();renderPlayers();status("Equipo seleccionado. Pulsa «Cargar plantilla».");});
+$("team-select").addEventListener("change",()=>{if(state.busy)return;state.teamSlug="";state.teamName="";state.page=1;state.teamNextCursor=null;state.clubCursors=[null];state.players=[];updateClubs();renderPlayers();status("Equipo seleccionado. Pulsa «Cargar plantilla».");});
 $("position").addEventListener("change",renderPlayers);
 $("club").addEventListener("change",renderPlayers);
 $("sort").addEventListener("change",renderPlayers);
