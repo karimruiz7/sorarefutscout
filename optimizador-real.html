@@ -75,6 +75,16 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .match-check input{accent-color:var(--accent);width:18px;height:18px}
 .match-details{display:block;margin-top:8px;color:#cbf9c1;font-size:11px;line-height:1.5;min-height:30px}
 @media(max-width:700px){.fixtures-tools .btn{flex:1}}
+
+/* Fase 3.3: rival y ajuste histórico explícito */
+.matchup-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:15px 0}
+.matchup-check{display:flex;gap:9px;align-items:center;color:#dceafd;font-size:13px}
+.matchup-check input{width:18px;height:18px;accent-color:var(--accent)}
+.matchup-status{font-size:12px;color:#bdd2e2;line-height:1.6;min-height:20px}
+.opponent-detail{display:block;color:#b7dfcc;font-size:11px;line-height:1.5;margin-top:5px;min-width:175px}
+.opponent-detail.unavailable{color:#d7b888}
+.adjustment{font-size:11px;color:#e2d4b6;line-height:1.45;margin-top:5px}
+.result-explain{font-size:12px;color:#bdd6c9;line-height:1.6;max-width:800px}
 </style>
 </head>
 <body>
@@ -127,6 +137,17 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <label class="match-check"><input id="only-playing" type="checkbox" disabled> Optimizar solo con jugadores que tengan un partido registrado en los próximos 7 días</label>
 <p class="help">El plazo de 7 días es un filtro práctico, <b>no</b> equivale a la Game Week oficial. Un partido programado no garantiza que el jugador participe o puntúe. Este filtro se activa tras consultar los partidos de todos los futbolistas disponibles.</p>
 </section>
+
+<section class="panel" aria-labelledby="matchup-title">
+<h2 id="matchup-title">Análisis de enfrentamientos · beta</h2>
+<p class="sub">Compara los próximos rivales de tus cartas utilizando los goles que han marcado y encajado en sus cinco últimos encuentros registrados por Sorare.</p>
+<div class="matchup-actions">
+<button type="button" class="btn secondary" id="analyze-opponents">Analizar enfrentamientos</button>
+<label class="matchup-check"><input id="use-matchups" type="checkbox" disabled> Priorizar los rivales más favorables al optimizar</label>
+</div>
+<div id="matchup-status" class="matchup-status" role="status" aria-live="polite">Primero consulta los próximos partidos. Después analiza los rivales para activar esta función.</div>
+<p class="help"><b>Modelo experimental, no oficial:</b> para delanteros y medios se considera más favorable un rival que encaja muchos goles; para defensas y porteros, uno que marca pocos. Se parte de una referencia neutra de 1,5 goles/partido y se aplican 7,5 unidades de índice por gol de diferencia, con un máximo de ±12. Estas ponderaciones son decisiones de diseño, no datos ni predicciones de Sorare. Si faltan al menos tres partidos válidos del rival, el ajuste es cero y se señala como desconocido.</p>
+</section>
 <section class="panel" aria-labelledby="pool-title">
 <div class="pool-meta"><div><h2 id="pool-title">Mi selección de futbolistas</h2><p class="sub">Guardada en este navegador. Marca las cartas que posees para que Arcade o Pro/Arena utilicen solo tu colección indicada manualmente.</p></div>
 <div class="actions"><button type="button" class="btn secondary tiny" id="reload">Actualizar lista</button><button type="button" class="btn danger tiny" id="clear">Vaciar selección</button></div></div>
@@ -136,9 +157,9 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 </section>
 <section id="result" class="result" hidden aria-live="polite">
 <h2>Mejor alineación según <span id="result-metric">L10</span></h2>
-<p class="sub">Máxima suma de medias históricas con las posiciones básicas indicadas.</p>
+<p class="sub" id="result-description">Máxima suma de medias históricas con las posiciones básicas indicadas.</p>
 <div class="total" id="total">—</div>
-<p class="sub">Suma de medias (referencia estadística, no resultado pronosticado)</p>
+<p class="sub" id="total-caption">Suma de medias (referencia estadística, no resultado pronosticado)</p>
 <div class="lineup" id="lineup"></div>
 <p class="help">Esta alineación es orientativa y no necesariamente válida para una competición concreta de Sorare.</p>
 </section>
@@ -207,7 +228,100 @@ function playerLabel(p){
  words.append(make("strong","",p.name),make("small","",p.club));wrap.append(avatar(p),words);return wrap;
 }
 
-const GAME_CACHE="sorarefutscout:next-games:v1";
+const OPP_CACHE="sorarefutscout:opponents:v1",OPP_TTL=60*60*1000;
+let opponents=new Map();
+function readOppCache(){
+ try{
+  const item=JSON.parse(sessionStorage.getItem(OPP_CACHE)||"null");
+  if(item&&Date.now()-item.at<OPP_TTL&&Array.isArray(item.items))opponents=new Map(item.items.filter(v=>v&&typeof v.slug==="string").map(v=>[v.slug,v]));
+ }catch(_){}
+}
+function saveOppCache(){
+ try{sessionStorage.setItem(OPP_CACHE,JSON.stringify({at:Date.now(),items:[...opponents.values()]}));}catch(_){}
+}
+function fixtureOpponent(p){
+ const info=games.get(p.slug),game=info?.game;
+ if(info?.status!=="scheduled"||!game)return null;
+ const own=info.clubSlug;
+ if(!own)return null;
+ if(game.homeSlug===own&&game.awaySlug&&game.awaySlug!==own)return{slug:game.awaySlug,name:game.away||"Rival",home:true};
+ if(game.awaySlug===own&&game.homeSlug&&game.homeSlug!==own)return{slug:game.homeSlug,name:game.home||"Rival",home:false};
+ return null;
+}
+function matchAdjustment(p){
+ const rival=fixtureOpponent(p);
+ const stats=rival?opponents.get(rival.slug):null;
+ if(!stats?.available||!Number.isFinite(stats.goalsForPerGame)||!Number.isFinite(stats.goalsAgainstPerGame))return null;
+ const defensive=p.position==="Defender"||p.position==="Goalkeeper";
+ const goalMetric=defensive?stats.goalsForPerGame:stats.goalsAgainstPerGame;
+ const difference=defensive?1.5-goalMetric:goalMetric-1.5;
+ const delta=Math.max(-12,Math.min(12,difference*7.5));
+ return {delta:Math.round(delta*10)/10,rival,stats};
+}
+function matchupValue(p,metric){
+ const base=p[metric];
+ if(typeof base!=="number"||!Number.isFinite(base))return null;
+ const insight=matchAdjustment(p);
+ return insight?Math.max(0,Math.min(100,base+insight.delta)):base;
+}
+function opponentText(p){
+ const rival=fixtureOpponent(p);
+ if(!rival)return {text:"Rival sin identificar",available:false};
+ const info=matchAdjustment(p);
+ if(!info)return {text:rival.name+": datos insuficientes",available:false};
+ const stat=p.position==="Defender"||p.position==="Goalkeeper"?
+  "Marca "+fmt(info.stats.goalsForPerGame)+" goles/partido":
+  "Encaja "+fmt(info.stats.goalsAgainstPerGame)+" goles/partido";
+ const sign=info.delta>0?"+":"";
+ return {text:rival.name+" · "+stat+" (últimos "+info.stats.gamesCount+") · Ajuste "+sign+fmt(info.delta),available:true};
+}
+function updateMatchupControl(){
+ const eligible=filteredByMode();
+ const withScores=eligible.filter(p=>matchAdjustment(p)!==null).length;
+ $("use-matchups").disabled=withScores===0;
+ if(!withScores)$("use-matchups").checked=false;
+}
+async function analyzeOpponents(){
+ if(!filteredByMode().length){$("matchup-status").textContent="Añade futbolistas a tu colección primero.";return;}
+ const candidates=filteredByMode();
+ const missingFixture=candidates.filter(p=>!games.has(p.slug));
+ if(missingFixture.length){
+  $("matchup-status").textContent="Primero pulsa «Consultar próximos partidos» para obtener los rivales y sus identificadores.";
+  return;
+ }
+ const list=new Map();
+ for(const p of candidates){
+  const r=fixtureOpponent(p);
+  if(r&&!opponents.has(r.slug))list.set(r.slug,r.name);
+ }
+ const slugs=[...list.keys()];
+ if(slugs.length>32){
+  $("matchup-status").textContent="La selección tiene demasiados rivales para una sola consulta ("+slugs.length+"). Analizaremos los primeros 32; el resto quedará sin ajuste.";
+ }
+ const selected=slugs.slice(0,32);
+ let errors=[],read=0;
+ $("analyze-opponents").disabled=true;
+ if(!selected.length)$("matchup-status").textContent="Los rivales ya están analizados o no tienen datos identificables.";
+ for(let i=0;i<selected.length;i+=8){
+  const group=selected.slice(i,i+8);
+  try{
+   const response=await fetch("/api/matchups?slugs="+encodeURIComponent(group.join(",")),{headers:{accept:"application/json"}});
+   const data=await response.json();
+   if(!response.ok||!data.ok)throw Error(data.error||"Consulta rechazada.");
+   for(const rival of data.opponents||[]){
+    if(group.includes(rival.slug)){opponents.set(rival.slug,rival);read++;}
+   }
+  }catch(e){errors.push(e.message);break;}
+ }
+ if(read)saveOppCache();
+ $("analyze-opponents").disabled=false;
+ updateMatchupControl();render();$("result").hidden=true;
+ const total=filteredByMode().filter(p=>matchAdjustment(p)!==null).length;
+ $("matchup-status").textContent="Datos de rivales recibidos: "+read+". "+total+" de "+candidates.length+
+  " jugadores tienen un ajuste calculable."+(errors.length?" Error: "+errors[0]:"")+
+  " Los demás se mantienen sin ajuste.";
+}
+const GAME_CACHE="sorarefutscout:next-games:v2";
 const GAME_TTL=15*60*1000;
 const WEEK_MS=7*24*3600*1000;
 let games=new Map();
@@ -287,8 +401,10 @@ async function loadFixtures(){
  updateFixtureFilter();render();
 }
 readGameCache();
+readOppCache();
 function render(){
  const summary={Goalkeeper:0,Defender:0,Midfielder:0,Forward:0};
+ updateMatchupControl();
  pool.forEach(p=>{if(summary[p.position]!==undefined)summary[p.position]++;});
  $("pool-count").textContent=filteredByMode().length+" disponibles de "+pool.length+" seleccionados";
  updateFixtureFilter();
@@ -304,7 +420,9 @@ function render(){
  for(const p of list){
    const tr=make("tr"),td=make("td");td.append(playerLabel(p));tr.append(td,make("td","",posName(p.position)));
    for(const metric of ["l5","l10","l15"])tr.append(make("td","score",fmt(p[metric])));
-   const fixtureCell=make("td");fixtureCell.append(matchLabel(p.slug));tr.append(fixtureCell);
+   const fixtureCell=make("td");fixtureCell.append(matchLabel(p.slug));
+   if(games.has(p.slug)){const rival=opponentText(p);const line=make("small","opponent-detail"+(rival.available?"":" unavailable"),rival.text);fixtureCell.append(line);}
+   tr.append(fixtureCell);
    const ownCell=make("td"),own=make("div","ownership");
    for(const [key,modeLabel] of [["ownedArcade","Arcade"],["ownedCompetitive","Pro/Arena"]]){
      const labelEl=make("label"),input=make("input");
@@ -327,12 +445,12 @@ function slots(format){
 }
 // Exact maximum-weight assignment: one player per slot, no player can occupy two slots.
 // Reverse-mask iteration ensures each available player is used at most once.
-function optimize(players,format,metric){
+function optimize(players,format,metric,scorer=null){
  const lineup=slots(format),length=lineup.length;
  const states=new Array(1<<length).fill(null);
  states[0]={sum:0,picks:[]};
  for(const p of players){
-   const value=p[metric];
+   const value=scorer?scorer(p,metric):p[metric];
    if(typeof value!=="number"||!Number.isFinite(value))continue;
    for(let mask=states.length-1;mask>=0;mask--){
      const prev=states[mask];if(!prev)continue;
@@ -351,11 +469,17 @@ function optimize(players,format,metric){
  const best=states[states.length-1];
  return best?{total:best.sum,slots:lineup,picks:best.picks.sort((a,b)=>a.slot-b.slot)}:null;
 }
-function card(slot,p,metric){
+function card(slot,p,metric,withOpponent=false){
  const el=make("div","slot");
  el.append(make("small","",slot.name),avatar(p),make("strong","",p.name),make("span","club",p.club),make("span","value",fmt(p[metric])));
  const next=games.get(p.slug);
  if(next?.status==="scheduled" && next.game)el.append(make("span","match-details",matchSummary(next.game)));
+ if(withOpponent){
+  const delta=matchAdjustment(p),adjusted=matchupValue(p,metric);
+  el.append(make("div","adjustment",delta?
+   "Media "+fmt(p[metric])+" · ajuste de rival "+(delta.delta>=0?"+":"")+fmt(delta.delta)+" · índice "+fmt(adjusted):
+   "Sin datos suficientes del rival · índice neutro "+fmt(p[metric])));
+ }
  return el;
 }
 function run(){
@@ -370,7 +494,8 @@ function run(){
    }
    candidates=candidates.filter(p=>playsWithinWeek(games.get(p.slug)));
  }
- const result=optimize(candidates,format,metric);
+ const useRivals=$("use-matchups").checked;
+ const result=optimize(candidates,format,metric,useRivals?matchupValue:null);
  const target=$("result"),lineup=$("lineup");lineup.replaceChildren();target.hidden=false;
  if(!result){
    const required=format==="so7"?"1 portero, 2 defensas, 2 centrocampistas, 1 delantero y 1 extra":"1 portero, 1 defensa, 1 centrocampista, 1 delantero y 1 extra";
@@ -379,10 +504,12 @@ function run(){
    lineup.className="lineup";lineup.append(make("div","alert","No hay suficientes jugadores de esta selección con media "+metric.toUpperCase()+" disponible. Necesitas "+required+". "+msg));
    return;
  }
- $("result-metric").textContent=metric.toUpperCase();
- $("total").textContent=fmt(result.total)+" pts";
+ $("result-metric").textContent=metric.toUpperCase()+(useRivals?" + dificultad del rival":"");
+ $("result-description").textContent=useRivals?"Suma de medias ajustadas por un índice experimental de enfrentamiento, sin valor predictivo validado.":"Máxima suma de medias históricas con las posiciones básicas indicadas.";
+ $("total-caption").textContent=useRivals?"Índice comparativo total · NO puntos esperados ni probabilidad de acierto":"Suma de medias (referencia estadística, no resultado pronosticado)";
+ $("total").textContent=fmt(result.total)+(useRivals?" índice":" pts");
  lineup.className="lineup"+(format==="so7"?" seven":"");
- for(const choice of result.picks)lineup.append(card(result.slots[choice.slot],choice.player,metric));
+ for(const choice of result.picks)lineup.append(card(result.slots[choice.slot],choice.player,metric,useRivals));
  target.scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("optimize").addEventListener("click",run);
@@ -390,6 +517,8 @@ $("reload").addEventListener("click",()=>{pool=readPool();render();notice("Selec
 $("clear").addEventListener("click",()=>{if(!pool.length)return;if(!confirm("¿Vaciar los futbolistas seleccionados para el optimizador en este navegador?"))return;pool=[];persist();$("result").hidden=true;render();notice("Selección vaciada.");});
 $("format").addEventListener("change",()=>{$("result").hidden=true;});
 $("load-fixtures").addEventListener("click",loadFixtures);
+$("analyze-opponents").addEventListener("click",analyzeOpponents);
+$("use-matchups").addEventListener("change",()=>{$("result").hidden=true;});
 $("only-playing").addEventListener("change",()=>{$("result").hidden=true;});
 $("game-mode").addEventListener("change",()=>{updateModeUi();render();$("result").hidden=true;});
 $("metric").addEventListener("change",()=>{$("result").hidden=true;});
