@@ -80,7 +80,21 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),photoBySlug:new Map(),view:"cards",busy:false};
+const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),photoBySlug:new Map(),view:"cards",busy:false,blockedUntil:0};
+const SEARCH_TTL = 10*60*1000;
+function cacheKey(query,page){return "sfs-search-v3:"+query.toLocaleLowerCase("es").replace(/\\s+/g," ").trim()+":"+page;}
+function cachedResult(query,page){
+  try{
+    const raw=sessionStorage.getItem(cacheKey(query,page));
+    if(!raw)return null;
+    const saved=JSON.parse(raw);
+    if(Date.now()-saved.savedAt>SEARCH_TTL){sessionStorage.removeItem(cacheKey(query,page));return null;}
+    return saved.result?.ok===true&&Array.isArray(saved.result.players)?saved.result:null;
+  }catch(_){return null;}
+}
+function storeResult(query,page,result){
+  try{sessionStorage.setItem(cacheKey(query,page),JSON.stringify({savedAt:Date.now(),result}));}catch(_){/* Private browsing / full quota: no cache. */}
+}
 const positions={Goalkeeper:"Portero",Defender:"Defensa",Midfielder:"Centrocampista",Forward:"Delantero",GOALKEEPER:"Portero",DEFENDER:"Defensa",MIDFIELDER:"Centrocampista",FORWARD:"Delantero"};
 const fmt=n=>typeof n==="number"&&Number.isFinite(n)?n.toLocaleString("es-ES",{maximumFractionDigits:1}):"—";
 const initials=name=>(name||"?").trim().split(/\s+/).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join("");
@@ -103,7 +117,14 @@ async function getJson(url){
   const response=await fetch(url,{headers:{accept:"application/json"}});
   let data;
   try{data=await response.json();}catch(_){throw Error("El servidor ha devuelto una respuesta inesperada.");}
-  if(!response.ok||!data.ok)throw Error((data.error||"La consulta no se ha completado.")+(data.detail?" "+data.detail:""));
+  if(!response.ok||!data.ok){
+    const err=Error((data.error||"La consulta no se ha completado.")+(data.detail?" "+data.detail:""));
+    err.status=response.status;
+    const header=Number(response.headers.get("retry-after"));
+    const body=Number(data.retryAfter);
+    err.retryAfter=Number.isFinite(header)&&header>0?header:(Number.isFinite(body)&&body>0?body:60);
+    throw err;
+  }
   return data;
 }
 function updateClubs(){
@@ -188,16 +209,34 @@ function renderPlayers(){
 async function search(page=1){
   const q=$("query").value.trim();
   if(q.length<2){status("Introduce al menos dos letras.",true);return;}
-  state.busy=true;state.query=q;state.page=page;
-  $("search-btn").disabled=true;status("Buscando futbolistas en Sorare…");
+  if(state.busy)return;
+  const saved=cachedResult(q,page);
+  if(!saved&&Date.now()<state.blockedUntil){
+    const seconds=Math.ceil((state.blockedUntil-Date.now())/1000);
+    status("Sorare ha pedido que esperemos "+seconds+" segundos antes de hacer otra consulta. Puedes seguir usando los resultados anteriores.",true);
+    return;
+  }
+  state.busy=true;
+  $("search-btn").disabled=true;status(saved?"Cargando resultados guardados…":"Buscando futbolistas en Sorare…");
   try{
-    const d=await getJson("/api/search?q="+encodeURIComponent(q)+"&page="+page);
-    state.players=d.players||[];state.players.forEach(p=>{if(p.avatar)state.photoBySlug.set(p.slug,p.avatar);});state.hits=d.nbHits||0;state.nbPages=d.nbPages||0;state.page=d.page||page;
-    updateClubs();renderPlayers();
-    $("source").textContent="Fuente: "+d.source+" · "+new Date(d.fetchedAt).toLocaleString("es-ES");
-    status(state.players.length?"Búsqueda completada. Selecciona un jugador para ver su ficha o compararlo.":"No se han encontrado futbolistas. Prueba otro nombre.");
-  }catch(e){state.players=[];state.hits=0;state.nbPages=0;updateClubs();renderPlayers();status("No se pudo realizar la búsqueda: "+e.message,true);}
-  finally{state.busy=false;$("search-btn").disabled=false;renderPlayers();}
+    const d=saved||await getJson("/api/search?q="+encodeURIComponent(q)+"&page="+page);
+    if(!saved)storeResult(q,page,d);
+    state.players=d.players||[];
+    state.players.forEach(p=>{if(p.avatar)state.photoBySlug.set(p.slug,p.avatar);});
+    state.hits=d.nbHits||0;state.nbPages=d.nbPages||0;state.page=d.page||page;state.query=q;
+    updateClubs();
+    $("source").textContent="Búsqueda «"+q+"» · Fuente: "+d.source+" · "+new Date(d.fetchedAt).toLocaleString("es-ES");
+    const prefix=saved?"Resultados guardados (máximo 10 minutos). ":"";
+    status(prefix+(state.players.length?"Selecciona un jugador para ver su ficha o compararlo.":"No se han encontrado futbolistas. Prueba otro nombre."));
+  }catch(e){
+    if(e.status===429){
+      const seconds=Math.min(3600,Math.max(1,Math.ceil(e.retryAfter||60)));
+      state.blockedUntil=Date.now()+seconds*1000;
+      status("Límite temporal de Sorare. Inténtalo de nuevo en aproximadamente "+seconds+" segundos."+(state.query?" Se mantienen los resultados anteriores de «"+state.query+"».":""),true);
+    }else{
+      status("No se pudo completar la búsqueda: "+e.message+(state.query?" Se mantienen los resultados anteriores de «"+state.query+"».":""),true);
+    }
+  }finally{state.busy=false;$("search-btn").disabled=false;renderPlayers();}
 }
 async function details(slug){
   if(state.details.has(slug))return state.details.get(slug);
