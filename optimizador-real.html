@@ -489,6 +489,7 @@ function updateOpportunityControl(){
  const eligible=filteredByMode().some(p=>opportunityData(p)!==null);
  $("use-opportunity").disabled=!eligible;
  if(!eligible)$("use-opportunity").checked=false;
+ $("metric").disabled=$("use-opportunity").checked;
 }
 function updateMatchupControl(){
  const eligible=filteredByMode();
@@ -705,7 +706,7 @@ function render(){
    oppCell.append(opportunityBadge(p));
    if(oppData){
      oppCell.append(make("small","opportunity-trend"+(oppData.trend>=8?" up":oppData.trend<=-8?" down":""),
-       oppData.trendLabel+" · "+(oppData.rivalKnown?"Rival evaluado":"Rival pendiente")));
+       oppData.trendLabel+" · "+(oppData.rivalKnown?"Rival evaluado":"Rival sin evaluar")));
    }
    oppCell.append(opportunityDetails(p));tr.append(oppCell);
    const fixtureCell=make("td");
@@ -795,7 +796,8 @@ function optimize(players,format,metric,scorer=null){
 }
 function card(slot,p,metric,analysisMode="mean"){
  const el=make("div","slot");
- el.append(make("small","",slot.name),avatar(p),make("strong","",p.name),make("span","club",p.club),make("span","value",fmt(p[metric])));
+ el.append(make("small","",slot.name),avatar(p),make("strong","",p.name),make("span","club",p.club),
+  make("span","value",fmt(analysisMode==="opportunity"?opportunityValue(p):p[metric])+(analysisMode==="opportunity"?"/100":"")));
  const next=games.get(p.slug);
  if(next?.status==="scheduled" && next.game){
    el.append(make("span","match-details",matchSummary(next.game)));
@@ -809,8 +811,8 @@ function card(slot,p,metric,analysisMode="mean"){
  }else if(analysisMode==="opportunity"){
    const data=opportunityData(p);
    if(data){
-    el.append(make("span","opportunity-summary","Oportunidad "+fmt(data.value)+"/100 · "+data.trendLabel+
-      (data.rivalKnown?" · ajuste rival "+(data.rivalEffect>=0?"+":"")+fmt(data.rivalEffect):" · rival pendiente")));
+    el.append(make("span","opportunity-summary","Forma "+fmt(data.form)+" · "+data.trendLabel+
+      (data.rivalKnown?" · ajuste rival "+(data.rivalEffect>=0?"+":"")+fmt(data.rivalEffect):" · rival sin evaluar")));
    }
  }
  return el;
@@ -913,8 +915,8 @@ function run(){
    lineup.className="lineup";lineup.append(make("div","alert","No hay suficientes jugadores de esta selección con media "+metric.toUpperCase()+" disponible. Necesitas "+required+". "+msg+gwNote));
    return;
  }
- $("result-metric").textContent=metric.toUpperCase()+
-  (mode==="opportunity"?" + oportunidad individual":mode==="rivals"?" + dificultad del rival":"");
+ $("result-metric").textContent=mode==="opportunity"?"Oportunidad individual":
+  metric.toUpperCase()+(mode==="rivals"?" + dificultad del rival":"");
  $("result-description").textContent=mode==="opportunity"?
   "Suma de índices individuales: forma reciente L5/L10/L15 y 35 % del ajuste del rival, si está disponible.":
   mode==="rivals"?"Suma de medias ajustadas por un índice experimental de enfrentamiento.":
@@ -933,10 +935,12 @@ $("load-fixtures").addEventListener("click",loadFixtures);
 $("analyze-opponents").addEventListener("click",analyzeOpponents);
 $("use-matchups").addEventListener("change",()=>{
  if($("use-matchups").checked)$("use-opportunity").checked=false;
+ updateOpportunityControl();
  $("result").hidden=true;
 });
 $("use-opportunity").addEventListener("change",()=>{
  if($("use-opportunity").checked)$("use-matchups").checked=false;
+ updateOpportunityControl();
  $("result").hidden=true;
 });
 $("only-playing").addEventListener("change",()=>{
