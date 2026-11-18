@@ -1,34 +1,38 @@
-# SorareFutScout — Fase 2: datos reales
+# SorareFutScout — Fase 2: datos reales (beta)
 
-## Estado de partida
-- Sitio estático público en Cloudflare Pages: https://sorarefutscout.pages.dev/
-- Código fuente en GitHub: `karimruiz7/sorarefutscout`
-- `index.html` muestra datos de demostración; deben distinguirse de datos reales.
+## Estado
+- Web pública principal: https://sorarefutscout.pages.dev/
+- Demo original: `index.html` (datos ficticios)
+- Nueva vista beta: `datos-reales.html` (solo presenta información auténtica si la API responde)
+- Backend: `functions/api/player.js`, ruta `/api/player?slug=erling-haland`
+- Código fuente: `karimruiz7/sorarefutscout`
 
-## Objetivo
-Sustituir progresivamente los datos ficticios por datos auténticos de futbolistas y puntuaciones procedentes de la API oficial de Sorare, respetando sus términos y límites.
+## Implementado en el repositorio
+- Consulta GraphQL prefijada para un futbolista por su slug de Sorare; no acepta GraphQL arbitrario.
+- Campos: nombre, club, posición, medias L5/L10/L15 y últimas 5 puntuaciones.
+- Cloudflare Pages Function que consulta `https://api.sorare.com/federation/graphql` (endpoint anunciado el 19 de agosto de 2026).
+- Caché de 10 minutos en borde, manejo de errores, respuestas 429 y validación de slug.
+- Pantalla de prueba con ejemplos Haaland / Mbappé y un campo para pegar la URL de un jugador.
 
-## Arquitectura
-1. Frontend estático (actual `index.html`): presenta jugadores, búsqueda, filtros, comparador y optimizador.
-2. Backend serverless (Cloudflare Pages Functions): consulta `https://api.sorare.com/graphql` y transforma resultados a un formato estable para la web. La API de Sorare no admite CORS directo desde dominios externos.
-3. Cache y limitación de peticiones: evitar peticiones repetitivas y respetar respuestas 429.
-4. Claves, si hicieran falta, solo en secretos de Cloudflare; nunca en GitHub ni código enviado al navegador.
+**Pendiente:** confirmar en Cloudflare que la Function ha sido desplegada y que Sorare permite estas consultas públicas. La subida a GitHub no equivale a una conexión verificada. Si la API rechaza peticiones o cambia el esquema, ajustar el backend sin tocar la demo existente.
 
-## Orden de implementación
-- [ ] Verificar qué datos de futbolistas y puntuaciones se pueden consultar sin inicio de sesión.
-- [ ] Crear una primera función que consulte la API desde servidor y gestione errores.
-- [ ] Añadir una vista de datos reales a la interfaz, con indicación de origen y fecha de actualización.
-- [ ] Ampliar filtros, historial y comparador con valores reales.
-- [ ] Estudiar integración de colecciones personales mediante OAuth; requiere Client ID/Secret emitidos por Sorare y consentimiento del usuario.
-- [ ] Reajustar el optimizador con reglas actuales de cada concurso.
+## Próximos hitos
+- [ ] Verificar que `/datos-reales.html` carga desde Cloudflare.
+- [ ] Consultar a Haaland y Mbappé y verificar la respuesta real de la API.
+- [ ] Resolver permisos/límites de la API y las condiciones para uso público a escala.
+- [ ] Incorporar datos auténticos al explorador y comparador de la página principal.
+- [ ] Implementar filtros e historial.
+- [ ] Estudiar OAuth para importar la colección personal del usuario con su autorización.
+- [ ] Adaptar el optimizador a las reglas efectivas de cada competición.
 
-## Seguridad, propiedad intelectual y transparencia
-- No solicitar ni publicar contraseñas, JWT, claves API, secretos OAuth o claves privadas.
-- Presentar SorareFutScout como proyecto independiente, no oficial.
-- Verificar las condiciones de uso de la API y de las marcas/datos antes de un lanzamiento abierto.
-- No presentar proyecciones sintéticas o inventadas como datos oficiales.
+## Seguridad y transparencia
+- Nunca solicitar contraseñas, JWT, claves API o secretos OAuth por chat.
+- Si se concede una clave de Sorare, guardarla como secreto en Cloudflare, no en GitHub.
+- No mostrar estadísticas ficticias como oficiales ni afirmar que una proyección sea dato de Sorare.
+- Proyecto independiente, no afiliado ni patrocinado por Sorare.
 
-## Fuentes oficiales
-- https://github.com/sorare/api
-- https://sorare.com/es/help/a/10873240230941/c-mo-puedo-obtener-acceso-a-la-api-de-sorare
-- https://sorare.com/es/api-terms
+## Referencias
+- Documentación: https://github.com/sorare/api
+- Changelog: https://github.com/sorare/api/blob/master/CHANGELOG.md
+- Esquema: https://api.sorare.com/graphql/schema
+- Cloudflare Pages Functions: https://developers.cloudflare.com/pages/functions/get-started/
