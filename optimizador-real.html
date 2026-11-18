@@ -220,6 +220,7 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <h2 id="opportunity-title">Oportunidad individual · beta</h2>
 <p class="sub">Una valoración distinta de la dificultad del rival: estudiamos la forma reciente de cada futbolista en Sorare y después aplicamos una corrección pequeña por el enfrentamiento.</p>
 <label class="opportunity-toggle"><input type="checkbox" id="use-opportunity"> Optimizar por oportunidad individual (experimental)</label>
+<p class="help" id="opportunity-status" role="status" aria-live="polite">El índice puede calcularse con la forma histórica aunque la API del calendario esté temporalmente limitada.</p>
 <div class="opportunity-grid">
 <div><strong>55 % · Media L5</strong>Forma de los cinco últimos encuentros puntuados.</div>
 <div><strong>30 % · Media L10</strong>Referencia más amplia para moderar una racha corta.</div>
@@ -311,7 +312,7 @@ function playerLabel(p){
  words.append(make("strong","",p.name),make("small","",p.club));wrap.append(avatar(p),words);return wrap;
 }
 
-const OPP_CACHE="sorarefutscout:opponents:v1",OPP_TTL=60*60*1000;
+const OPP_CACHE="sorarefutscout:opponents:v1",OPP_PERSIST="sorarefutscout:opponents:persistent:v1",OPP_TTL=6*60*60*1000;
 let opponents=new Map();
 const OPP_COOLDOWN_KEY="sorarefutscout:matchup-cooldown:v1";
 let matchupCooldownUntil=0;
@@ -329,13 +330,24 @@ function keepCooldown(seconds){
  return duration;
 }
 function readOppCache(){
- try{
-  const item=JSON.parse(sessionStorage.getItem(OPP_CACHE)||"null");
-  if(item&&Date.now()-item.at<OPP_TTL&&Array.isArray(item.items))opponents=new Map(item.items.filter(v=>v&&typeof v.slug==="string").map(v=>[v.slug,v]));
- }catch(_){}
+ let best=null;
+ for(const storage of [localStorage,sessionStorage]){
+   try{
+     const key=storage===localStorage?OPP_PERSIST:OPP_CACHE;
+     const item=JSON.parse(storage.getItem(key)||"null");
+     if(item&&Number.isFinite(item.at)&&item.at<=Date.now()&&Date.now()-item.at<OPP_TTL&&Array.isArray(item.items)&&
+       (!best||item.at>best.at))best=item;
+   }catch(_){}
+ }
+ if(best){
+   opponents=new Map(best.items.filter(v=>v&&typeof v.slug==="string").map(v=>[v.slug,v]));
+   saveOppCache(best.at);
+ }
 }
-function saveOppCache(){
- try{sessionStorage.setItem(OPP_CACHE,JSON.stringify({at:Date.now(),items:[...opponents.values()]}));}catch(_){}
+function saveOppCache(at=Date.now()){
+ const item=JSON.stringify({at,items:[...opponents.values()]});
+ try{sessionStorage.setItem(OPP_CACHE,item);}catch(_){}
+ try{localStorage.setItem(OPP_PERSIST,item);}catch(_){}
 }
 function fixtureOpponent(p){
  if(!fixtureFresh(p.slug))return null;
@@ -487,10 +499,18 @@ function opponentText(p){
  return {text:rival.name+" · "+stat+" (últimos "+info.stats.gamesCount+") · Ajuste "+sign+fmt(info.delta),available:true};
 }
 function updateOpportunityControl(){
- const eligible=filteredByMode().some(p=>opportunityData(p)!==null);
+ const candidates=filteredByMode();
+ const valid=candidates.filter(p=>opportunityData(p)!==null);
+ const reviewed=valid.filter(p=>opportunityData(p).rivalKnown).length;
+ const eligible=valid.length>0;
  $("use-opportunity").disabled=!eligible;
  if(!eligible)$("use-opportunity").checked=false;
  $("metric").disabled=$("use-opportunity").checked;
+ $("opportunity-status").textContent=valid.length+" de "+candidates.length+
+  " futbolistas tienen L5 y L10 disponibles; "+reviewed+" tienen también rival evaluado. "+
+  (reviewed<valid.length?"El resto utiliza un índice parcial calculado solo con su forma, sin inventar el impacto del rival.":
+    "Todos los índices disponibles incorporan el ajuste de rival.")+
+  " No son puntos esperados.";
 }
 function updateMatchupControl(){
  const eligible=filteredByMode();
@@ -1010,7 +1030,7 @@ function run(){
  $("result-metric").textContent=mode==="opportunity"?"Oportunidad individual":
   metric.toUpperCase()+(mode==="rivals"?" + dificultad del rival":"");
  $("result-description").textContent=mode==="opportunity"?
-  "Suma de índices individuales: forma reciente L5/L10/L15 y 35 % del ajuste del rival, si está disponible.":
+  "Suma de índices individuales: forma L5/L10/L15 y ajuste reducido solo para rivales evaluados. Donde falte información, el índice es parcial.":
   mode==="rivals"?"Suma de medias ajustadas por un índice experimental de enfrentamiento.":
   "Máxima suma de medias históricas con las posiciones básicas indicadas.";
  $("total-caption").textContent=mode==="mean"?
