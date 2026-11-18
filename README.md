@@ -130,3 +130,14 @@ A escala pública probablemente será necesaria una vía autorizada de mayor cap
 - Comprobados sintaxis JavaScript y seis escenarios de selección: varias GW, partida de jugadores en GW, falta de GW, ausencia de partidos, alternancia de selección y equipo incompleto sin posiciones necesarias. Pendiente de validar el flujo en Cloudflare.
 
 Fuente sobre calendario de GW: https://sorare.com/es/help/a/21439051570973/introduction-g-n-rale-sorare-football
+
+## Fase 3.5 — Comparador de hasta 3 alineaciones reales (18-11-2026)
+
+- `optimizador-real.html` calcula ahora hasta **tres combinaciones distintas de futbolistas** ordenadas por máxima suma de la media seleccionada L5/L10/L15. Si se activa «Priorizar rivales», se utiliza el **índice experimental** de enfrentamientos en vez de la media pura.
+- Comparador visual: opciones 1/2/3 con su suma y diferencia respecto a la primera, tarjetas de cada once y explicación de qué jugadores entran y salen en cada opción.
+- Se respetan **todos los filtros existentes**: Arcade / Pro-Arena / análisis libre, restricciones SO5/SO7, jugadores con próximo partido a siete días o GW Sorare elegida. Solo se consideran los jugadores cargados en la selección local.
+- El algoritmo usa programación dinámica por máscaras de puestos, conservando las tres mejores selecciones **únicas por conjunto de jugadores**, para no presentar como alternativa el mismo once con posiciones intercambiadas. No repite jugadores, ni incluye portero en la plaza extra.
+- Si solo hay una o dos combinaciones válidas, lo explica y no inventa alternativas. Con exactamente cinco cartas válidas para SO5, normalmente solo aparece una opción; para comparar hacen falta más cartas elegibles.
+- No se hacen llamadas adicionales a Sorare para calcular alternativas.
+- **Validación técnica:** sintaxis JS comprobada; los resultados top-3 coinciden con enumeración exhaustiva en 10 escenarios SO5/SO7, con y sin portero, con selección limitada, y con ajuste experimental del rival. Falta confirmar la actualización de Cloudflare con la colección real.
+- El orden es un análisis estadístico histórico, **no una previsión validada** de puntos o elegibilidad; se desconocen cartas verdaderamente poseídas, alineaciones iniciales y posibles bajas.
