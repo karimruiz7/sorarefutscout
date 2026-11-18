@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b101a">
+<title>SorareFutScout · Datos reales (beta)</title>
+<style>
+:root{color-scheme:dark;--bg:#0b101a;--card:#141e2e;--card2:#1a283b;--border:#2c3b51;--text:#f5f8fd;--muted:#a8b6c9;--accent:#b5ff65}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#1a2d25 0%,var(--bg) 54%);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh;line-height:1.5}
+main{max-width:880px;margin:auto;padding:30px 18px 80px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:42px}
+.logo{font-size:21px;font-weight:800;letter-spacing:-.7px}.logo span{color:var(--accent)}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.pill{color:var(--accent);border:1px solid #476b34;background:#203323;padding:5px 11px;border-radius:30px;display:inline-block;font-weight:700;font-size:12px}
+h1{font-size:clamp(27px,5vw,44px);letter-spacing:-1.4px;margin:16px 0 8px;line-height:1.15}p{color:var(--muted);margin:6px 0 20px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;margin-top:24px}
+label{display:block;font-weight:700;margin-bottom:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+input{width:100%;flex:1 1 240px;min-width:0;border:1px solid #47566e;background:#0e1623;color:white;padding:14px;border-radius:10px;font-size:15px}
+button{background:var(--accent);color:#142109;border:0;border-radius:10px;font-weight:800;padding:13px 18px;cursor:pointer;font-size:15px}button:disabled{opacity:.55;cursor:wait}
+.examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.examples button{background:#253448;color:#e3ecf9;border:1px solid #3a4e66;padding:9px 13px;font-weight:600;font-size:13px}
+small{color:var(--muted)}
+#result[hidden]{display:none}
+#notice{margin-top:16px;min-height:20px;color:#d6e4f3}
+h2{margin-top:0;font-size:23px;letter-spacing:-.4px}.sub{margin-top:-4px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+.metric{background:var(--card2);border:1px solid var(--border);padding:17px;border-radius:12px}
+.metric span{display:block;color:var(--muted);font-size:13px}.metric strong{display:block;font-size:29px;margin-top:3px}
+.scores{display:flex;gap:10px;flex-wrap:wrap;padding:0;margin:0;list-style:none}
+.scores li{background:var(--card2);border:1px solid var(--border);border-radius:10px;min-width:66px;padding:11px;text-align:center;font-weight:700}
+footer{border-top:1px solid var(--border);margin-top:28px;padding-top:16px;font-size:13px;color:var(--muted)}
+@media(max-width:480px){nav{align-items:start;flex-direction:column}.panel{padding:16px}.metrics{gap:6px}.metric{padding:12px}.metric strong{font-size:25px}}
+</style>
+</head>
+<body><main>
+<nav><div class="logo">Sorare<span>FutScout</span></div><a href="/">← Volver a la demo</a></nav>
+<div class="pill">FASE 2 · PRUEBA DE INTEGRACIÓN</div>
+<h1>Datos reales de <span style="color:var(--accent)">Sorare Fútbol</span></h1>
+<p>Prueba la conexión con la API oficial. Esta herramienta consulta las puntuaciones publicadas por Sorare; no son predicciones ni estadísticas inventadas.</p>
+<section class="panel">
+<form id="form">
+<label for="slug">Jugador de Sorare</label>
+<div class="row">
+<input id="slug" required maxlength="200" value="erling-haland" placeholder="Slug o URL del jugador" aria-describedby="helper">
+<button id="go" type="submit">Consultar estadísticas</button>
+</div>
+</form>
+<div class="examples"><button type="button" data-slug="erling-haland">Erling Haaland</button><button type="button" data-slug="kylian-mbappe-lottin">Kylian Mbappé</button></div>
+<p id="helper"><small>Puedes pegar una URL de Sorare o su identificador, por ejemplo <code>erling-haland</code>.</small></p>
+<div id="notice" role="status" aria-live="polite">Pulsa «Consultar estadísticas» para probar la conexión.</div>
+</section>
+<section class="panel" id="result" hidden aria-live="polite">
+<h2 id="name"></h2><p id="team" class="sub"></p>
+<div class="metrics">
+<div class="metric"><span>Media L5</span><strong id="l5">—</strong></div>
+<div class="metric"><span>Media L10</span><strong id="l10">—</strong></div>
+<div class="metric"><span>Media L15</span><strong id="l15">—</strong></div>
+</div>
+<h3>Últimas 5 puntuaciones disponibles</h3>
+<ul id="scores" class="scores"></ul>
+<p><small id="source"></small></p>
+</section>
+<footer>Proyecto independiente y no oficial. Sin conexión con cuentas personales ni almacenamiento de contraseñas. La disponibilidad de datos depende de la API de Sorare.</footer>
+</main>
+<script>
+(function(){
+  const form=document.getElementById('form'),field=document.getElementById('slug'),button=document.getElementById('go'),notice=document.getElementById('notice'),result=document.getElementById('result');
+  const byId=id=>document.getElementById(id);
+  const number=x=>typeof x==='number'&&Number.isFinite(x)?x.toLocaleString('es-ES',{maximumFractionDigits:1}):'—';
+  const normalize=value=>{
+    try{if(value.includes('sorare.com')){const u=new URL(value);if(!/(^|\.)sorare\.com$/.test(u.hostname))return '';const m=u.pathname.match(/\/football\/players\/([a-z0-9-]+)/i);return m?m[1].toLowerCase():'';}}
+    catch(_){return ''}
+    return value.trim().toLowerCase();
+  };
+  async function load(value){
+    const slug=normalize(value);
+    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)){notice.textContent='Escribe un identificador de Sorare válido.';return;}
+    button.disabled=true;notice.textContent='Consultando datos oficiales…';result.hidden=true;
+    try{
+      const response=await fetch('/api/player?slug='+encodeURIComponent(slug),{headers:{accept:'application/json'}});
+      const data=await response.json();
+      if(!response.ok||!data.ok)throw new Error((data.error||'No se pudo completar la consulta.')+(data.detail?' '+data.detail:''));
+      const p=data.player;
+      byId('name').textContent=p.name;
+      byId('team').textContent=(p.club||'Club no disponible')+' · '+(p.position||'Posición no disponible');
+      ['l5','l10','l15'].forEach(k=>byId(k).textContent=number(p[k]));
+      const scores=byId('scores');scores.replaceChildren();
+      (p.lastScores||[]).forEach(score=>{const li=document.createElement('li');li.textContent=number(score);scores.appendChild(li)});
+      if(!scores.childElementCount){const li=document.createElement('li');li.textContent='Sin resultados';scores.appendChild(li);}
+      byId('source').textContent='Fuente: '+data.source+' · Consulta: '+new Date(data.fetchedAt).toLocaleString('es-ES');
+      result.hidden=false;notice.textContent='Datos recibidos correctamente de Sorare.';
+    }catch(error){notice.textContent='No se pudieron mostrar las estadísticas: '+error.message;}
+    finally{button.disabled=false;}
+  }
+  form.addEventListener('submit',e=>{e.preventDefault();load(field.value);});
+  document.querySelectorAll('[data-slug]').forEach(el=>el.addEventListener('click',()=>{field.value=el.dataset.slug;load(field.value)}));
+})();
+</script>
+</body></html>
