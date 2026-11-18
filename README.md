@@ -104,3 +104,17 @@ Esquema de referencia: https://api.sorare.com/graphql/schema
 - Comprobada la sintaxis JS y el mapeo de los cinco niveles + categoría desconocida con datos ficticios de prueba. Todavía falta verificar el despliegue de Cloudflare y el endpoint de rivales contra Sorare en producción.
 
 No copiar iconografía, colores exactos ni contenidos de herramientas ajenas: etiquetas y explicaciones son de SorareFutScout.
+
+## Fase 3.3.1 — Control de errores 429 en análisis de rivales (18-11-2026)
+
+El usuario observó que, después de pulsar «Analizar enfrentamientos», Sorare devolvió HTTP 429 y los cinco jugadores quedaron como «Sin evaluar». Esto **no** demuestra que los rivales carezcan de resultados: no se recibió una respuesta completa para calcular los índices.
+
+- `functions/api/matchups.js`: transmite `retry-after` y `reason=rate_limit`; respeta la espera de Sorare y la memoriza temporalmente como marcador de caché interno 200 (no representa falsamente una respuesta correcta ante el visitante). En Cloudflare, el enfriamiento de caché es por ubicación de borde, no global.
+- `optimizador-real.html`: memoriza el enfriamiento en `sessionStorage`, evita volver a consultar durante ese tiempo y explica los segundos aproximados restantes.
+- Las etiquetas ahora distinguen **Límite API** (consulta bloqueada), **Pendiente** (sin consultar), **Sin datos** (hubo respuesta pero insuficiente historial) y los cinco niveles de dificultad calculados.
+- Se mantiene sin cambios el optimizador por medias históricas, y no se asignan índices de rival ficticios cuando Sorare no devuelve estadísticas.
+- Probada sintaxis JavaScript y mapeo de estados con ejemplos simulados. Falta verificar en Cloudflare el último despliegue y la disponibilidad real de la API tras la pausa.
+
+Referencia: https://github.com/sorare/api#rate-limit
+
+A escala pública probablemente será necesaria una vía autorizada de mayor capacidad de la API, disponible mediante proceso de Sorare. Nunca guardar claves en el frontend o GitHub.
