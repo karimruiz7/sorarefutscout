@@ -53,6 +53,15 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 .history-index{color:#8da4ba;font-size:10px}
 .history-notice{color:#8ca3b8;font-size:11px;line-height:1.5;margin-top:10px}
 @media(max-width:700px){.advanced-filters .field-sm{flex:1 1 90px}.advanced-filters .check{padding:5px 0}.advanced-filters button{width:100%}}
+
+/* Search modes: exact team roster vs fuzzy player search */
+[hidden]{display:none!important}
+.search-modes{display:flex;gap:9px;margin-bottom:17px;flex-wrap:wrap}
+.search-modes button{border:1px solid #445b73;border-radius:10px;padding:10px 15px;background:#233347;color:#d7e4f3;font-weight:750}
+.search-modes button.active{background:#2b4429;border-color:var(--accent);color:var(--accent)}
+.team-picker{flex:1;min-width:220px}.team-picker select{width:100%;height:49px;background:#0c1522}
+.roster-caption{font-size:12px;line-height:1.6;color:#a7bbcc;margin:9px 0 0}
+@media(max-width:700px){.team-picker{width:100%}}
 </style>
 </head>
 <body>
@@ -63,12 +72,25 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 <h1>Explora jugadores de<br><span style="color:var(--accent)">Sorare Fútbol</span></h1>
 <p class="intro">Busca futbolistas por nombre, consulta sus puntuaciones reales y compara dos jugadores para decidir con más información. No necesitas iniciar sesión.</p>
 <section class="box">
+<div class="search-modes" role="group" aria-label="Tipo de búsqueda">
+<button type="button" id="player-mode" class="active" aria-pressed="true">⚽ Por jugador</button>
+<button type="button" id="team-mode" aria-pressed="false">🛡 Por equipo</button>
+</div>
 <form id="search-form" class="findbox">
 <input id="query" name="query" value="Haaland" aria-label="Nombre del futbolista" placeholder="Busca por nombre (ej. Mbappé, Haaland…)" minlength="2" maxlength="60" required>
+<label class="team-picker" for="team-select" id="team-picker" hidden>
+<select id="team-select" aria-label="Seleccionar club">
+<option value="real-madrid-madrid">Real Madrid</option>
+<option value="barcelona-barcelona">FC Barcelona</option>
+<option value="atletico-madrid-madrid">Atlético de Madrid</option>
+<option value="valencia-valencia">Valencia CF</option>
+<option value="real-oviedo-oviedo">Real Oviedo</option>
+</select>
+</label>
 <button class="btn" id="search-btn" type="submit">Buscar jugadores</button>
 </form>
-<p class="tip">Fuente: API GraphQL de Sorare. <b>Las medias son históricas, no predicciones.</b> Los filtros de club y posición actúan sobre los resultados de la página actual.</p>
-<div class="status" id="status" role="status" aria-live="polite">Escribe el nombre de un futbolista para comenzar.</div>
+<p class="tip" id="search-tip">Fuente: API GraphQL de Sorare. <b>Las medias son históricas, no predicciones.</b> La búsqueda por nombre admite coincidencias aproximadas. Para ver una plantilla concreta, selecciona «Por equipo».</p>
+<div class="status" id="status" role="status" aria-live="polite">Escribe el nombre de un futbolista para comenzar.</div><p class="roster-caption" id="roster-disclaimer" hidden>Plantilla activa según los datos de Sorare; no sustituye una inscripción oficial del club. Se actualiza cuando Sorare modifica su información.</p>
 </section>
 <section aria-labelledby="list-title">
 <div class="section-title"><h2 id="list-title">Resultados de la búsqueda</h2><span class="subline" id="source"></span></div>
@@ -106,9 +128,22 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),photoBySlug:new Map(),view:"cards",busy:false,blockedUntil:0};
+const state={query:"",page:1,nbPages:0,hits:0,players:[],selected:[],details:new Map(),photoBySlug:new Map(),view:"cards",mode:"player",teamSlug:"",teamName:"",clubCursors:[null],teamNextCursor:null,busy:false,blockedUntil:0};
 const SEARCH_TTL = 10*60*1000;
 function cacheKey(query,page){return "sfs-search-v3:"+query.toLocaleLowerCase("es").replace(/\s+/g," ").trim()+":"+page;}
+function teamCacheKey(slug,cursor){return "sfs-club-v1:"+slug+":"+(cursor||"first");}
+function cachedTeam(slug,cursor){
+ try{
+  const data=sessionStorage.getItem(teamCacheKey(slug,cursor));
+  if(!data)return null;
+  const item=JSON.parse(data);
+  if(Date.now()-item.at>10*60*1000)return null;
+  return item.response?.ok?item.response:null;
+ }catch(_){return null;}
+}
+function storeTeam(slug,cursor,response){
+ try{sessionStorage.setItem(teamCacheKey(slug,cursor),JSON.stringify({at:Date.now(),response}));}catch(_){}
+}
 function cachedResult(query,page){
   try{
     const raw=sessionStorage.getItem(cacheKey(query,page));
@@ -223,7 +258,7 @@ function renderTable(players,container){
 }
 function renderPlayers(){
  const players=visiblePlayers();
- $("count").textContent=players.length+" visibles · "+state.hits+" coincidencias en Sorare (página actual)";
+ $("count").textContent=state.mode==="team" ? players.length+" visibles · "+state.teamName+" (plantilla Sorare, página "+state.page+")" : players.length+" visibles · "+state.hits+" coincidencias en Sorare (página actual)";
  const list=$("players");list.replaceChildren();
  $("cards-view").classList.toggle("active",state.view==="cards");
  $("table-view").classList.toggle("active",state.view==="table");
@@ -234,14 +269,97 @@ function renderPlayers(){
    const empty=create("div","empty",state.players.length?"No hay jugadores con estos filtros en esta página. Prueba otros filtros o avanza.":"Sin resultados. Prueba otro nombre.");
    empty.style.gridColumn="1/-1";list.appendChild(empty);
  } else if(state.view==="table")renderTable(players,list);else renderCards(players,list);
- const total=Math.min(20,Math.max(1,state.nbPages));
- $("paging").hidden=state.nbPages<=1;
- $("page-label").textContent="Página "+state.page+" de "+total;
- $("prev").disabled=state.busy||state.page<=1;
- $("next").disabled=state.busy||state.page>=total;
+ if(state.mode==="team"){
+   $("paging").hidden=state.page===1&&!state.teamNextCursor;
+   $("page-label").textContent="Plantilla · página "+state.page;
+   $("prev").disabled=state.busy||state.page<=1;
+   $("next").disabled=state.busy||!state.teamNextCursor;
+ } else {
+   const total=Math.min(20,Math.max(1,state.nbPages));
+   $("paging").hidden=state.nbPages<=1;
+   $("page-label").textContent="Página "+state.page+" de "+total;
+   $("prev").disabled=state.busy||state.page<=1;
+   $("next").disabled=state.busy||state.page>=total;
+ }
+}
+const EXACT_CLUB_ALIASES={
+  "real madrid":"real-madrid-madrid",
+  "fc barcelona":"barcelona-barcelona",
+  "barcelona":"barcelona-barcelona",
+  "atletico madrid":"atletico-madrid-madrid",
+  "atletico de madrid":"atletico-madrid-madrid",
+  "valencia":"valencia-valencia",
+  "valencia cf":"valencia-valencia",
+  "real oviedo":"real-oviedo-oviedo",
+};
+function normalizedName(name){
+  return name.trim().toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ");
+}
+function setMode(mode,reset=true){
+  state.mode=mode;
+  $("player-mode").classList.toggle("active",mode==="player");
+  $("team-mode").classList.toggle("active",mode==="team");
+  $("player-mode").setAttribute("aria-pressed",String(mode==="player"));
+  $("team-mode").setAttribute("aria-pressed",String(mode==="team"));
+  $("query").hidden=mode==="team";
+  $("query").required=mode==="player";
+  $("team-picker").hidden=mode!=="team";
+  $("search-btn").textContent=mode==="team"?"Cargar plantilla":"Buscar jugadores";
+  $("search-tip").textContent=mode==="team"?
+    "Plantilla activa del club consultada directamente en Sorare. Los filtros y el orden se aplican a la página de jugadores descargada.":
+    "Busca jugadores por nombre. Para que un equipo no se mezcle con otros, utiliza «Por equipo». Las medias son históricas y no predicciones.";
+  $("roster-disclaimer").hidden=mode!=="team";
+  if(reset){
+    state.players=[];state.page=1;state.nbPages=0;state.hits=0;state.teamSlug="";state.teamName="";
+    state.teamNextCursor=null;state.clubCursors=[null];
+    $("position").value="";$("club").value="";updateClubs();
+    $("source").textContent="";
+    status(mode==="team"?"Selecciona un equipo y pulsa «Cargar plantilla».":"Introduce el nombre de un jugador.");
+    renderPlayers();
+  }
+}
+function applyPlayers(data){
+  state.players=data.players||[];
+  state.players.forEach(p=>{if(p.avatar)state.photoBySlug.set(p.slug,p.avatar);});
+  updateClubs();renderPlayers();
+}
+async function loadTeam(cursor=null,page=1){
+  if(state.busy)return;
+  const slug=$("team-select").value;
+  if(state.teamSlug!==slug){state.clubCursors=[null];cursor=null;page=1;}
+  const saved=cachedTeam(slug,cursor);
+  if(!saved&&Date.now()<state.blockedUntil){
+    status("Sorare ha solicitado una pausa. Prueba de nuevo cuando pase el tiempo indicado; puedes usar los resultados anteriores.",true);
+    return;
+  }
+  state.busy=true;$("search-btn").disabled=true;
+  status(saved?"Cargando plantilla guardada…":"Consultando jugadores activos de "+$("team-select").selectedOptions[0].textContent+"…");
+  try{
+    const url="/api/club?slug="+encodeURIComponent(slug)+(cursor?"&after="+encodeURIComponent(cursor):"");
+    const data=saved||await getJson(url);
+    if(!saved)storeTeam(slug,cursor,data);
+    state.mode="team";state.teamSlug=slug;state.teamName=data.team?.name||$("team-select").selectedOptions[0].textContent;
+    state.page=page;state.teamNextCursor=data.nextCursor||null;state.clubCursors[page-1]=cursor;
+    applyPlayers(data);
+    $("source").textContent="Plantilla de "+state.teamName+" según "+data.source+" · "+new Date(data.fetchedAt).toLocaleString("es-ES");
+    status((saved?"Datos guardados. ":"")+"Mostrando jugadores asociados a este club en Sorare."+(data.nextCursor?" Hay más jugadores en la página siguiente.":""));
+  }catch(e){
+    if(e.status===429){
+      const seconds=Math.min(3600,Math.max(1,Math.ceil(e.retryAfter||60)));
+      state.blockedUntil=Date.now()+seconds*1000;
+      status("Sorare ha limitado temporalmente las peticiones; vuelve a intentarlo en unos "+seconds+" segundos. Se conservan los jugadores ya cargados.",true);
+    }else status("No se pudo cargar esta plantilla: "+e.message+" No se muestran jugadores inventados.",true);
+  }finally{state.busy=false;$("search-btn").disabled=false;renderPlayers();}
 }
 async function search(page=1){
   const q=$("query").value.trim();
+  const detected=EXACT_CLUB_ALIASES[normalizedName(q)];
+  if(detected){
+    setMode("team");
+    $("team-select").value=detected;
+    await loadTeam(null,1);
+    return;
+  }
   if(q.length<2){status("Introduce al menos dos letras.",true);return;}
   if(state.busy)return;
   const saved=cachedResult(q,page);
@@ -335,7 +453,10 @@ async function showDetail(p){
   if(state.selected.length>2)state.selected=state.selected.slice(-2);
   renderPlayers();compare();$("compare-section").scrollIntoView({behavior:"smooth"});
 }
-$("search-form").addEventListener("submit",e=>{e.preventDefault();search(1);});
+$("search-form").addEventListener("submit",e=>{e.preventDefault();if(state.mode==="team")loadTeam(null,1);else search(1);});
+$("player-mode").addEventListener("click",()=>{if(state.busy)return;setMode("player");});
+$("team-mode").addEventListener("click",()=>{if(state.busy)return;setMode("team");});
+$("team-select").addEventListener("change",()=>{if(state.busy)return;state.teamSlug="";state.teamNextCursor=null;state.clubCursors=[null];state.players=[];updateClubs();renderPlayers();status("Equipo seleccionado. Pulsa «Cargar plantilla».");});
 $("position").addEventListener("change",renderPlayers);
 $("club").addEventListener("change",renderPlayers);
 $("sort").addEventListener("change",renderPlayers);
@@ -352,8 +473,16 @@ $("reset-filters").addEventListener("click",()=>{
 });
 $("cards-view").addEventListener("click",()=>{state.view="cards";renderPlayers();});
 $("table-view").addEventListener("click",()=>{state.view="table";renderPlayers();});
-$("prev").addEventListener("click",()=>{if(state.page>1)search(state.page-1);});
-$("next").addEventListener("click",()=>{if(state.page<Math.min(state.nbPages,20))search(state.page+1);});
+$("prev").addEventListener("click",()=>{
+ if(state.page<=1)return;
+ if(state.mode==="team")loadTeam(state.clubCursors[state.page-2]||null,state.page-1);
+ else search(state.page-1);
+});
+$("next").addEventListener("click",()=>{
+ if(state.mode==="team"){
+   if(state.teamNextCursor)loadTeam(state.teamNextCursor,state.page+1);
+ } else if(state.page<Math.min(state.nbPages,20))search(state.page+1);
+});
 $("clear").addEventListener("click",()=>{state.selected=[];renderPlayers();compare();});
 compare();
 })();
