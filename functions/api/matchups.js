@@ -14,9 +14,9 @@ function build(slugs){
 }
 function retrySeconds(value){
   const n=Number(value);
-  if(Number.isFinite(n)&&n>0)return Math.min(3600,Math.ceil(n));
+  if(Number.isFinite(n)&&n>0)return Math.min(86400,Math.ceil(n));
   const time=value?Date.parse(value):NaN;
-  return Number.isFinite(time)?Math.min(3600,Math.max(1,Math.ceil((time-Date.now())/1000))):60;
+  return Number.isFinite(time)?Math.min(86400,Math.max(1,Math.ceil((time-Date.now())/1000))):60;
 }
 function toStats(club,slug){
   if(!club || club.slug!==slug)return {slug,available:false,reason:"Sin datos fiables en Sorare"};
@@ -54,9 +54,23 @@ export async function onRequestGet(context){
     return respond({ok:false,error:"Solicita entre 1 y 8 clubes con identificadores válidos y sin duplicados."},400);
   }
   slugs.sort();
-  const key=new Request(url.origin+"/api/matchups?v=1&slugs="+encodeURIComponent(slugs.join(",")));
+  const key=new Request(url.origin+"/api/matchups?v=2&slugs="+encodeURIComponent(slugs.join(",")));
+  // 200-valued internal marker: Cloudflare Cache API does not reliably cache 429.
+  const cooldownKey=new Request(url.origin+"/api/matchups?__cooldown=v2");
   let cache;
-  try{cache=caches.default;const old=await cache.match(key);if(old)return old;}catch(_){}
+  try{
+    cache=caches.default;
+    const old=await cache.match(key);
+    if(old)return old;
+    const hold=await cache.match(cooldownKey);
+    if(hold){
+      const info=await hold.json();
+      const seconds=Math.max(1,Math.ceil((Number(info.retryAt)-Date.now())/1000));
+      if(Number.isFinite(seconds)&&Number(info.retryAt)>Date.now()){
+        return respond({ok:false,error:"Sorare ha limitado temporalmente las consultas.",reason:"rate_limit",retryAfter:seconds},429,{"retry-after":String(seconds)});
+      }
+    }
+  }catch(_){}
   const {query,variables}=build(slugs);
   let upstream;
   try{
@@ -70,7 +84,18 @@ export async function onRequestGet(context){
   }catch(_){return respond({ok:false,error:"No se pudo contactar con Sorare."},502);}
   if(upstream.status===429){
     const seconds=retrySeconds(upstream.headers.get("retry-after"));
-    return respond({ok:false,error:"Sorare ha limitado temporalmente las peticiones.",retryAfter:seconds},429,{"retry-after":String(seconds)});
+    // Store an internal status-200 cooldown marker, never a fake success for visitors.
+    if(cache&&context.waitUntil){
+      const marker=new Response(JSON.stringify({retryAt:Date.now()+seconds*1000}),{
+        status:200,
+        headers:{"content-type":"application/json","cache-control":"public, max-age="+seconds+", s-maxage="+seconds},
+      });
+      context.waitUntil(cache.put(cooldownKey,marker).catch(()=>{}));
+    }
+    return respond({
+      ok:false,error:"Sorare ha limitado temporalmente las peticiones.",
+      reason:"rate_limit",retryAfter:seconds,
+    },429,{"retry-after":String(seconds)});
   }
   if(!upstream.ok)return respond({ok:false,error:"Sorare no ha respondido correctamente.",upstreamStatus:upstream.status},502);
   let data;
