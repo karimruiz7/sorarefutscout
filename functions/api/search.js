@@ -7,11 +7,15 @@ const SEARCH_QUERY = [
   "   nbHits nbPages page",
   "   hits { anyPlayer { __typename ... on Player {",
   "     slug displayName position activeClub { name }",
+  '  avatar: pictureUrl(derivative: "avatar")',
   "     l5: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE)",
+  "     l10: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)",
+  "     l15: averageScore(type: LAST_FIFTEEN_SO5_AVERAGE_SCORE)",
   "   } } }",
   " }",
   "}"
 ].join("\n");
+const SEARCH_QUERY_WITHOUT_PHOTO = SEARCH_QUERY.replace('avatar: pictureUrl(derivative: "avatar")', "");
 
 function respond(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -38,7 +42,7 @@ export async function onRequestGet(context) {
     return respond({ ok: false, error: "Página de búsqueda no válida." }, 400);
   }
 
-  const cacheKey = new Request(url.origin + "/api/search?q=" + encodeURIComponent(q.toLowerCase()) + "&page=" + page);
+  const cacheKey = new Request(url.origin + "/api/search?v=2&q=" + encodeURIComponent(q.toLowerCase()) + "&page=" + page);
   let cache;
   try {
     cache = caches.default;
@@ -74,6 +78,25 @@ export async function onRequestGet(context) {
   let data;
   try { data = await upstream.json(); }
   catch (_) { return respond({ ok: false, error: "Respuesta ilegible de Sorare." }, 502); }
+  // If Sorare changes/restricts the optional portrait field, retry without it.
+  // Player search and statistics must stay available even if images disappear.
+  if (data.errors?.some(error => /pictureUrl|derivative/i.test(String(error?.message || "")))) {
+    try {
+      const fallbackHeaders = { "content-type": "application/json", accept: "application/json" };
+      if (context.env?.SORARE_API_KEY) fallbackHeaders.APIKEY = context.env.SORARE_API_KEY;
+      const fallbackResponse = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: fallbackHeaders,
+        body: JSON.stringify({
+          operationName: "SorareFutScoutSearch",
+          query: SEARCH_QUERY_WITHOUT_PHOTO,
+          variables: { query: q, page, pageSize: 12 },
+        }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (fallbackResponse.ok) data = await fallbackResponse.json();
+    } catch (_) { /* Keep original error if fallback also fails. */ }
+  }
   if (data.errors?.length) {
     return respond({
       ok: false,
@@ -97,6 +120,9 @@ export async function onRequestGet(context) {
       club: p.activeClub?.name || "Sin club",
       position: p.position || "UNKNOWN",
       l5: typeof p.l5 === "number" ? p.l5 : null,
+      l10: typeof p.l10 === "number" ? p.l10 : null,
+      l15: typeof p.l15 === "number" ? p.l15 : null,
+      avatar: typeof p.avatar === "string" && /^https:\/\//i.test(p.avatar) ? p.avatar : null,
     }));
 
   const response = respond({
