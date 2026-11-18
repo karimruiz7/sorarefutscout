@@ -162,9 +162,12 @@ function poolSaveItem(p){
  if(!["goalkeeper","defender","midfielder","forward"].includes(pos))return {ok:false,error:"Posición no compatible"};
  if(typeof p.slug!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.slug))return {ok:false,error:"Identificador no válido"};
  const metric=k=>typeof p[k]==="number"&&Number.isFinite(p[k])&&p[k]>=0&&p[k]<=100?p[k]:null;
- const item={slug:p.slug,name:p.name,club:p.club,position:p.position,
-  l5:metric("l5"),l10:metric("l10"),l15:metric("l15"),avatar:safePhoto(p.avatar),savedAt:Date.now()};
  const current=poolRead(),prior=current.findIndex(o=>o.slug===p.slug);
+ const previous=prior>=0?current[prior]:null;
+ const item={slug:p.slug,name:p.name,club:p.club,position:p.position,
+  l5:metric("l5"),l10:metric("l10"),l15:metric("l15"),avatar:safePhoto(p.avatar),
+  ownedArcade:previous?.ownedArcade===true,ownedCompetitive:previous?.ownedCompetitive===true,
+  savedAt:Date.now()};
  if(prior<0&&current.length>=POOL_MAX)return {ok:false,error:"Máximo de "+POOL_MAX+" jugadores"};
  if(prior>=0)current[prior]=item;else current.push(item);
  try{localStorage.setItem(OPTIMIZER_KEY,JSON.stringify(current));return {ok:true,newItem:prior<0};}
