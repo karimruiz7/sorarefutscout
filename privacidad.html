@@ -33,9 +33,18 @@ code{color:#b5ff65}footer{border-top:1px solid #30475c;padding:23px;color:#a5bac
 <li>Cuando OAuth esté habilitado, «Desconectar cuenta» invalidará la sesión local registrada en el servidor. Si deseas revocar autorizaciones de terceros, comprueba también los controles de tu cuenta Sorare.</li>
 </ul>
 <h2>6. Responsable y contacto</h2>
-<p>Antes de habilitar el acceso OAuth al público, el operador de SorareFutScout deberá publicar sus datos de identificación y un canal de contacto privado para ejercer derechos y formular solicitudes sobre datos personales. No utilices incidencias públicas de GitHub para enviar datos privados o credenciales.</p>
+<p>Antes de habilitar el acceso OAuth al público, el operador de SorareFutScout deberá publicar sus datos de identificación y un canal de contacto privado para ejercer derechos y formular solicitudes sobre datos personales. No utilices incidencias públicas de GitHub para enviar datos privados o credenciales.</p><p id="contact-result"><strong>Contacto privado:</strong> pendiente de configurar antes de activar OAuth.</p>
 <h2>7. Cambios y límites</h2>
 <p>Esta información refleja el desarrollo de la beta y puede cambiar cuando añadamos sincronización de cartas, un sistema de cuentas completo o nuevos proveedores de noticias. Los visitantes deben consultar la versión actualizada antes de conectar su cuenta.</p>
 </section>
 <p class="intro">SorareFutScout es independiente y no está afiliada oficialmente a Sorare.</p>
-</main><footer>© SorareFutScout · <a href="/">Inicio</a> · <a href="/mi-club.html">Mi club</a></footer></body></html>
+</main><script>
+fetch("/api/auth/config",{cache:"no-store"}).then(r=>r.json()).then(info=>{
+ const el=document.getElementById("contact-result");
+ if(info?.contact&&typeof info.contact==="string"){
+  el.textContent="Contacto privado para solicitudes de datos: ";
+  const a=document.createElement("a");a.href="mailto:"+info.contact;a.textContent=info.contact;
+  el.append(a);
+ }
+}).catch(()=>{});
+</script><footer>© SorareFutScout · <a href="/">Inicio</a> · <a href="/mi-club.html">Mi club</a></footer></body></html>
