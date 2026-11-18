@@ -88,3 +88,17 @@ La API de Sorare documenta `Player.pictureUrl(derivative: "avatar")`. El uso de 
 - [ ] Añadir verificación de cartas poseídas mediante OAuth, temporada/escasez, elegibilidad por competición, cap, calendario, lesiones/DNP, sustitutos y proyección futura, tras validar acceso y disponibilidad de datos.
 
 **Nota:** «optimizar» aquí significa maximizar una estadística histórica, no garantizar puntos futuros ni generar automáticamente una alineación válida para todas las competiciones.
+
+## Fase 3.1 — Distinguir colecciones y modalidades
+
+- [x] Confirmado en la ayuda oficial: Arcade, Pro y Arena son tres modos distintos (no equivalen a SO5/SO7).
+- [x] Registradas las cuatro ligas del set WNTR de sobres de Sorare: LaLiga, Bundesliga, Premier League, Ligue 1. La lista puede cambiar con otros sets.
+- [x] Añadido selector de contexto (libre, Arcade, Pro/Arena) al optimizador.
+- [x] Añadidas marcas manuales de propiedad Arcade y Pro/Arena por jugador, persistidas en `localStorage`.
+- [x] En Arcade el optimizador permite solo los jugadores marcados como colección Arcade y utiliza SO5.
+- [x] En Pro/Arena utiliza solo cartas marcadas manualmente para competición, pero no garantiza elegibilidad real.
+- [x] El explorador preserva las marcas de colección al actualizar medias.
+- [x] Pruebas de algoritmo: cinco cartas Arcade marcadas dan la suma L5 esperada, una carta exclusiva Pro queda fuera, colección Pro incompleta no construye un equipo.
+- [ ] Verificar la actualización publicada en Cloudflare y confirmar el flujo manual.
+- [ ] Incorporar verificación de la liga actual de cada jugador desde una fuente documentada, sin inferirla de su nombre.
+- [ ] Conectar datos de colección mediante OAuth y validar reglas específicas de tablero / Game Week cuando Sorare conceda acceso autorizado.
