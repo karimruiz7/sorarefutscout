@@ -123,6 +123,23 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .alternative-explanation{background:#112921;border:1px solid #426049;border-radius:11px;padding:12px 15px;font-size:13px;line-height:1.65;color:#d5ebd9;margin:8px 0 15px}
 .alternative-count{font-size:12px;color:#bad5c1;margin:7px 0 0}
 @media(max-width:700px){.alternative-options{grid-template-columns:1fr}.alt-option{display:flex;align-items:center;justify-content:space-between;gap:10px}.alt-option .alt-points{font-size:17px}}
+
+/* Fase 3.6: oportunidad individual independiente del rival */
+.opportunity-panel{background:linear-gradient(140deg,#19243a,#142c30);border-color:#3c6370}
+.opportunity-toggle{display:flex;gap:10px;align-items:center;margin:15px 0;color:#e4f6fb;font-weight:750;font-size:13px}
+.opportunity-toggle input{height:18px;width:18px;accent-color:var(--accent)}
+.opportunity-badge{display:inline-flex;align-items:center;background:#203e45;border:1px solid #477b82;color:#c2f7ee;border-radius:8px;padding:5px 9px;font-weight:800;font-size:12px;white-space:nowrap}
+.opportunity-badge.missing{background:#2b3744;color:#b2c5d6;border-color:#4c5966}
+.opportunity-trend{display:block;font-size:11px;color:#b9d3e1;margin-top:4px;white-space:nowrap}
+.opportunity-trend.up{color:#b5ffa8}.opportunity-trend.down{color:#ffbaae}
+.opportunity-explain{margin-top:7px;max-width:325px}
+.opportunity-explain summary{cursor:pointer;color:#9dd9ed;font-size:11px}
+.opportunity-explain p{font-size:11px;color:#c3d9e0;line-height:1.6;margin:7px 0 0}
+.opportunity-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.opportunity-grid>div{border:1px solid #3c5565;background:#142333;border-radius:11px;padding:12px;font-size:12px;line-height:1.55;color:#b9d7e7}
+.opportunity-grid strong{display:block;color:#e3f5f5;margin-bottom:4px}
+.slot .opportunity-summary{display:block;margin-top:9px;font-size:11px;color:#c3f5e8;line-height:1.5}
+@media(max-width:700px){.opportunity-grid{grid-template-columns:1fr}.opportunity-badge{white-space:normal}}
 </style>
 </head>
 <body>
@@ -198,6 +215,18 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 </div>
 <p class="legend-note">Las etiquetas se interpretan desde la posición del futbolista: un rival que encaja muchos goles favorece a atacantes; uno que marca pocos, a defensas y porteros. Si no hay datos suficientes se mostrará «Sin evaluar».</p>
 <p class="help"><b>Modelo experimental, no oficial:</b> para delanteros y medios se considera más favorable un rival que encaja muchos goles; para defensas y porteros, uno que marca pocos. Se parte de una referencia neutra de 1,5 goles/partido y se aplican 7,5 unidades de índice por gol de diferencia, con un máximo de ±12. Estas ponderaciones son decisiones de diseño, no datos ni predicciones de Sorare. Si faltan al menos tres partidos válidos del rival, el ajuste es cero y se señala como desconocido.</p>
+</section>
+<section class="panel opportunity-panel" aria-labelledby="opportunity-title">
+<h2 id="opportunity-title">Oportunidad individual · beta</h2>
+<p class="sub">Una valoración distinta de la dificultad del rival: estudiamos la forma reciente de cada futbolista en Sorare y después aplicamos una corrección pequeña por el enfrentamiento.</p>
+<label class="opportunity-toggle"><input type="checkbox" id="use-opportunity"> Optimizar por oportunidad individual (experimental)</label>
+<div class="opportunity-grid">
+<div><strong>55 % · Media L5</strong>Forma de los cinco últimos encuentros puntuados.</div>
+<div><strong>30 % · Media L10</strong>Referencia más amplia para moderar una racha corta.</div>
+<div><strong>15 % · Media L15</strong>Contexto adicional. Si falta L15, repartimos su peso proporcionalmente entre L5 y L10.</div>
+</div>
+<p class="help">Solo se aplica el <b>35 % del ajuste experimental del rival</b> (máximo ±4,2 unidades). Si faltan datos del rival, mostramos un índice parcial basado en la forma; no damos por favorable el encuentro. Se necesitan L5 y L10 disponibles. La localía se informa cuando Sorare la confirma, pero <b>no suma puntos</b> sin estadísticas específicas. Tampoco disponemos aún de minutos previstos, lesiones ni probabilidad de titularidad verificadas.</p>
+<p class="help"><b>Importante:</b> es un índice comparativo propio de SorareFutScout (escala 0–100), no un pronóstico ni una puntuación oficial. «Oportunidad individual» y «Priorizar rivales» son criterios alternativos; no se aplican simultáneamente.</p>
 </section>
 <section class="panel" aria-labelledby="pool-title">
 <div class="pool-meta"><div><h2 id="pool-title">Mi selección de futbolistas</h2><p class="sub">Guardada en este navegador. Marca las cartas que posees para que Arcade o Pro/Arena utilicen solo tu colección indicada manualmente.</p></div>
@@ -393,6 +422,54 @@ function matchupValue(p,metric){
  const insight=matchAdjustment(p);
  return insight?Math.max(0,Math.min(100,base+insight.delta)):base;
 }
+const OPPORTUNITY_WEIGHTS={l5:0.55,l10:0.30,l15:0.15};
+const OPPORTUNITY_RIVAL_FACTOR=0.35;
+function opportunityData(p){
+ if(typeof p?.l5!=="number"||!Number.isFinite(p.l5)||
+    typeof p?.l10!=="number"||!Number.isFinite(p.l10))return null;
+ const haveL15=typeof p.l15==="number"&&Number.isFinite(p.l15);
+ const weights=OPPORTUNITY_WEIGHTS.l5+OPPORTUNITY_WEIGHTS.l10+(haveL15?OPPORTUNITY_WEIGHTS.l15:0);
+ const form=(p.l5*OPPORTUNITY_WEIGHTS.l5+p.l10*OPPORTUNITY_WEIGHTS.l10+
+   (haveL15?p.l15*OPPORTUNITY_WEIGHTS.l15:0))/weights;
+ const rival=matchAdjustment(p);
+ const rivalEffect=rival?rival.delta*OPPORTUNITY_RIVAL_FACTOR:null;
+ const round=n=>Math.round(n*10)/10;
+ const value=Math.max(0,Math.min(100,form+(rivalEffect||0)));
+ const trend=round(p.l5-p.l10);
+ const home=fixtureOpponent(p)?.home;
+ return {value:round(value),form:round(form),trend,
+  trendLabel:trend>=8?"En alza":trend<=-8?"En descenso":"Estable",
+  hasL15:haveL15,rivalKnown:rival!==null,
+  rivalEffect:rivalEffect===null?null:round(rivalEffect),
+  home:typeof home==="boolean"?home:null};
+}
+function opportunityValue(p){return opportunityData(p)?.value??null;}
+function opportunityBadge(p){
+ const data=opportunityData(p);
+ const badge=make("span","opportunity-badge"+(data?"":" missing"),data?fmt(data.value)+" / 100":"Sin datos");
+ badge.setAttribute("aria-label","Oportunidad individual de "+p.name+": "+(data?fmt(data.value)+" sobre 100":"no disponible"));
+ return badge;
+}
+function opportunityDetails(p){
+ const detail=make("details","opportunity-explain");
+ detail.append(make("summary","","¿Por qué este índice?"));
+ const data=opportunityData(p);
+ if(!data){
+   detail.append(make("p","","No se han recibido las medias L5 y L10 necesarias; no inventamos el índice."));
+   return detail;
+ }
+ const impact=data.rivalKnown?
+   "Rival: "+(data.rivalEffect>=0?"+":"")+fmt(data.rivalEffect)+" unidades (35 % del ajuste del enfrentamiento).":
+   "Rival: sin datos suficientes; índice parcial basado solo en la forma.";
+ const venue=data.home===true?"Juega en casa (sin bonificación).":
+   data.home===false?"Juega fuera (sin penalización).":"Localía no comprobada (sin efecto en el índice).";
+ const l15=data.hasL15?"L15 "+fmt(p.l15)+".":"L15 ausente: los pesos L5 y L10 se redistribuyen.";
+ detail.append(make("p","","L5 "+fmt(p.l5)+"; L10 "+fmt(p.l10)+"; "+l15+
+   " Forma combinada "+fmt(data.form)+". Tendencia L5–L10: "+(data.trend>0?"+":"")+
+   fmt(data.trend)+" ("+data.trendLabel+"). "+impact+" "+venue+
+   " Índice "+fmt(data.value)+"/100. Modelo experimental: no estima goles, minutos ni puntos esperados."));
+ return detail;
+}
 function opponentText(p){
  const rival=fixtureOpponent(p);
  if(!rival)return {text:"Rival sin identificar",available:false};
@@ -407,6 +484,11 @@ function opponentText(p){
   "Encaja "+fmt(info.stats.goalsAgainstPerGame)+" goles/partido";
  const sign=info.delta>0?"+":"";
  return {text:rival.name+" · "+stat+" (últimos "+info.stats.gamesCount+") · Ajuste "+sign+fmt(info.delta),available:true};
+}
+function updateOpportunityControl(){
+ const eligible=filteredByMode().some(p=>opportunityData(p)!==null);
+ $("use-opportunity").disabled=!eligible;
+ if(!eligible)$("use-opportunity").checked=false;
 }
 function updateMatchupControl(){
  const eligible=filteredByMode();
@@ -602,7 +684,7 @@ readGameCache();
 readOppCache();
 function render(){
  const summary={Goalkeeper:0,Defender:0,Midfielder:0,Forward:0};
- updateMatchupControl();
+ updateMatchupControl();updateOpportunityControl();
  pool.forEach(p=>{if(summary[p.position]!==undefined)summary[p.position]++;});
  $("pool-count").textContent=filteredByMode().length+" disponibles de "+pool.length+" seleccionados";
  updateGameWeekFilter();
@@ -612,13 +694,20 @@ function render(){
  const target=$("pool");target.replaceChildren();
  if(!pool.length){target.append(make("div","empty","Todavía no has añadido futbolistas. Ve al explorador real, busca un equipo y pulsa «Añadir visibles al optimizador»."));return;}
  const wrap=make("div","tablewrap"),table=make("table"),thead=make("thead"),row=make("tr");
- for(const col of ["Jugador","Posición","L5","L10","L15","Próximo partido","Mis cartas (manual)","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
+ for(const col of ["Jugador","Posición","L5","L10","L15","Oportunidad individual","Próximo partido","Mis cartas (manual)","Eliminar"]){const th=make("th","",col);th.scope="col";row.append(th);}
  thead.append(row);
  const body=make("tbody");
  const list=[...pool].sort((a,b)=>a.position.localeCompare(b.position)||a.name.localeCompare(b.name,"es"));
  for(const p of list){
    const tr=make("tr"),td=make("td");td.append(playerLabel(p));tr.append(td,make("td","",posName(p.position)));
    for(const metric of ["l5","l10","l15"])tr.append(make("td","score",fmt(p[metric])));
+   const oppCell=make("td"),oppData=opportunityData(p);
+   oppCell.append(opportunityBadge(p));
+   if(oppData){
+     oppCell.append(make("small","opportunity-trend"+(oppData.trend>=8?" up":oppData.trend<=-8?" down":""),
+       oppData.trendLabel+" · "+(oppData.rivalKnown?"Rival evaluado":"Rival pendiente")));
+   }
+   oppCell.append(opportunityDetails(p));tr.append(oppCell);
    const fixtureCell=make("td");
    const chosenGw=$("game-week").value;
    if(chosenGw){
