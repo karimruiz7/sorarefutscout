@@ -150,6 +150,15 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .status-pill.doubt{background:#4a3d25;border-color:#867140;color:#ffdfa5}
 .status-pill.good{background:#244034;border-color:#507b5a;color:#c5fac5}
 .status-link{font-size:11px;color:#b5ff65;display:block;margin-top:6px}
+
+/* Navegación rápida del optimizador */
+.jumpnav{display:flex;flex-wrap:wrap;gap:8px;margin:7px 0 22px}
+.jumpnav a{padding:8px 11px;border:1px solid #3c5770;border-radius:9px;background:#182738;color:#c8d7ea;font-size:12px;font-weight:750}
+.jumpnav a:hover{border-color:var(--accent);color:var(--accent)}
+section[id]{scroll-margin-top:94px}
+.method-details{margin-top:12px;color:#c2d1de;font-size:12px}
+.method-details summary{cursor:pointer;color:#b5ff65;font-weight:750}
+.method-details .help{margin:7px 0 0}
 </style>
 </head>
 <body>
@@ -164,7 +173,13 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <div class="instruction"><b>2. Crea tu selección</b><span>Utiliza «Añadir al optimizador» o «Añadir visibles» para guardarlos en este navegador.</span></div>
 <div class="instruction"><b>3. Optimiza</b><span>Escoge formato y media. Calculamos la mejor combinación dentro de tu selección.</span></div>
 </div>
-<section class="panel">
+<nav class="jumpnav" aria-label="Ir a una sección del optimizador">
+<a href="#configuracion">Configuración</a><a href="#calendario">Game Week</a>
+<a href="#rivales">Enfrentamientos</a><a href="#oportunidad">Oportunidad individual</a>
+<a href="#cartas">Mis cartas</a><a href="#result">Alineaciones</a>
+<a href="/disponibilidad.html">Noticias y bajas ↗</a>
+</nav>
+<section class="panel" id="configuracion">
 <div class="actions" style="justify-content:space-between"><h2>Configuración del optimizador</h2><span class="badge" id="pool-count">0 jugadores</span></div>
 <div class="toolbar">
 <label class="field">Contexto de juego <select id="game-mode">
@@ -194,7 +209,7 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <p class="help">Marca manualmente en la tabla qué futbolistas tienes en cada colección. Las marcas son tuyas y no están verificadas con Sorare; tampoco comprobamos la liga de cada carta. El motor no valida escasez, temporada, elegibilidad, encuentros, lesiones, cap, XP, capitán ni bonificaciones. No predice puntos ni registra alineaciones.</p>
 </section>
 
-<section class="panel" aria-labelledby="fixtures-title">
+<section class="panel" id="calendario" aria-labelledby="fixtures-title">
 <h2 id="fixtures-title">Próximos partidos de tus jugadores</h2>
 <p class="sub">Consulta en Sorare el siguiente partido puntuable registrado para cada futbolista de tu selección. Mostraremos fecha, rival y Game Week si Sorare los facilita.</p>
 <div class="fixtures-tools">
@@ -210,7 +225,7 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <p class="help">Las Game Weeks se obtienen de Sorare y pueden abarcar varios días. Solo podemos mostrar la <b>próxima</b> Game Week registrada para cada futbolista; no sabemos todavía todos sus partidos de jornadas posteriores. Elegir una GW excluye a quien no tenga un próximo partido identificado en ella. El filtro de siete días y el de Game Week no se aplican simultáneamente. Un partido previsto no garantiza titularidad ni elegibilidad de la carta.</p>
 </section>
 
-<section class="panel" aria-labelledby="matchup-title">
+<section class="panel" id="rivales" aria-labelledby="matchup-title">
 <h2 id="matchup-title">Análisis de enfrentamientos · beta</h2>
 <p class="sub">Compara los próximos rivales de tus cartas utilizando los goles que han marcado y encajado en sus cinco últimos encuentros registrados por Sorare.</p>
 <div class="matchup-actions">
@@ -226,9 +241,9 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <span class="difficulty-badge" data-level="very-hard">Muy difícil</span>
 </div>
 <p class="legend-note">Las etiquetas se interpretan desde la posición del futbolista: un rival que encaja muchos goles favorece a atacantes; uno que marca pocos, a defensas y porteros. Si no hay datos suficientes se mostrará «Sin evaluar».</p>
-<p class="help"><b>Modelo experimental, no oficial:</b> para delanteros y medios se considera más favorable un rival que encaja muchos goles; para defensas y porteros, uno que marca pocos. Se parte de una referencia neutra de 1,5 goles/partido y se aplican 7,5 unidades de índice por gol de diferencia, con un máximo de ±12. Estas ponderaciones son decisiones de diseño, no datos ni predicciones de Sorare. Si faltan al menos tres partidos válidos del rival, el ajuste es cero y se señala como desconocido.</p>
+<details class="method-details"><summary>Cómo calculamos la dificultad</summary><p class="help"><b>Modelo experimental, no oficial:</b> para delanteros y medios se considera más favorable un rival que encaja muchos goles; para defensas y porteros, uno que marca pocos. Se parte de una referencia neutra de 1,5 goles/partido y se aplican 7,5 unidades de índice por gol de diferencia, con un máximo de ±12. Estas ponderaciones son decisiones de diseño, no datos ni predicciones de Sorare. Si faltan al menos tres partidos válidos del rival, el ajuste es cero y se señala como desconocido.</p></details>
 </section>
-<section class="panel opportunity-panel" aria-labelledby="opportunity-title">
+<section class="panel opportunity-panel" id="oportunidad" aria-labelledby="opportunity-title">
 <h2 id="opportunity-title">Oportunidad individual · beta</h2>
 <p class="sub">Una valoración distinta de la dificultad del rival: estudiamos la forma reciente de cada futbolista en Sorare y después aplicamos una corrección pequeña por el enfrentamiento.</p>
 <label class="opportunity-toggle"><input type="checkbox" id="use-opportunity"> Optimizar por oportunidad individual (experimental)</label>
@@ -241,7 +256,7 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <p class="help">Solo se aplica el <b>35 % del ajuste experimental del rival</b> (máximo ±4,2 unidades). Si faltan datos del rival, mostramos un índice parcial basado en la forma; no damos por favorable el encuentro. Se necesitan L5 y L10 disponibles. La localía se informa cuando Sorare la confirma, pero <b>no suma puntos</b> sin estadísticas específicas. Tampoco disponemos aún de minutos previstos, lesiones ni probabilidad de titularidad verificadas.</p>
 <p class="help"><b>Importante:</b> es un índice comparativo propio de SorareFutScout (escala 0–100), no un pronóstico ni una puntuación oficial. «Oportunidad individual» y «Priorizar rivales» son criterios alternativos; no se aplican simultáneamente.</p>
 </section>
-<section class="panel" aria-labelledby="pool-title">
+<section class="panel" id="cartas" aria-labelledby="pool-title">
 <div class="pool-meta"><div><h2 id="pool-title">Mi selección de futbolistas</h2><p class="sub">Guardada en este navegador. Marca las cartas que posees para que Arcade o Pro/Arena utilicen solo tu colección indicada manualmente.</p></div>
 <div class="actions"><button type="button" class="btn secondary tiny" id="reload">Actualizar lista</button><button type="button" class="btn danger tiny" id="clear">Vaciar selección</button></div></div>
 <div id="position-counts" class="positions"></div>
