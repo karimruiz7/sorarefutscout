@@ -28,7 +28,9 @@
 - [ ] Resolver permisos/límites de la API y las condiciones para uso público a escala.
 - [x] Añadir un enlace desde la página principal al explorador de datos reales (beta).
 - [ ] Integrar los datos reales en todos los módulos del panel original y eliminar datos simulados cuando cada módulo esté validado.
-- [ ] Implementar filtros e historial.
+- [x] Añadir filtros de medias mínimas L5/L10/L15 y opción de jugadores con club, sobre la página cargada.
+- [x] Añadir un gráfico de las últimas cinco puntuaciones disponibles al abrir la ficha / comparación.
+- [ ] Validar la nueva UI de filtros e historial en Cloudflare, escritorio y móvil.
 - [ ] Estudiar OAuth para importar la colección personal del usuario con su autorización.
 - [ ] Adaptar el optimizador a las reglas efectivas de cada competición.
 
@@ -55,3 +57,10 @@ La API de Sorare documenta `Player.pictureUrl(derivative: "avatar")`. El uso de 
 - [x] `explorador.html`: caché de sesión de 10 minutos para búsquedas repetidas, mantiene últimos resultados si una consulta falla y muestra el tiempo de espera aproximado.
 - [ ] Validar el despliegue más reciente y probar una búsqueda repetida de Rayan, sabiendo que el límite de Sorare puede seguir aplicando a búsquedas nuevas.
 - [ ] Para tráfico público a escala, evaluar permiso o API key de Sorare que permita mayor tasa de peticiones; guardar la clave solo como secreto de Cloudflare.
+
+## Fase 2.2 — Filtros y gráficos (18-11-2026)
+- Añadidos umbrales numéricos L5/L10/L15 (de 0 a 100), checkbox «Solo con club» y botón para restablecer filtros.
+- Se usan los datos ya cargados de la API, sin nuevas peticiones por cada filtro; afectan únicamente a los resultados de la página visible, NO a un ranking global.
+- Las fichas individuales incluyen gráfico accesible de cinco resultados recientes (`rawPlayerGameScores`), sin inventar las puntuaciones ausentes.
+- Mantener una distinción visible entre medias históricas, elegibilidad y proyecciones futuras: son conceptos distintos.
+- Estado: el código está publicado en GitHub, pendiente de validación en Cloudflare.
