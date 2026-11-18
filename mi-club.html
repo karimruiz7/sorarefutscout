@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b111a"><title>Mi club | SorareFutScout</title>
+<meta name="description" content="Conecta tu cuenta de Sorare con autorización oficial y prepara la importación de tu club en SorareFutScout.">
+<style>
+:root{color-scheme:dark;--accent:#b5ff65;--bg:#0b111a;--panel:#141e2e;--border:#31435b;--muted:#aebed0;--text:#f7f9fc}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#1c352a,#0b111a 65%);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+header{background:#0d151fef;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}.wrap{max-width:1100px;margin:auto;padding:0 22px}.head{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:16px}.logo{font-size:18px;font-weight:900;color:var(--text)}.logo b{display:inline-block;background:var(--accent);border-radius:10px;color:#14210a;padding:7px 9px;margin-right:10px}.logo em{font-style:normal;color:var(--accent)}
+nav{display:flex;gap:16px;flex-wrap:wrap}nav a{color:var(--muted);font-size:13px}nav .active{color:var(--accent);font-weight:850}
+main{padding:42px 0 70px}h1{font-size:clamp(32px,5vw,52px);line-height:1.13;letter-spacing:-1.3px;margin:6px 0 13px}h1 em{font-style:normal;color:var(--accent)}.eyebrow{color:var(--accent);font-size:11px;font-weight:900;letter-spacing:1.5px}.intro{color:var(--muted);max-width:770px;margin:0 0 28px}
+.hero{border:1px solid #416057;background:linear-gradient(125deg,#19263a,#153229);border-radius:20px;padding:28px;margin-bottom:21px}
+.card{border:1px solid var(--border);background:var(--panel);padding:24px;border-radius:17px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.status{padding:10px 12px;background:#1e3145;color:#b9d6ec;border:1px solid #476681;border-radius:10px;font-size:13px;margin:15px 0;line-height:1.65}.status.good{background:#193826;color:#b7efc4;border-color:#417550}.status.error{background:#44282e;color:#ffcbc4;border-color:#8c5860}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#142109;font-weight:850;padding:12px 16px;border-radius:10px;border:none;margin:8px 7px 8px 0;text-decoration:none}.btn.secondary{background:#2c3f54;border:1px solid #526f8a;color:#fff}.btn:disabled{opacity:.46;cursor:not-allowed}.pill{font-size:11px;padding:5px 8px;border:1px solid #5a7184;color:#c6d9e6;border-radius:8px;white-space:nowrap}.steps{list-style:none;padding:0;display:grid;gap:12px;margin:0}.steps li{display:flex;gap:12px;align-items:start;background:#172638;border:1px solid #334a60;border-radius:13px;padding:15px}.number{display:grid;place-items:center;border-radius:50%;background:#2a4635;color:#c2ff97;flex:0 0 28px;width:28px;height:28px;font-weight:900}.steps strong{display:block;margin-bottom:3px}.steps p{margin:0;color:var(--muted);font-size:12px}
+.small{color:var(--muted);font-size:12px;line-height:1.7}.section-title{margin:0 0 14px;font-size:20px}
+footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-size:12px;color:#96adc0}
+@media(max-width:740px){.grid{grid-template-columns:1fr}.head{align-items:start;flex-direction:column;padding:14px 0}.wrap{padding:0 14px}.hero,.card{padding:18px}}
+</style></head><body>
+<header><div class="wrap head"><a class="logo" href="/"><b>SF</b>Sorare<em>FutScout</em></a>
+<nav aria-label="Navegación"><a href="/">Inicio</a><a href="/explorador.html">Jugadores</a><a href="/optimizador-real.html">Optimizador</a><a href="/disponibilidad.html">Disponibilidad</a><a class="active" href="/mi-club.html" aria-current="page">Mi club</a></nav>
+</div></header>
+<main class="wrap">
+<div class="eyebrow">FASE 4 · TU CLUB EN UN SOLO LUGAR</div>
+<h1>Tu club de Sorare, <em>sin copiar cartas a mano.</em></h1>
+<p class="intro">Queremos que conectes tu cuenta, importes tus cartas y prepares varias alineaciones en menos de diez minutos. El proceso de importación aún está en desarrollo; la conexión OAuth solo se habilitará cuando esté configurada y probada.</p>
+<section class="hero">
+<h2 class="section-title">Conexión con Sorare</h2>
+<p class="small">Autorización oficial mediante Sorare OAuth. SorareFutScout nunca te pedirá la contraseña de tu cuenta.</p>
+<div id="connection-status" class="status" role="status" aria-live="polite">Comprobando si la conexión está habilitada…</div>
+<div id="profile" class="status good" hidden></div>
+<a id="connect" href="/auth/sorare/start" class="btn" style="display:none">Conectar con Sorare</a>
+<button id="disconnect" class="btn secondary" type="button" hidden>Desconectar cuenta</button>
+<a class="btn secondary" href="/optimizador-real.html">Seguir con mi selección manual</a>
+<p class="small">La clave API del proyecto permite consultas públicas. Para vincular cuentas necesitaremos credenciales OAuth específicas y almacenamiento seguro de sesiones. <a href="/privacidad.html">Cómo tratamos los datos</a>.</p>
+</section>
+<div class="grid">
+<section class="card"><h2 class="section-title">Tu recorrido, paso a paso</h2>
+<ol class="steps">
+<li><span class="number">1</span><div><strong>Conectar cuenta</strong><p>Autorizar desde Sorare el acceso de lectura a tu perfil y tus cartas.</p></div></li>
+<li><span class="number">2</span><div><strong>Importar cartas</strong><p>Próxima fase: consultar la colección y comprobar la compatibilidad de Arcade y Pro/Arena.</p></div></li>
+<li><span class="number">3</span><div><strong>Elegir Game Week</strong><p>Filtrar encuentros y jugadores según los calendarios reales disponibles.</p></div></li>
+<li><span class="number">4</span><div><strong>Comparar alineaciones</strong><p>Buscar las mejores combinaciones por forma, rival y disponibilidad documentada.</p></div></li>
+</ol></section>
+<section class="card"><h2 class="section-title">Qué datos solicitaremos</h2>
+<p class="small">Según la documentación de OAuth de Sorare, el permiso permite consultar información básica de usuario y cartas. No permite consultar futuras alineaciones privadas ni realizar operaciones de compra o venta.</p>
+<p class="small">La sesión se gestionará en Cloudflare mediante una cookie segura y un registro cifrado de acceso. No se guardarán contraseñas de Sorare.</p>
+<div class="status"><strong>Estado actual:</strong> el importador no está conectado todavía. Puedes continuar utilizando el explorador y el optimizador como hasta ahora.</div>
+<a href="/explorador.html">Abrir el explorador real</a></section>
+</div>
+<footer>SorareFutScout es una herramienta independiente, no oficial y en desarrollo. Las estadísticas e índices no garantizan puntuaciones ni elegibilidad. <a href="/privacidad.html">Privacidad</a>.</footer>
+</main>
+<script>
+(()=>{
+ const $=id=>document.getElementById(id),status=$("connection-status");
+ const message={denied:"Has cancelado la autorización de Sorare.",not_ready:"La conexión todavía no está configurada.",
+ state:"No se ha podido verificar la solicitud de conexión. Inténtalo de nuevo desde esta página.",
+ invalid_code:"Sorare no ha devuelto un código de autorización válido.",failed:"La conexión no se ha completado. Revisa la configuración de OAuth."};
+ const error=new URLSearchParams(location.search).get("error");
+ if(error&&message[error]){status.classList.add("error");status.textContent=message[error];}
+ async function load(){
+  try{
+   const [config,session]=await Promise.all([
+    fetch("/api/auth/config",{cache:"no-store"}).then(r=>r.json()),
+    fetch("/api/auth/session",{cache:"no-store"}).then(r=>r.json())
+   ]);
+   if(session.connected){
+    $("profile").hidden=false;
+    $("profile").textContent="Cuenta conectada: "+session.user.slug+". La importación de cartas se habilitará en la siguiente fase.";
+    $("disconnect").hidden=false;$("connect").style.display="none";
+    if(!error){status.textContent="Autorización de Sorare completada. Se ha creado una sesión segura.";}
+   }else if(config.oauthReady){
+    $("profile").hidden=true;$("disconnect").hidden=true;
+    $("connect").style.display="inline-flex";
+    if(!error)status.textContent="Conexión configurada: puedes autorizar el acceso de lectura desde Sorare.";
+   }else{
+    $("connect").style.display="none";$("disconnect").hidden=true;
+    if(!error)status.textContent="En preparación: faltan las credenciales OAuth y/o el almacenamiento KV. La clave API ya configurada no sustituye OAuth.";
+   }
+  }catch(_){status.classList.add("error");status.textContent="No se ha podido consultar la configuración. No se activará la conexión hasta verificar el servidor."; $("connect").style.display="none";}
+ }
+ $("disconnect").addEventListener("click",async()=>{
+  $("disconnect").disabled=true;
+  try{
+   const res=await fetch("/api/auth/logout",{method:"POST",cache:"no-store",credentials:"same-origin"});
+   if(!res.ok)throw Error();
+   $("profile").hidden=true;$("disconnect").hidden=true;status.textContent="Sesión cerrada. Tus cartas guardadas manualmente en este navegador no se han borrado.";
+   await load();
+  }catch(_){status.classList.add("error");status.textContent="No se ha podido cerrar la sesión en el servidor. Vuelve a intentarlo.";}
+  finally{$("disconnect").disabled=false;}
+ });
+ load();
+})();
+</script></body></html>
