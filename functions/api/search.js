@@ -16,6 +16,15 @@ const SEARCH_QUERY = [
   "}"
 ].join("\n");
 const SEARCH_QUERY_WITHOUT_PHOTO = SEARCH_QUERY.replace('avatar: pictureUrl(derivative: "avatar")', "");
+// Sorare sends Retry-After on HTTP 429. Accept seconds or a HTTP-date.
+function retrySeconds(header) {
+  const n = Number(header);
+  if (Number.isFinite(n) && n >= 0) return Math.min(3600, Math.max(1, Math.ceil(n)));
+  const deadline = header ? Date.parse(header) : NaN;
+  if (Number.isFinite(deadline)) return Math.min(3600, Math.max(1, Math.ceil((deadline - Date.now()) / 1000)));
+  return 60;
+}
+
 
 function respond(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -42,12 +51,16 @@ export async function onRequestGet(context) {
     return respond({ ok: false, error: "Página de búsqueda no válida." }, 400);
   }
 
-  const cacheKey = new Request(url.origin + "/api/search?v=2&q=" + encodeURIComponent(q.toLowerCase()) + "&page=" + page);
+  const cacheKey = new Request(url.origin + "/api/search?v=3&q=" + encodeURIComponent(q.toLowerCase()) + "&page=" + page);
+  // One cooldown per Cloudflare data center when Sorare asks us to slow down.
+  const cooldownKey = new Request(url.origin + "/api/search?__cooldown=v3");
   let cache;
   try {
     cache = caches.default;
     const previous = await cache.match(cacheKey);
     if (previous) return previous;
+    const cooldown = await cache.match(cooldownKey);
+    if (cooldown) return cooldown;
   } catch (_) { /* No cache available in local development. */ }
 
   let upstream;
@@ -69,7 +82,19 @@ export async function onRequestGet(context) {
   }
 
   if (upstream.status === 429) {
-    return respond({ ok: false, error: "Límite de consultas de Sorare. Vuelve a intentarlo más tarde." }, 429);
+    const seconds = retrySeconds(upstream.headers.get("retry-after"));
+    const limited = respond({
+      ok: false,
+      error: "Sorare ha limitado temporalmente las búsquedas.",
+      retryAfter: seconds,
+    }, 429, {
+      "retry-after": String(seconds),
+      "cache-control": "public, max-age=0, s-maxage=" + seconds,
+    });
+    if (cache && context.waitUntil) {
+      context.waitUntil(cache.put(cooldownKey, limited.clone()).catch(() => {}));
+    }
+    return limited;
   }
   if (!upstream.ok) {
     return respond({ ok: false, error: "Sorare no ha respondido correctamente.", upstreamStatus: upstream.status }, 502);
@@ -134,7 +159,7 @@ export async function onRequestGet(context) {
     nbHits: result.nbHits || 0,
     nbPages: result.nbPages || 0,
     players,
-  }, 200, { "cache-control": "public, max-age=60, s-maxage=300" });
+  }, 200, { "cache-control": "public, max-age=60, s-maxage=900" });
 
   if (cache && context.waitUntil) context.waitUntil(cache.put(cacheKey, response.clone()).catch(() => {}));
   return response;
