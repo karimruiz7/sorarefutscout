@@ -93,3 +93,14 @@ Referencias oficiales:
 - **Validación:** sintaxis y casos de filtrado +1 día / +10 días probados. El endpoint de producción aún debe verificarse tras el despliegue, ya que Sorare puede cambiar el esquema o limitar consultas.
 
 Esquema de referencia: https://api.sorare.com/graphql/schema
+
+## Fase 3.3 · Cinco niveles de dificultad visual (18-11-2026)
+
+- **Nueva UI** en `optimizador-real.html`: cinco etiquetas propias con color y texto junto al próximo enfrentamiento y en las cartas del once optimizado. Son: **Muy favorable**, **Favorable**, **Equilibrado**, **Difícil** y **Muy difícil**. Sin datos suficientes se muestra **Sin evaluar** en gris.
+- Los niveles se calculan desde el punto de vista de la **posición del jugador** con los datos de rivales ya analizados en `/api/matchups`. Delantero/centrocampista: goles encajados por el rival. Defensa/portero: goles que marca el rival. Por ello el mismo rival puede aparecer más favorable para un atacante que para un defensa.
+- El ajuste experimental existente toma como referencia 1,5 goles/partido, multiplica la diferencia por 7,5 unidades y limita el resultado a ±12. Clasificación: ajuste >= +7,5 muy favorable; [+2,5, +7,5) favorable; (-2,5, +2,5) equilibrado; (-7,5, -2,5] difícil; <= -7,5 muy difícil.
+- Junto al partido existe **«¿Por qué esta dificultad?»**: muestra club rival, número de encuentros válidos, goles pertinentes de media y el ajuste calculado; no hay predicciones ni probabilidades.
+- La etiqueta visual es **independiente** de activar «Priorizar los rivales más favorables al optimizar»: consultar análisis muestra etiquetas; marcar checkbox aplica el ajuste experimental a la selección de alineación.
+- Comprobada la sintaxis JS y el mapeo de los cinco niveles + categoría desconocida con datos ficticios de prueba. Todavía falta verificar el despliegue de Cloudflare y el endpoint de rivales contra Sorare en producción.
+
+No copiar iconografía, colores exactos ni contenidos de herramientas ajenas: etiquetas y explicaciones son de SorareFutScout.
