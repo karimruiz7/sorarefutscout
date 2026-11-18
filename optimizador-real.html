@@ -85,6 +85,22 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .opponent-detail.unavailable{color:#d7b888}
 .adjustment{font-size:11px;color:#e2d4b6;line-height:1.45;margin-top:5px}
 .result-explain{font-size:12px;color:#bdd6c9;line-height:1.6;max-width:800px}
+.difficulty-legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:13px 0 10px}
+.difficulty-badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;border-radius:7px;font-size:11px;font-weight:850;letter-spacing:.1px;padding:5px 8px;line-height:1.35;border:1px solid transparent}
+.difficulty-badge[data-level="very-good"]{background:#16472c;color:#b9f6cf;border-color:#29774b}
+.difficulty-badge[data-level="good"]{background:#2b4426;color:#d0f4b0;border-color:#507b39}
+.difficulty-badge[data-level="balanced"]{background:#493b1c;color:#ffe09c;border-color:#816c32}
+.difficulty-badge[data-level="hard"]{background:#4b301f;color:#ffd0aa;border-color:#96542f}
+.difficulty-badge[data-level="very-hard"]{background:#4d2528;color:#ffd0ce;border-color:#91434b}
+.difficulty-badge[data-level="unknown"]{background:#293746;color:#c7d3df;border-color:#46586b}
+.difficulty-badge.compact{margin:4px auto 5px;white-space:normal;max-width:100%;text-align:center}
+.match-summary{display:flex;flex-wrap:wrap;align-items:center;gap:7px 9px}
+.match-summary .match{flex:1 1 165px}
+.matchup-why{margin-top:7px;max-width:350px}
+.matchup-why summary{color:#a7caeb;font-size:11px;font-weight:650;cursor:pointer;list-style:revert}
+.matchup-why p{font-size:11px;color:#bfd1e2;line-height:1.55;margin:6px 0 0}
+.legend-note{font-size:12px;color:#bbcede;line-height:1.55;margin:8px 0}
+@media(max-width:700px){.difficulty-legend{gap:5px}.difficulty-badge{font-size:10px;padding:5px 6px}}
 </style>
 </head>
 <body>
@@ -146,6 +162,14 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 <label class="matchup-check"><input id="use-matchups" type="checkbox" disabled> Priorizar los rivales más favorables al optimizar</label>
 </div>
 <div id="matchup-status" class="matchup-status" role="status" aria-live="polite">Primero consulta los próximos partidos. Después analiza los rivales para activar esta función.</div>
+<div class="difficulty-legend" aria-label="Cinco niveles de dificultad del enfrentamiento">
+<span class="difficulty-badge" data-level="very-good">Muy favorable</span>
+<span class="difficulty-badge" data-level="good">Favorable</span>
+<span class="difficulty-badge" data-level="balanced">Equilibrado</span>
+<span class="difficulty-badge" data-level="hard">Difícil</span>
+<span class="difficulty-badge" data-level="very-hard">Muy difícil</span>
+</div>
+<p class="legend-note">Las etiquetas se interpretan desde la posición del futbolista: un rival que encaja muchos goles favorece a atacantes; uno que marca pocos, a defensas y porteros. Si no hay datos suficientes se mostrará «Sin evaluar».</p>
 <p class="help"><b>Modelo experimental, no oficial:</b> para delanteros y medios se considera más favorable un rival que encaja muchos goles; para defensas y porteros, uno que marca pocos. Se parte de una referencia neutra de 1,5 goles/partido y se aplican 7,5 unidades de índice por gol de diferencia, con un máximo de ±12. Estas ponderaciones son decisiones de diseño, no datos ni predicciones de Sorare. Si faltan al menos tres partidos válidos del rival, el ajuste es cero y se señala como desconocido.</p>
 </section>
 <section class="panel" aria-labelledby="pool-title">
@@ -257,6 +281,48 @@ function matchAdjustment(p){
  const difference=defensive?1.5-goalMetric:goalMetric-1.5;
  const delta=Math.max(-12,Math.min(12,difference*7.5));
  return {delta:Math.round(delta*10)/10,rival,stats};
+}
+// Categorías propias de SorareFutScout, no proceden de una clasificación oficial.
+function classifyDifficulty(adjustment){
+ if(!adjustment)return {level:"unknown",name:"Sin evaluar"};
+ const value=adjustment.delta;
+ if(value>=7.5)return {level:"very-good",name:"Muy favorable"};
+ if(value>=2.5)return {level:"good",name:"Favorable"};
+ if(value>-2.5)return {level:"balanced",name:"Equilibrado"};
+ if(value>-7.5)return {level:"hard",name:"Difícil"};
+ return {level:"very-hard",name:"Muy difícil"};
+}
+function difficultyBadge(p,compact=false){
+ const data=classifyDifficulty(matchAdjustment(p));
+ const badge=make("span","difficulty-badge"+(compact?" compact":""));
+ badge.dataset.level=data.level;
+ badge.textContent=data.name;
+ badge.setAttribute("aria-label","Dificultad del próximo rival para "+p.name+": "+data.name);
+ return badge;
+}
+function matchupWhy(p){
+ const box=make("details","matchup-why");
+ const summary=make("summary","","¿Por qué esta dificultad?");
+ box.append(summary);
+ const rival=fixtureOpponent(p);
+ const analysis=matchAdjustment(p);
+ if(!rival){
+  box.append(make("p","","No hemos identificado de manera fiable el rival de este futbolista en Sorare. No asignamos dificultad sin datos."));
+  return box;
+ }
+ if(!analysis){
+  box.append(make("p","",rival.name+": no hay suficientes resultados confirmados (se requieren al menos 3 de los 5 últimos partidos). La dificultad queda sin evaluar."));
+  return box;
+ }
+ const defensive=["Defender","Goalkeeper"].includes(p.position);
+ const average=defensive?analysis.stats.goalsForPerGame:analysis.stats.goalsAgainstPerGame;
+ const evidence=defensive?"goles marcados por el rival":"goles encajados por el rival";
+ const neutral="Referencia neutra: 1,5 goles/partido. Diferencia × 7,5, limitada a ±12 unidades.";
+ const change=(analysis.delta>=0?"+":"")+fmt(analysis.delta);
+ box.append(make("p","",rival.name+" · "+analysis.stats.gamesCount+" partidos recientes · "+
+   fmt(average)+" "+evidence+" por partido. Ajuste experimental: "+change+" unidades. "+neutral+
+   " Es una valoración orientativa, no una predicción de los puntos ni una probabilidad."));
+ return box;
 }
 function matchupValue(p,metric){
  const base=p[metric];
@@ -420,8 +486,18 @@ function render(){
  for(const p of list){
    const tr=make("tr"),td=make("td");td.append(playerLabel(p));tr.append(td,make("td","",posName(p.position)));
    for(const metric of ["l5","l10","l15"])tr.append(make("td","score",fmt(p[metric])));
-   const fixtureCell=make("td");fixtureCell.append(matchLabel(p.slug));
-   if(games.has(p.slug)){const rival=opponentText(p);const line=make("small","opponent-detail"+(rival.available?"":" unavailable"),rival.text);fixtureCell.append(line);}
+   const fixtureCell=make("td");
+   const matchRow=make("div","match-summary");
+   if(games.has(p.slug)){
+     matchRow.append(difficultyBadge(p));
+   }
+   matchRow.append(matchLabel(p.slug));
+   fixtureCell.append(matchRow);
+   if(games.has(p.slug)){
+     const rival=opponentText(p);
+     fixtureCell.append(make("small","opponent-detail"+(rival.available?"":" unavailable"),rival.text));
+     if(games.get(p.slug)?.status==="scheduled")fixtureCell.append(matchupWhy(p));
+   }
    tr.append(fixtureCell);
    const ownCell=make("td"),own=make("div","ownership");
    for(const [key,modeLabel] of [["ownedArcade","Arcade"],["ownedCompetitive","Pro/Arena"]]){
@@ -473,7 +549,10 @@ function card(slot,p,metric,withOpponent=false){
  const el=make("div","slot");
  el.append(make("small","",slot.name),avatar(p),make("strong","",p.name),make("span","club",p.club),make("span","value",fmt(p[metric])));
  const next=games.get(p.slug);
- if(next?.status==="scheduled" && next.game)el.append(make("span","match-details",matchSummary(next.game)));
+ if(next?.status==="scheduled" && next.game){
+   el.append(make("span","match-details",matchSummary(next.game)));
+   el.append(difficultyBadge(p,true));
+ }
  if(withOpponent){
   const delta=matchAdjustment(p),adjusted=matchupValue(p,metric);
   el.append(make("div","adjustment",delta?
