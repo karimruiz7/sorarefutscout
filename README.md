@@ -170,3 +170,21 @@ Objetivo: evitar interpretar «defensa fuerte del rival» como equivalente a «m
 - [ ] Calibrar pesos con históricos observados antes de presentar el índice como una señal estadística validada. Revisar fuentes fiables para minutos/titularidad/localía y acciones específicas.
 
 Contexto de Sorare: https://sorare.com/help/a/4402904001809/how-does-scoring-work-in-sorare-football y https://sorare.com/blog/football/l15-%E2%86%92-l10-update-2.
+
+## Fase 3.6.1 · Calendarios que sobreviven a límites de Sorare (18-11-2026)
+
+Incidencia real: el usuario seleccionó ocho jugadores, pero la siguiente consulta de calendario devolvió HTTP 429 y el panel mostró «0 jugadores», desactivó el selector de GW y el índice individual quedó parcial con «rival sin evaluar». La consulta anterior ya había funcionado. La causa inmediata es el límite de Sorare; la caché anterior solo duraba 15 minutos en `sessionStorage`, no recuperaba datos caducados ni compartía jugadores individuales entre selecciones.
+
+**Solución publicada en código:**
+
+- El frontend `optimizador-real.html` migra snapshots antiguos `sessionStorage` (v1 y v2) al almacenamiento local por jugador `sorarefutscout:next-games:per-player:v1`, preservando **la fecha original de obtención**.
+- Los calendarios recientes (edad menor que cuatro horas, fecha de partido vigente) no requieren nuevas llamadas. El botón «Consultar próximos partidos» solicita solo los futbolistas sin calendarios recientes; divide la consulta en lotes de hasta seis para conservar éxitos parciales si otro lote resulta limitado.
+- Los calendarios de hasta 36 horas se pueden **mostrar claramente como anteriores/sin confirmar**, pero nunca habilitan filtros de Game Week ni ajustan rivales hasta actualizarse. Se descartan las fechas pasadas.
+- El frontend detecta HTTP 429, registra el tiempo de espera `Retry-After` y bloquea nuevos intentos desde el navegador hasta que pase el periodo. El backend `functions/api/next-games.js` utiliza un marcador de enfriamiento en Cloudflare (caché local de borde), respetando el tiempo de Sorare. No almacena 429 como éxito.
+- Se conservan los últimos análisis de rivales durante seis horas en almacenamiento local; también se migran los resultados existentes en `sessionStorage`. El índice «Oportunidad individual» muestra cuántos jugadores tienen **rival evaluado** y cuántos solo un **índice parcial de forma**.
+- Los filtros de jornadas siguen siendo estrictos: no se inventan partidos, y los datos antiguos no se consideran actuales para optimizar.
+- **Validación técnica:** JS sintácticamente válido, sin controles HTML duplicados ni ausentes; escenarios simulados de migración de sesión antigua, persistencia al recargar, conservación de la marca temporal, datos anteriores que no habilitan GW, descarte de partidos caducados y manejo de espera API. Pendiente probar Cloudflare contra Sorare sin superar su límite.
+
+**Limitación:** esta solución reduce consultas duplicadas, pero no puede eludir el límite de Sorare. Si el usuario abrió una pestaña nueva sin caché ni datos históricos locales, debe respetar `Retry-After`. Para un servicio público con tráfico, estudiar la generación de una API key autorizada en https://sorare.com/settings/developer, guardándola únicamente en secretos de Cloudflare (nunca en GitHub ni frontend).
+
+Referencia oficial: https://github.com/sorare/api#rate-limit
