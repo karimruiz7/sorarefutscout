@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b101a">
+<meta name="description" content="SorareFutScout: explora y compara futbolistas con estadísticas reales obtenidas desde la API de Sorare.">
+<title>Explorador de jugadores | SorareFutScout</title>
+<style>
+:root{color-scheme:dark;--bg:#0b101a;--panel:#141e2d;--panel2:#1b293a;--line:#2c3c53;--text:#f5f9ff;--sub:#a9b8ca;--accent:#b5ff65;--red:#ffaaa1;--blue:#85c7fc}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 80% -20%,#1e3328 0%,#0b101a 65%);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+button,input,select{font:inherit}button{cursor:pointer}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+header{border-bottom:1px solid #26354a;background:#0c141de6;position:sticky;top:0;z-index:5;backdrop-filter:blur(12px)}.wrap{max-width:1180px;margin:auto;padding:0 22px}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:74px}.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:18px;letter-spacing:-.5px}.mark{background:var(--accent);border-radius:10px;padding:8px 10px;color:#0c1720;font-size:17px;transform:rotate(-5deg)}.brand i{font-style:normal;color:var(--accent)}.nav{display:flex;gap:15px;align-items:center;color:var(--sub);font-size:13px}.nav a{color:var(--sub)}.nav .selected{color:var(--accent)}
+main{padding:44px 0 80px}.flag{font-size:11px;letter-spacing:1.3px;font-weight:900;color:var(--accent)}h1{font-size:clamp(30px,5vw,53px);letter-spacing:-1.4px;line-height:1.12;margin:9px 0 13px}.intro{color:var(--sub);font-size:15px;max-width:670px;margin:0 0 30px}.section-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:34px 0 15px}.section-title h2{margin:0;font-size:23px;letter-spacing:-.5px}
+.box{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:22px}.findbox{display:flex;gap:10px}.findbox input{flex:1;min-width:0;border:1px solid #475b78;background:#0c1522;color:white;padding:14px 15px;border-radius:11px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;border:0;background:var(--accent);padding:12px 18px;border-radius:10px;color:#14200b;font-weight:850}.btn:disabled{opacity:.48;cursor:default}.btn.outline{background:#243448;color:white;border:1px solid #475b71}.btn.tiny{padding:9px 12px;font-size:12px}.tip{color:var(--sub);font-size:12px;margin:13px 0 0}.tip b{color:#e2edfa}.status{margin-top:16px;min-height:24px;color:#c1d5e6;font-size:13px}.status.error{color:var(--red)}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:20px 0 14px}.filter{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--sub)}select{border:1px solid #435874;background:#111e2c;border-radius:10px;padding:11px 13px;min-width:165px;color:white}
+.count{color:var(--sub);font-size:12px;margin-left:auto;padding-bottom:10px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.player{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}.person{display:flex;gap:12px;align-items:center}.avatar{height:52px;width:52px;flex:0 0 52px;border-radius:13px;background:linear-gradient(145deg,#395b56,#253d57);color:#e8f7fd;display:grid;place-items:center;font-weight:900;letter-spacing:-.4px}.person b{font-size:16px;display:block;line-height:1.3}.person small{display:block;color:var(--sub);font-size:12px;margin-top:5px;overflow-wrap:anywhere}.meta{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid #2c3d50;padding-top:13px}.tag{font-size:11px;padding:5px 8px;border-radius:7px;color:#cae4f2;background:#22384a}.l5{font-size:20px;color:var(--accent);font-weight:900}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+.empty{border:1px dashed #3a4d63;padding:30px;border-radius:15px;color:var(--sub);text-align:center}.paging{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:20px;color:var(--sub);font-size:13px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}.compare-pane{border:1px solid var(--line);background:var(--panel);padding:20px;border-radius:16px;min-width:0}.compare-pane h3{font-size:18px;margin:0 0 6px}.compare-pane p{color:var(--sub);font-size:13px;margin:0}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:20px}.metric{padding:13px 9px;border-radius:11px;background:var(--panel2);border:1px solid var(--line)}.metric span{display:block;font-size:12px;color:var(--sub)}.metric strong{display:block;font-size:25px;margin-top:3px;font-variant-numeric:tabular-nums}.scores{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.score{padding:8px 11px;background:var(--panel2);border:1px solid #304459;border-radius:8px;font-weight:700;font-size:13px}.subline{color:var(--sub);font-size:12px;line-height:1.65}.clear{border:0;background:none;color:var(--red);cursor:pointer;padding:0;font-weight:700;font-size:12px}.labels{display:flex;justify-content:space-between;gap:12px;align-items:start}
+footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c9db0;font-size:12px;line-height:1.7}
+@media(max-width:950px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.nav{gap:8px}.nav a{font-size:12px}.brand{font-size:15px}.head{min-height:70px}.wrap{padding:0 14px}main{padding-top:26px}.grid,.compare{grid-template-columns:1fr}.box{padding:16px}.findbox{flex-wrap:wrap}.findbox .btn{width:100%}.filters .filter{flex:1}.filter select{width:100%;min-width:125px}.count{width:100%;margin-left:0}}
+</style>
+</head>
+<body>
+<header><div class="wrap head"><a class="brand" href="/"><span class="mark">SF</span><span>Sorare<i>FutScout</i></span></a>
+<nav class="nav"><a href="/">Demo</a><a class="selected" href="/explorador.html" aria-current="page">Explorador real</a><a href="/datos-reales.html">Prueba API</a></nav></div></header>
+<main class="wrap">
+<div class="flag">FASE 2 · ESTADÍSTICAS REALES · BETA</div>
+<h1>Explora jugadores de<br><span style="color:var(--accent)">Sorare Fútbol</span></h1>
+<p class="intro">Busca futbolistas por nombre, consulta sus puntuaciones reales y compara dos jugadores para decidir con más información. No necesitas iniciar sesión.</p>
+<section class="box">
+<form id="search-form" class="findbox">
+<input id="query" name="query" value="Haaland" aria-label="Nombre del futbolista" placeholder="Busca por nombre (ej. Mbappé, Haaland…)" minlength="2" maxlength="60" required>
+<button class="btn" id="search-btn" type="submit">Buscar jugadores</button>
+</form>
+<p class="tip">Fuente: API GraphQL de Sorare. <b>Las medias son históricas, no predicciones.</b> Los filtros de club y posición actúan sobre los resultados de la página actual.</p>
+<div class="status" id="status" role="status" aria-live="polite">Escribe el nombre de un futbolista para comenzar.</div>
+</section>
+<section aria-labelledby="list-title">
+<div class="section-title"><h2 id="list-title">Resultados de la búsqueda</h2><span class="subline" id="source"></span></div>
+<div class="filters">
+<label class="filter">Posición <select id="position"><option value="">Todas</option><option value="Goalkeeper">Porteros</option><option value="Defender">Defensas</option><option value="Midfielder">Centrocampistas</option><option value="Forward">Delanteros</option></select></label>
+<label class="filter">Club <select id="club"><option value="">Todos los clubes</option></select></label>
+<div class="count" id="count"></div>
+</div>
+<div class="grid" id="players"><div class="empty" style="grid-column:1/-1">Los resultados aparecerán aquí.</div></div>
+<div class="paging" id="paging" hidden><button class="btn outline tiny" id="prev" type="button">← Anterior</button><span id="page-label"></span><button class="btn outline tiny" id="next" type="button">Siguiente →</button></div>
+</section>
+<section aria-labelledby="compare-title" id="compare-section">
+<div class="section-title"><h2 id="compare-title">Comparador de jugadores</h2><button id="clear" class="clear" type="button">Limpiar comparación</button></div>
+<div class="compare" id="compare">
+<div class="compare-pane"><p>Selecciona el primer jugador desde los resultados.</p></div>
+<div class="compare-pane"><p>Selecciona el segundo jugador para comparar sus medias.</p></div>
+</div>
+<p class="subline" style="margin-top:13px">Las puntuaciones L5, L10 y L15 se solicitan individualmente a Sorare. Las cifras pueden variar cuando se actualizan sus partidos.</p>
+</section>
+<footer>SorareFutScout es un proyecto independiente y no oficial. Esta página utiliza exclusivamente valores obtenidos de la API de Sorare; si el servicio falla, mostramos un error y nunca inventamos puntuaciones.</footer>
+</main>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const state={query:"",page:0,nbPages:0,hits:0,players:[],selected:[],details:new Map(),busy:false};
+const positions={Goalkeeper:"Portero",Defender:"Defensa",Midfielder:"Centrocampista",Forward:"Delantero",GOALKEEPER:"Portero",DEFENDER:"Defensa",MIDFIELDER:"Centrocampista",FORWARD:"Delantero"};
+const fmt=n=>typeof n==="number"&&Number.isFinite(n)?n.toLocaleString("es-ES",{maximumFractionDigits:1}):"—";
+const initials=name=>(name||"?").trim().split(/\s+/).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join("");
+const create=(tag,className,text)=>{const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;};
+function status(msg,error=false){$("status").textContent=msg;$("status").classList.toggle("error",error);}
+async function getJson(url){
+  const response=await fetch(url,{headers:{accept:"application/json"}});
+  let data;
+  try{data=await response.json();}catch(_){throw Error("El servidor ha devuelto una respuesta inesperada.");}
+  if(!response.ok||!data.ok)throw Error((data.error||"La consulta no se ha completado.")+(data.detail?" "+data.detail:""));
+  return data;
+}
+function updateClubs(){
+  const select=$("club"),selected=select.value;
+  const clubs=[...new Set(state.players.map(p=>p.club).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  select.replaceChildren(create("option","", "Todos los clubes"));
+  select.firstElementChild.value="";
+  clubs.forEach(club=>{const opt=create("option","",club);opt.value=club;select.appendChild(opt)});
+  select.value=clubs.includes(selected)?selected:"";
+}
+function renderPlayers(){
+  const position=$("position").value,club=$("club").value;
+  const players=state.players.filter(p=>(!position||String(p.position).toLowerCase()===position.toLowerCase())&&(!club||p.club===club));
+  $("count").textContent=players.length+" visibles · "+state.hits+" coincidencias en Sorare";
+  const list=$("players");list.replaceChildren();
+  if(!players.length){const empty=create("div","empty",state.players.length?"No hay jugadores con estos filtros en esta página. Prueba otros filtros o avanza.":"Sin resultados. Prueba otro nombre.");empty.style.gridColumn="1/-1";list.appendChild(empty);}
+  for(const p of players){
+    const card=create("article","player");
+    const person=create("div","person"),avatar=create("div","avatar",initials(p.name)),data=create("div");
+    data.append(create("b","",p.name),create("small","",p.club||"Sin club"));person.append(avatar,data);
+    const meta=create("div","meta");meta.append(create("span","tag",positions[p.position]||p.position||"Sin posición"),create("strong","l5","L5 "+fmt(p.l5)));
+    const actions=create("div","actions"),detail=create("button","btn outline tiny","Ver ficha"),add=create("button","btn tiny",state.selected.includes(p.slug)?"Seleccionado ✓":"Comparar");
+    detail.type=add.type="button";detail.addEventListener("click",()=>showDetail(p));
+    add.disabled=state.selected.includes(p.slug);add.addEventListener("click",()=>choose(p.slug));
+    actions.append(detail,add);card.append(person,meta,actions);list.appendChild(card);
+  }
+  const total=Math.min(21,Math.max(1,state.nbPages));
+  $("paging").hidden=state.nbPages<=1;
+  $("page-label").textContent="Página "+(state.page+1)+" de "+total;
+  $("prev").disabled=state.busy||state.page<=0;
+  $("next").disabled=state.busy||state.page+1>=total;
+}
+async function search(page=0){
+  const q=$("query").value.trim();
+  if(q.length<2){status("Introduce al menos dos letras.",true);return;}
+  state.busy=true;state.query=q;state.page=page;
+  $("search-btn").disabled=true;status("Buscando futbolistas en Sorare…");
+  try{
+    const d=await getJson("/api/search?q="+encodeURIComponent(q)+"&page="+page);
+    state.players=d.players||[];state.hits=d.nbHits||0;state.nbPages=d.nbPages||0;state.page=d.page||page;
+    updateClubs();renderPlayers();
+    $("source").textContent="Fuente: "+d.source+" · "+new Date(d.fetchedAt).toLocaleString("es-ES");
+    status(state.players.length?"Búsqueda completada. Selecciona un jugador para ver su ficha o compararlo.":"No se han encontrado futbolistas. Prueba otro nombre.");
+  }catch(e){state.players=[];state.hits=0;state.nbPages=0;updateClubs();renderPlayers();status("No se pudo realizar la búsqueda: "+e.message,true);}
+  finally{state.busy=false;$("search-btn").disabled=false;renderPlayers();}
+}
+async function details(slug){
+  if(state.details.has(slug))return state.details.get(slug);
+  const d=await getJson("/api/player?slug="+encodeURIComponent(slug));
+  state.details.set(slug,d.player);
+  return d.player;
+}
+function renderDetailPane(parent,p,index,error){
+  parent.replaceChildren();
+  if(error){parent.append(create("h3","", "Jugador "+(index+1)),create("p","",error.message));return;}
+  if(!p){parent.append(create("p","", "Selecciona el jugador "+(index+1)+" desde los resultados."));return;}
+  const head=create("div","labels"),heading=create("div");
+  heading.append(create("h3","",p.name),create("p","",p.club+" · "+(positions[p.position]||p.position||"—")));
+  const remove=create("button","clear","Quitar");remove.type="button";remove.addEventListener("click",()=>removePlayer(p.slug));
+  head.append(heading,remove);parent.appendChild(head);
+  const metrics=create("div","metrics");
+  for(const [key,label] of [["l5","L5"],["l10","L10"],["l15","L15"]]){const metric=create("div","metric");metric.append(create("span","",label),create("strong","",fmt(p[key])));metrics.appendChild(metric);}
+  parent.append(metrics,create("p","subline","Últimas cinco puntuaciones disponibles"));
+  const scoreList=create("div","scores");
+  const last=(p.lastScores||[]).slice(0,5);
+  last.length?last.forEach(n=>scoreList.append(create("span","score",fmt(n)))):scoreList.append(create("span","subline","Sin datos recientes"));
+  parent.append(scoreList);
+}
+function compare(){
+  const container=$("compare");container.replaceChildren();
+  for(let index=0;index<2;index++){
+    const pane=create("div","compare-pane"),slug=state.selected[index];
+    container.appendChild(pane);
+    if(!slug){renderDetailPane(pane,null,index);continue;}
+    renderDetailPane(pane,{slug,name:"Cargando…",club:"Esperando datos de Sorare",position:"",lastScores:[]},index);
+    details(slug).then(p=>{if(state.selected[index]===slug)renderDetailPane(pane,p,index);})
+      .catch(error=>{if(state.selected[index]===slug)renderDetailPane(pane,null,index,error);});
+  }
+}
+function choose(slug){
+  if(state.selected.includes(slug))return;
+  if(state.selected.length===2)state.selected.shift();
+  state.selected.push(slug);renderPlayers();compare();
+  $("compare-section").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function removePlayer(slug){state.selected=state.selected.filter(s=>s!==slug);renderPlayers();compare();}
+async function showDetail(p){
+  const selected=state.selected.length===2?[state.selected[1]]:[...state.selected];
+  state.selected=selected.filter(slug=>slug!==p.slug).concat(p.slug);
+  if(state.selected.length>2)state.selected=state.selected.slice(-2);
+  renderPlayers();compare();$("compare-section").scrollIntoView({behavior:"smooth"});
+}
+$("search-form").addEventListener("submit",e=>{e.preventDefault();search(0);});
+$("position").addEventListener("change",renderPlayers);
+$("club").addEventListener("change",renderPlayers);
+$("prev").addEventListener("click",()=>{if(state.page>0)search(state.page-1);});
+$("next").addEventListener("click",()=>{if(state.page+1<Math.min(state.nbPages,21))search(state.page+1);});
+$("clear").addEventListener("click",()=>{state.selected=[];renderPlayers();compare();});
+compare();
+})();
+</script></body></html>
