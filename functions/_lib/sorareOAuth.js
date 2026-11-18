@@ -7,9 +7,13 @@ export const SESSION_COOKIE="__Host-sfs_session";
 export const STATE_COOKIE="__Host-sfs_oauth_state";
 const TTL=7*24*3600;
 const te=new TextEncoder(),td=new TextDecoder();
+export function validContact(value){
+ return typeof value==="string"&&value.length<150&&/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(value);
+}
 export function authReady(env){
  return Boolean(typeof env?.SORARE_OAUTH_CLIENT_ID==="string"&&env.SORARE_OAUTH_CLIENT_ID.trim()&&
  typeof env?.SORARE_OAUTH_CLIENT_SECRET==="string"&&env.SORARE_OAUTH_CLIENT_SECRET.trim()&&
+ validContact(env?.SFS_PRIVACY_CONTACT)&&
  env?.SFS_SESSIONS&&typeof env.SFS_SESSIONS.get==="function"&&
  typeof env.SFS_SESSIONS.put==="function"&&typeof env.SFS_SESSIONS.delete==="function");
 }
