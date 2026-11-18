@@ -93,6 +93,7 @@ footer{margin-top:35px;padding-top:20px;border-top:1px solid var(--line);font-si
 .difficulty-badge[data-level="hard"]{background:#4b301f;color:#ffd0aa;border-color:#96542f}
 .difficulty-badge[data-level="very-hard"]{background:#4d2528;color:#ffd0ce;border-color:#91434b}
 .difficulty-badge[data-level="unknown"]{background:#293746;color:#c7d3df;border-color:#46586b}
+.difficulty-badge[data-level="blocked"]{background:#4e3823;color:#ffe0ab;border-color:#9c6d34}
 .difficulty-badge.compact{margin:4px auto 5px;white-space:normal;max-width:100%;text-align:center}
 .match-summary{display:flex;flex-wrap:wrap;align-items:center;gap:7px 9px}
 .match-summary .match{flex:1 1 165px}
@@ -254,6 +255,21 @@ function playerLabel(p){
 
 const OPP_CACHE="sorarefutscout:opponents:v1",OPP_TTL=60*60*1000;
 let opponents=new Map();
+const OPP_COOLDOWN_KEY="sorarefutscout:matchup-cooldown:v1";
+let matchupCooldownUntil=0;
+try{
+ const saved=Number(sessionStorage.getItem(OPP_COOLDOWN_KEY));
+ if(Number.isFinite(saved)&&saved>Date.now())matchupCooldownUntil=saved;
+}catch(_){}
+function cooldownRemaining(){
+ return Math.max(0,Math.ceil((matchupCooldownUntil-Date.now())/1000));
+}
+function keepCooldown(seconds){
+ const duration=Math.min(86400,Math.max(1,Math.ceil(Number(seconds)||60)));
+ matchupCooldownUntil=Date.now()+duration*1000;
+ try{sessionStorage.setItem(OPP_COOLDOWN_KEY,String(matchupCooldownUntil));}catch(_){}
+ return duration;
+}
 function readOppCache(){
  try{
   const item=JSON.parse(sessionStorage.getItem(OPP_CACHE)||"null");
@@ -293,7 +309,17 @@ function classifyDifficulty(adjustment){
  return {level:"very-hard",name:"Muy difícil"};
 }
 function difficultyBadge(p,compact=false){
- const data=classifyDifficulty(matchAdjustment(p));
+ const score=matchAdjustment(p);
+ let data=classifyDifficulty(score);
+ if(!score){
+   const rival=fixtureOpponent(p);
+   const known=rival?opponents.get(rival.slug):null;
+   if(rival&&!known){
+     data=cooldownRemaining()>0?{level:"blocked",name:"Límite API"}:{level:"unknown",name:"Pendiente"};
+   }else if(known&&!known.available){
+     data={level:"unknown",name:"Sin datos"};
+   }
+ }
  const badge=make("span","difficulty-badge"+(compact?" compact":""));
  badge.dataset.level=data.level;
  badge.textContent=data.name;
