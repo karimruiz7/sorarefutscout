@@ -1,8 +1,10 @@
 # SorareFutScout — OAuth application request package
 
-**Status:** draft for submission; not yet sent or approved.  
+**Status:** draft for submission; not yet sent or approved. Do not attach secrets to the request.  
 **Application:** SorareFutScout  
 **Professional contact:** sorarescoutfut@gmail.com  
+**Operator:** personal project (not a company; full legal controller identity to be completed privately and in the privacy notice before public OAuth activation)  
+**Launch model:** free public beta; possible optional Premium in the future (not yet available)  
 **Website:** https://sorarefutscout.pages.dev  
 **Privacy policy (provisional):** https://sorarefutscout.pages.dev/privacidad.html  
 **OAuth callback (exact URL):** https://sorarefutscout.pages.dev/auth/sorare/callback
@@ -17,7 +19,7 @@ SorareFutScout is an independent, public football scouting and lineup-analysis w
 
 Hello Sorare Developer Support,
 
-I would like to request OAuth credentials for SorareFutScout, an independent football scouting and lineup-analysis web application currently available as a public beta.
+I am developing SorareFutScout as an independent personal project. It is a free public beta for Sorare Football managers, and I would like to register it for OAuth so users can optionally connect their Sorare accounts. A separate Premium tier may be considered in the future, but no paid tier is currently available.
 
 Website: https://sorarefutscout.pages.dev
 Contact: sorarescoutfut@gmail.com
@@ -28,7 +30,7 @@ We are now developing an optional “Connect with Sorare” experience. With eac
 
 SorareFutScout is not affiliated with or endorsed by Sorare. Because the proposed name contains the Sorare brand, please let us know whether it complies with your branding requirements; we are willing to adjust the public-facing name if necessary. We will not use Sorare's official logo or claim official status.
 
-We request read-only use for this user-facing workflow. We do not seek permission to trade cards, place bids, access users’ email addresses, or submit lineups on their behalf. Authentication is designed to be handled server-side through Cloudflare; application secrets and user tokens will not be exposed in frontend code. We will finalize our privacy documentation and complete end-to-end security tests before enabling connections publicly.
+We intend to use OAuth only to read the user's basic identity and card collection for the requested workflow. We understand that Sorare's standard OAuth scope also includes other categories of account data; we will not request those fields unless the user-facing purpose and privacy notice are updated. Sorare's OAuth permissions do not authorize trading, bidding, access to email addresses or future private lineups. We will not submit lineups on a user's behalf. Authentication is designed to be handled server-side through Cloudflare; application secrets and user tokens will not be exposed in frontend code. We will finalize our privacy documentation and complete end-to-end security tests before enabling connections publicly.
 
 Application name: SorareFutScout
 Production OAuth callback: https://sorarefutscout.pages.dev/auth/sorare/callback
@@ -56,8 +58,8 @@ sorarescoutfut@gmail.com
 | Privacy | https://sorarefutscout.pages.dev/privacidad.html (provisional; must be finalized) |
 | Permissions | OAuth user basic information and cards, read-only |
 | Required access | Authorization Code (user consent) |
-| Business model | Not specified; do not invent |
-| App logo | A PNG file provided separately by the owner |
+| Business model | Free public beta; optional Premium under consideration for the future, not yet launched |
+| App logo | PNG image; use the approved SorareFutScout logo with no claim of Sorare endorsement |
 
 ## Pre-submission checklist
 
@@ -67,9 +69,11 @@ sorarescoutfut@gmail.com
 - [x] Exact production callback agreed in code.
 - [x] PNG logo prepared for review.
 - [ ] Owner approves final logo.
-- [ ] Privacy page finalized with correct controller identity and legally required disclosures; the public contact email is now provided, but the beta privacy text is still provisional.
+- [x] Privacy page expanded for personal free beta with purposes, providers, retention and user rights; contact email provided.
+- [ ] Complete controller's legal identity and review all required disclosures (including provider data location/guarantees) before making OAuth available publicly. The privacy text remains provisional.
 - [ ] Owner verifies Sorare's branding requirements for a third-party name containing 'Sorare'.
-- [ ] Owner confirms the wording, selects the API/OAuth category in Sorare's official request form, attaches the PNG, and submits the request.
+- [ ] Owner uses their EXISTING Sorare account (Sorare restricts individuals to one account) to submit the application, enters sorarescoutfut@gmail.com as professional contact where supported, and does not create a second account.
+- [ ] Owner confirms the wording, selects the API/OAuth category in Sorare's official registration/support flow, attaches the PNG, and submits the request.
 - [ ] Sorare issues OAuth Client ID and Client Secret; configure privately in Cloudflare, NEVER in GitHub or chat.
 - [ ] Cloudflare KV namespace set up, end-to-end login/logout/refresh tested and security reviewed before switching on OAuth.
 - [ ] Actual card collection import implemented, verified and separately tested for Arcade and competitive cards.
@@ -79,4 +83,4 @@ sorarescoutfut@gmail.com
 - https://github.com/sorare/api#oauth-authentication--login-with-sorare
 - https://sorare.com/settings/developer
 
-Sorare's documentation lists application name, one or more callback URLs, and a PNG logo for an OAuth registration request. It lists access to basic user details and cards within the OAuth scope; access does not include future lineups or trading functionality. Final approval is decided by Sorare.
+Sorare's documentation lists a unique application name, one or more callback URLs and a PNG logo for OAuth registration. Its single OAuth scope also permits reading certain other categories including auctions, offers, favorites and notifications; SorareFutScout's intended queries are narrower (basic identity and cards). Access does not include email, future lineups or trading operations. Final approval is decided by Sorare. Existing account rule: https://sorare.com/es/help/a/4402904990353/can-i-have-more-than-one-account . Privacy duty guidance: https://www.aepd.es/derechos-y-deberes/conoce-tus-derechos/derecho-de-informacion .
