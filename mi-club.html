@@ -16,6 +16,10 @@ main{padding:42px 0 70px}h1{font-size:clamp(32px,5vw,52px);line-height:1.13;lett
 .small{color:var(--muted);font-size:12px;line-height:1.7}.section-title{margin:0 0 14px;font-size:20px}
 footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-size:12px;color:#96adc0}
 @media(max-width:740px){.grid{grid-template-columns:1fr}.head{align-items:start;flex-direction:column;padding:14px 0}.wrap{padding:0 14px}.hero,.card{padding:18px}}
+.test-access{background:#132837;border:1px solid #45667e;border-radius:12px;padding:17px;margin:14px 0}
+.test-access label{display:block;font-size:12px;font-weight:750;margin:7px 0}
+.test-access input{display:block;width:100%;max-width:460px;padding:11px;border:1px solid #587388;border-radius:9px;background:#0c1825;color:#fff;font:inherit}
+.test-access input:focus-visible{outline:2px solid var(--accent)}
 </style></head><body>
 <header><div class="wrap head"><a class="logo" href="/"><b>SF</b>Sorare<em>FutScout</em></a>
 <nav aria-label="Navegación"><a href="/">Inicio</a><a href="/explorador.html">Jugadores</a><a href="/optimizador-real.html">Optimizador</a><a href="/disponibilidad.html">Disponibilidad</a><a class="active" href="/mi-club.html" aria-current="page">Mi club</a></nav>
@@ -29,6 +33,16 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
 <p class="small">Autorización oficial mediante Sorare OAuth. SorareFutScout nunca te pedirá la contraseña de tu cuenta.</p>
 <div id="connection-status" class="status" role="status" aria-live="polite">Comprobando si la conexión está habilitada…</div>
 <div id="profile" class="status good" hidden></div>
+<div id="test-gate" class="test-access" hidden>
+  <strong>Prueba privada del propietario</strong>
+  <p class="small">Este acceso es solo para verificar la conexión OAuth. Introduce la clave de prueba que guardaste como secreto en Cloudflare; NO es tu contraseña de Sorare, tu Client Secret ni tu API key.</p>
+  <form id="test-form">
+    <label for="test-passphrase">Clave temporal de prueba</label>
+    <input id="test-passphrase" type="password" minlength="24" maxlength="512" autocomplete="off" required>
+    <button class="btn" type="submit">Desbloquear prueba privada</button>
+  </form>
+  <p class="small" id="test-feedback" role="status" aria-live="polite"></p>
+</div>
 <a id="connect" href="/auth/sorare/start" class="btn" style="display:none">Conectar con Sorare</a>
 <button id="disconnect" class="btn secondary" type="button" hidden>Desconectar cuenta</button>
 <a class="btn secondary" href="/optimizador-real.html">Seguir con mi selección manual</a>
@@ -55,20 +69,29 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
  const $=id=>document.getElementById(id),status=$("connection-status");
  const message={denied:"Has cancelado la autorización de Sorare.",not_ready:"La conexión todavía no está configurada.",
  state:"No se ha podido verificar la solicitud de conexión. Inténtalo de nuevo desde esta página.",
- invalid_code:"Sorare no ha devuelto un código de autorización válido.",failed:"La conexión no se ha completado. Revisa la configuración de OAuth."};
+ invalid_code:"Sorare no ha devuelto un código de autorización válido.",failed:"La conexión no se ha completado. Revisa la configuración de OAuth.",test_denied:"Acceso de prueba no autorizado o caducado. Desbloquea el acceso privado."};
  const error=new URLSearchParams(location.search).get("error");
  if(error&&message[error]){status.classList.add("error");status.textContent=message[error];}
  async function load(){
   try{
-   const [config,session]=await Promise.all([
+   const [config,session,test]=await Promise.all([
     fetch("/api/auth/config",{cache:"no-store"}).then(r=>r.json()),
-    fetch("/api/auth/session",{cache:"no-store"}).then(r=>r.json())
+    fetch("/api/auth/session",{cache:"no-store"}).then(r=>r.json()),
+    fetch("/api/auth/test-access",{cache:"no-store"}).then(r=>r.json())
    ]);
+   $("test-gate").hidden=true;
    if(session.connected){
     $("profile").hidden=false;
     $("profile").textContent="Cuenta conectada: "+session.user.slug+". La importación de cartas se habilitará en la siguiente fase.";
     $("disconnect").hidden=false;$("connect").style.display="none";
     if(!error){status.textContent="Autorización de Sorare completada. Se ha creado una sesión segura.";}
+   }else if(config.privateTestAvailable){
+    $("profile").hidden=true;$("disconnect").hidden=true;
+    $("test-gate").hidden=Boolean(test.granted);
+    $("connect").style.display=test.granted?"inline-flex":"none";
+    if(!error)status.textContent=test.granted?
+     "Prueba privada habilitada en este navegador durante 30 minutos. Puedes autorizar tu cuenta Sorare.":
+     "Prueba privada disponible. Solo el propietario con la clave temporal puede conectar una cuenta.";
    }else if(config.oauthReady){
     $("profile").hidden=true;$("disconnect").hidden=true;
     $("connect").style.display="inline-flex";
@@ -79,6 +102,25 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
    }
   }catch(_){status.classList.add("error");status.textContent="No se ha podido consultar la configuración. No se activará la conexión hasta verificar el servidor."; $("connect").style.display="none";}
  }
+ $("test-form").addEventListener("submit",async e=>{
+   e.preventDefault();
+   const form=e.currentTarget,input=$("test-passphrase"),key=input.value;
+   const feedback=$("test-feedback");
+   input.value="";
+   form.querySelector('button[type="submit"]').disabled=true;
+   feedback.textContent="Validando acceso privado…";
+   try{
+    const r=await fetch("/api/auth/test-access",{
+      method:"POST",credentials:"same-origin",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({passphrase:key}),cache:"no-store"
+    });
+    if(!r.ok)throw Error("Clave incorrecta o puerta de prueba inactiva.");
+    feedback.textContent="Acceso autorizado en este navegador.";
+    await load();
+   }catch(err){feedback.textContent=err.message;}
+   finally{form.querySelector('button[type="submit"]').disabled=false;}
+ });
  $("disconnect").addEventListener("click",async()=>{
   $("disconnect").disabled=true;
   try{
