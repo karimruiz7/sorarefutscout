@@ -39,9 +39,13 @@ export async function onRequestGet({request,env}){
    method:"POST",headers,
    body:JSON.stringify({operationName:"SorareFutScoutMyFootballCards",
     query:QUERY,variables:{after}}),
-   signal:AbortSignal.timeout(12000)
+   signal:AbortSignal.timeout(25000)
   });
- }catch(_){return json({ok:false,error:"sorare_temporalmente_no_disponible"},503);}
+ }catch(error){
+  if(error?.name==="TimeoutError"||error?.name==="AbortError")
+   return json({ok:false,error:"sorare_tiempo_agotado"},504);
+  return json({ok:false,error:"sorare_temporalmente_no_disponible"},503);
+ }
  if(response.status===429)return json({ok:false,error:"limite_de_sorare"},429,{
   "retry-after":Math.min(Math.max(Number(response.headers.get("retry-after"))||60,1),300).toString()
  });
