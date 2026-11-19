@@ -27,12 +27,13 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
 <main class="wrap">
 <div class="eyebrow">FASE 4 · TU CLUB EN UN SOLO LUGAR</div>
 <h1>Tu club de Sorare, <em>sin copiar cartas a mano.</em></h1>
-<p class="intro">Queremos que conectes tu cuenta, importes tus cartas y prepares varias alineaciones en menos de diez minutos. El proceso de importación aún está en desarrollo; la conexión OAuth solo se habilitará cuando esté configurada y probada.</p>
+<p class="intro">Queremos que conectes tu cuenta, importes tus cartas y prepares varias alineaciones en menos de diez minutos. El acceso OAuth funciona en pruebas privadas. Estamos construyendo una vista previa de tus cartas antes de integrar la colección al optimizador.</p>
 <section class="hero">
 <h2 class="section-title">Conexión con Sorare</h2>
 <p class="small">Autorización oficial mediante Sorare OAuth. SorareFutScout nunca te pedirá la contraseña de tu cuenta.</p>
 <div id="connection-status" class="status" role="status" aria-live="polite">Comprobando si la conexión está habilitada…</div>
 <div id="profile" class="status good" hidden></div>
+<a id="my-cards" href="/mis-cartas.html" class="btn" hidden>Ver mis cartas de fútbol (beta)</a>
 <div id="test-gate" class="test-access" hidden>
   <strong>Prueba privada del propietario</strong>
   <p class="small">Este acceso es solo para verificar la conexión OAuth. Introduce la clave de prueba que guardaste como secreto en Cloudflare; NO es tu contraseña de Sorare, tu Client Secret ni tu API key.</p>
@@ -59,7 +60,7 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
 <section class="card"><h2 class="section-title">Qué datos solicitaremos</h2>
 <p class="small">Según la documentación de OAuth de Sorare, el permiso permite consultar información básica de usuario y cartas. No permite consultar futuras alineaciones privadas ni realizar operaciones de compra o venta.</p>
 <p class="small">La sesión se gestionará en Cloudflare mediante una cookie segura y un registro cifrado de acceso. No se guardarán contraseñas de Sorare.</p>
-<div class="status"><strong>Estado actual:</strong> el importador no está conectado todavía. Puedes continuar utilizando el explorador y el optimizador como hasta ahora.</div>
+<div class="status"><strong>Estado actual:</strong> ya puedes probar la vista previa de cartas, pero todavía no se añaden automáticamente al optimizador ni está confirmada la cobertura de Arcade.</div>
 <a href="/explorador.html">Abrir el explorador real</a></section>
 </div>
 <footer>SorareFutScout es una herramienta independiente, no oficial y en desarrollo. Las estadísticas e índices no garantizan puntuaciones ni elegibilidad. <a href="/privacidad.html">Privacidad</a>.</footer>
@@ -98,10 +99,12 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
    $("test-gate").hidden=true;
    if(session.connected){
     $("profile").hidden=false;
-    $("profile").textContent="Cuenta conectada: "+session.user.slug+". La importación de cartas se habilitará en la siguiente fase.";
+    $("profile").textContent="Cuenta conectada: "+session.user.slug+". Puedes consultar una vista previa de cartas, pendiente de validar con Sorare.";
     $("disconnect").hidden=false;$("connect").style.display="none";
-    if(!error){status.textContent="Autorización de Sorare completada. Se ha creado una sesión segura.";}
+    $("my-cards").hidden=false;
+    if(!error){status.textContent="Sesión Sorare activa. Puedes consultar una vista previa de tus cartas con permiso de lectura.";}
    }else if(config.privateTestAvailable){
+    $("my-cards").hidden=true;
     $("profile").hidden=true;$("disconnect").hidden=true;
     $("test-gate").hidden=Boolean(test.granted);
     $("connect").style.display=test.granted?"inline-flex":"none";
@@ -109,10 +112,12 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
      "Prueba privada habilitada en este navegador durante 30 minutos. Puedes autorizar tu cuenta Sorare.":
      "Prueba privada disponible. Solo el propietario con la clave temporal puede conectar una cuenta.";
    }else if(config.oauthReady){
+    $("my-cards").hidden=true;
     $("profile").hidden=true;$("disconnect").hidden=true;
     $("connect").style.display="inline-flex";
     if(!error)status.textContent="Conexión configurada: puedes autorizar el acceso de lectura desde Sorare.";
    }else{
+    $("my-cards").hidden=true;
     $("connect").style.display="none";$("disconnect").hidden=true;
     if(!error)status.textContent="En preparación: faltan las credenciales OAuth y/o el almacenamiento KV. La clave API ya configurada no sustituye OAuth.";
    }
@@ -142,7 +147,7 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
   try{
    const res=await fetch("/api/auth/logout",{method:"POST",cache:"no-store",credentials:"same-origin"});
    if(!res.ok)throw Error();
-   $("profile").hidden=true;$("disconnect").hidden=true;status.textContent="Sesión cerrada. Tus cartas guardadas manualmente en este navegador no se han borrado.";
+   $("profile").hidden=true;$("disconnect").hidden=true;$("my-cards").hidden=true;status.textContent="Sesión cerrada. Tus cartas guardadas manualmente en este navegador no se han borrado.";
    await load();
   }catch(_){status.classList.add("error");status.textContent="No se ha podido cerrar la sesión en el servidor. Vuelve a intentarlo.";}
   finally{$("disconnect").disabled=false;}
