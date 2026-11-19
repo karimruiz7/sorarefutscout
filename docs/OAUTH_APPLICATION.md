@@ -84,3 +84,14 @@ sorarescoutfut@gmail.com
 - https://sorare.com/settings/developer
 
 Sorare's documentation lists a unique application name, one or more callback URLs and a PNG logo for OAuth registration. Its single OAuth scope also permits reading certain other categories including auctions, offers, favorites and notifications; SorareFutScout's intended queries are narrower (basic identity and cards). Access does not include email, future lineups or trading operations. Final approval is decided by Sorare. Existing account rule: https://sorare.com/es/help/a/4402904990353/can-i-have-more-than-one-account . Privacy duty guidance: https://www.aepd.es/derechos-y-deberes/conoce-tus-derechos/derecho-de-informacion .
+
+
+### Prueba OAuth privada (fase de verificación, antes de abrir al público)
+
+- La infraestructura se ha comprobado con `/api/auth/preflight`: API key, Client ID, Client Secret, contacto y KV cargados, pero esto **no valida aún los permisos frente a Sorare**.
+- Un acceso privado opcional está preparado sin habilitar OAuth públicamente.
+- En Cloudflare Pages (Production) añadir **únicamente** `SFS_OAUTH_TEST_SECRET` con tipo **Secret**, generado aleatoriamente en un gestor de contraseñas (32+ caracteres fuertes), nunca copiado a GitHub o al chat. Mantener `SFS_OAUTH_ENABLED` **ausente** o distinto de `true`.
+- Después del despliegue, abrir `https://sorarefutscout.pages.dev/mi-club.html`, introducir esa clave de prueba en el formulario; el servidor valida la clave y entrega una cookie HttpOnly de **30 minutos**. Sin esa cookie el servidor impide el inicio y el callback OAuth.
+- El navegador de prueba podrá autorizar la cuenta de Sorare, crear una sesión cifrada en `SFS_SESSIONS` y luego cerrar sesión. Durante el test, no activar el importador de cartas ni invitar a usuarios.
+- Cuando se comprueben acceso y desconexión, quitar **`SFS_OAUTH_TEST_SECRET`**, desplegar de nuevo y comprobar que `/mi-club.html` vuelve a indicar que OAuth está en preparación. La cookie deja de ser válida al borrar el secreto. Limpiar cualquier sesión de prueba guardada en KV cuando proceda.
+- Antes de lanzamiento público: revisar política de privacidad, manejo de errores, alertas/monitorización y pruebas de seguridad. Solo entonces se considerará `SFS_OAUTH_ENABLED=true` como activación pública.
