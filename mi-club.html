@@ -70,7 +70,8 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
  const $=id=>document.getElementById(id),status=$("connection-status");
  const message={denied:"Has cancelado la autorización de Sorare.",not_ready:"La conexión todavía no está configurada.",
  state:"No se ha podido verificar la solicitud de conexión. Inténtalo de nuevo desde esta página.",
- invalid_code:"Sorare no ha devuelto un código de autorización válido.",failed:"La conexión no se ha completado. Revisa la configuración de OAuth.",test_denied:"Acceso de prueba no autorizado o caducado. Desbloquea el acceso privado."};
+ invalid_code:"Sorare no ha devuelto un código de autorización válido.",failed:"La conexión no se ha completado. Revisa la configuración de OAuth.",test_denied:"Acceso de prueba no autorizado o caducado. Desbloquea el acceso privado.",
+ rate_limited:"Sorare está limitando temporalmente las conexiones OAuth. Nuestro servidor ha activado una pausa de seguridad. No repitas la autorización de forma continua."};
  const search=new URLSearchParams(location.search);
  const error=search.get("error"),phase=search.get("phase"),detail=search.get("detail")||"";
  const explanation={
@@ -103,6 +104,14 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
     $("disconnect").hidden=false;$("connect").style.display="none";
     $("my-cards").hidden=false;
     if(!error){status.textContent="Sesión Sorare activa. Puedes consultar una vista previa de tus cartas con permiso de lectura.";}
+   }else if(Number(config.retryAfterSeconds)>0){
+    $("my-cards").hidden=true;
+    $("profile").hidden=true;$("disconnect").hidden=true;
+    $("test-gate").hidden=true;
+    $("connect").style.display="none";
+    status.classList.add("error");
+    status.textContent="Sorare ha devuelto HTTP 429. Hemos pausado nuevas autorizaciones durante al menos "+
+      config.retryAfterSeconds+" segundos para evitar peticiones repetidas. Este plazo es una medida de seguridad, no una confirmación de Sorare. Recarga la página más adelante.";
    }else if(config.privateTestAvailable){
     $("my-cards").hidden=true;
     $("profile").hidden=true;$("disconnect").hidden=true;
