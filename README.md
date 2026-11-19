@@ -226,3 +226,5 @@ Sorare OAuth da acceso autorizado a información básica y cartas; no proporcion
 - El navegador de prueba podrá autorizar la cuenta de Sorare, crear una sesión cifrada en `SFS_SESSIONS` y luego cerrar sesión. Durante el test, no activar el importador de cartas ni invitar a usuarios.
 - Cuando se comprueben acceso y desconexión, quitar **`SFS_OAUTH_TEST_SECRET`**, desplegar de nuevo y comprobar que `/mi-club.html` vuelve a indicar que OAuth está en preparación. La cookie deja de ser válida al borrar el secreto. Limpiar cualquier sesión de prueba guardada en KV cuando proceda.
 - Antes de lanzamiento público: revisar política de privacidad, manejo de errores, alertas/monitorización y pruebas de seguridad. Solo entonces se considerará `SFS_OAUTH_ENABLED=true` como activación pública.
+
+**Comprobación tras configurar el secreto temporal:** visitar `https://sorarefutscout.pages.dev/api/auth/test-access`. El JSON debe mostrar `testAvailable:true` y `granted:false` antes de desbloquear el navegador. No introducir ninguna clave en la URL ni compartirla en capturas.
