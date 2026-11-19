@@ -1,5 +1,5 @@
 import {authReady,canonical,cookie,cookieHeader,STATE_COOKIE,SESSION_COOKIE,
- equalSafe,randomValue,tokenRequest,currentUser,putSession,CALLBACK,redirect,noStore} from "../../_lib/sorareOAuth.js";
+ equalSafe,randomValue,tokenRequest,currentUser,putSession,CALLBACK,redirect,noStore,testAccessGranted,privateTestEnabled} from "../../_lib/sorareOAuth.js";
 export async function onRequestGet({request,env}){
  if(!canonical(request))return new Response("No se permite este dominio de retorno.",{status:403,headers:noStore()});
  const params=new URL(request.url).searchParams;
@@ -7,6 +7,7 @@ export async function onRequestGet({request,env}){
  const go=(reason)=>redirect("/mi-club.html?error="+encodeURIComponent(reason),302,{"set-cookie":cleanup});
  if(params.has("error"))return go("denied");
  if(!authReady(env))return go("not_ready");
+ if(privateTestEnabled(env)&&!await testAccessGranted(env,request))return go("test_denied");
  const state=params.get("state")||"",saved=cookie(request,STATE_COOKIE);
  if(!equalSafe(state,saved))return go("state");
  const code=params.get("code")||"";
