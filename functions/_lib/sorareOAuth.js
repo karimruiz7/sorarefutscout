@@ -142,11 +142,12 @@ export async function tokenRequest(env,params){
   method:"POST",headers:{"content-type":"application/x-www-form-urlencoded","accept":"application/json"},
   body,signal:AbortSignal.timeout(12000)
  });
- if(!response.ok)throw Error("Sorare rejected OAuth token request");
- const token=await response.json();
- if(!validToken(token.access_token)||!validToken(token.refresh_token)||
-    !Number.isFinite(Number(token.expires_in))||Number(token.expires_in)<60)
-   throw Error("Sorare returned incomplete OAuth credentials");
+ if(!response.ok)throw Error("token_http_"+response.status);
+ let token;
+ try{token=await response.json();}catch(_){throw Error("token_invalid_json");}
+ if(!validToken(token?.access_token)||!validToken(token?.refresh_token)||
+    !Number.isFinite(Number(token?.expires_in))||Number(token.expires_in)<60)
+   throw Error("token_incomplete");
  return token;
 }
 export async function currentUser(env,accessToken){
@@ -159,10 +160,12 @@ export async function currentUser(env,accessToken){
    query:"query SorareFutScoutAuthenticatedUser { currentUser { slug } }"
   }),signal:AbortSignal.timeout(12000)
  });
- if(!result.ok)throw Error("User profile not available");
- const data=await result.json();
+ if(!result.ok)throw Error("profile_http_"+result.status);
+ let data;
+ try{data=await result.json();}catch(_){throw Error("profile_invalid_json");}
  const slug=data?.data?.currentUser?.slug;
- if(data.errors?.length||typeof slug!=="string"||slug.length<2||slug.length>150)throw Error("Invalid user identity");
+ if(data?.errors?.length)throw Error("profile_graphql_error");
+ if(typeof slug!=="string"||slug.length<2||slug.length>150)throw Error("profile_missing_user");
  return slug;
 }
 export async function refreshed(env,record){
