@@ -244,3 +244,14 @@ Sorare OAuth da acceso autorizado a información básica y cartas; no proporcion
 **Prueba privada:** si el usuario desconectó su cuenta, volver a `/mi-club.html` y autorizar de nuevo con la clave temporal; abrir `/mis-cartas.html` y pulsar «Consultar mis cartas». Nunca compartir secretos ni códigos de autorización en capturas. No activar `SFS_OAUTH_ENABLED=true` todavía.
 
 Esquema técnico Sorare verificado: https://api.sorare.com/graphql/schema
+
+### Control de HTTP 429 del endpoint OAuth (19-11-2026)
+
+- Durante la nueva prueba privada, Sorare devolvió `token_http_429` al canjear un código OAuth. La autenticación ya había funcionado antes; no se ha confirmado un problema de credenciales.
+- Se ha añadido pausa compartida en KV bajo `sfs:oauth:token-cooldown:v1`. Si el endpoint de token responde `429`, se respeta `Retry-After` cuando existe (acotado a una hora) o una pausa local provisional de 180 segundos si no llega. Esto **no confirma** el tiempo de desbloqueo de Sorare, ya que su documentación especifica `Retry-After` para GraphQL y no necesariamente para el endpoint de OAuth.
+- `/auth/sorare/start` evita iniciar otra autorización durante esa pausa, `/api/auth/config` muestra solo `retryAfterSeconds` y `/mi-club.html` oculta el botón con una explicación.
+- Una autorización cuya fase de tokens falló requiere un **nuevo código OAuth** después de la pausa; nunca reintentar el mismo código.
+- El aviso y la pausa no resuelven necesariamente la causa subyacente del 429. Si persiste tras dejar descansar las peticiones, revisar límites, cabeceras y consultar soporte Sorare sin compartir tokens ni secretos.
+- Mantener `SFS_OAUTH_ENABLED` desactivado; no anunciar importación de cartas hasta que esté validada con una sesión real.
+
+Documentación de límites GraphQL de Sorare: https://github.com/sorare/api#rate-limit
