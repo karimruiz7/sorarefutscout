@@ -228,3 +228,19 @@ Sorare OAuth da acceso autorizado a información básica y cartas; no proporcion
 - Antes de lanzamiento público: revisar política de privacidad, manejo de errores, alertas/monitorización y pruebas de seguridad. Solo entonces se considerará `SFS_OAUTH_ENABLED=true` como activación pública.
 
 **Comprobación tras configurar el secreto temporal:** visitar `https://sorarefutscout.pages.dev/api/auth/test-access`. El JSON debe mostrar `testAvailable:true` y `granted:false` antes de desbloquear el navegador. No introducir ninguna clave en la URL ni compartirla en capturas.
+
+### Fase 4.2 · Vista previa privada de cartas Football (19-11-2026)
+
+- [x] `/mis-cartas.html`: apartado separado para mostrar cartas de la cuenta OAuth con fotografía de futbolista, club, posición, rareza y temporada.
+- [x] `GET /api/my-cards`: consulta de solo lectura autenticada a `currentUser.cards(first:20, sport:FOOTBALL, owned:true, ownedByMe:true)` con paginación mediante cursor.
+- [x] Servidor exige sesión cifrada válida, dominio canónico y pase de prueba privada mientras el acceso público esté desactivado.
+- [x] No se envían tokens ni secretos al navegador; las respuestas no incluyen datos de cartera, email ni ofertas. `cache-control: no-store`; no se persiste la lista de cartas en el backend.
+- [x] La vista no incorpora ni modifica la selección manual del optimizador. Aún no promete importar cartas Arcade.
+- [x] Pruebas estáticas y simulaciones de respuesta: colección válida, vacía, identidad distinta, sesión ausente, fallo GraphQL y puerta privada caducada.
+- [ ] Confirmar con la cuenta real que la consulta funciona y que el conjunto expuesto por OAuth coincide con las cartas de Sorare Pro, y comprobar independientemente la cobertura Arcade.
+- [ ] Diseñar compatibilidad entre `playerSlug` de cartas y el formato actual del optimizador, evitando sobrescribir elecciones manuales o interpretar la tenencia de cartas como elegibilidad oficial.
+- [ ] Auditar/optimizar límites API, paginación grande, refuerzo de sesiones, protección contra abuso y experiencia de móvil antes de la apertura pública.
+
+**Prueba privada:** si el usuario desconectó su cuenta, volver a `/mi-club.html` y autorizar de nuevo con la clave temporal; abrir `/mis-cartas.html` y pulsar «Consultar mis cartas». Nunca compartir secretos ni códigos de autorización en capturas. No activar `SFS_OAUTH_ENABLED=true` todavía.
+
+Esquema técnico Sorare verificado: https://api.sorare.com/graphql/schema
