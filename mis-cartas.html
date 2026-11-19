@@ -23,7 +23,7 @@ main{padding:37px 0 66px}h1{font-size:clamp(31px,4.6vw,47px);line-height:1.14;le
 .card{background:#19283b;border:1px solid #3b526c;border-radius:13px;padding:14px;display:flex;gap:12px;min-width:0}
 .avatar{width:55px;height:55px;flex:0 0 55px;border-radius:12px;background:#2e4c5c;object-fit:cover}
 .avatar-fallback{display:grid;place-items:center;font-weight:800;color:white}
-.card-content{min-width:0}.card strong{display:block;font-size:14px;overflow-wrap:anywhere}.card .small{display:block;color:var(--muted);font-size:12px;line-height:1.5}.tag{display:inline-block;margin-top:7px;border:1px solid #587052;color:#d8ffae;border-radius:7px;font-size:11px;padding:3px 7px}.muted{font-size:12px;color:var(--muted)}
+.card-content{min-width:0}.card strong{display:block;font-size:14px;overflow-wrap:anywhere}.card .small{display:block;color:var(--muted);font-size:12px;line-height:1.5}.select-player{display:flex;align-items:center;gap:7px;margin-top:8px;cursor:pointer;font-size:12px}.select-player input{width:16px;height:16px;accent-color:var(--accent)}.import-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.tag{display:inline-block;margin-top:7px;border:1px solid #587052;color:#d8ffae;border-radius:7px;font-size:11px;padding:3px 7px}.muted{font-size:12px;color:var(--muted)}
 footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size:12px}
 @media(max-width:850px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.cards{grid-template-columns:1fr}.head{flex-direction:column;align-items:flex-start;padding:15px 0}.wrap{padding:0 14px}.panel{padding:15px}}
@@ -57,6 +57,14 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <div id="cards" class="cards" aria-live="polite"></div>
 <div id="empty" class="notice" hidden>Esta consulta no ha devuelto cartas de fútbol. Es posible que la API no exponga las cartas Arcade o que esta cuenta no tenga cartas de los tipos consultados. No significa que tu cuenta de Sorare esté vacía.</div>
 <button id="more" class="btn secondary" type="button" hidden>Cargar más cartas</button>
+<div class="notice" id="import-panel" hidden>
+<strong>Importación voluntaria al optimizador</strong>
+<p class="muted">Selecciona hasta 20 futbolistas distintos de las cartas cargadas. Obtendremos sus medias L5/L10/L15 en una consulta y los añadiremos sin borrar tu selección anterior (máximo 120 futbolistas).</p>
+<div class="import-bar"><button id="import" class="btn" disabled type="button">Añadir seleccionados al optimizador</button>
+<span id="chosen" class="muted" role="status">0 seleccionados</span>
+<a class="btn secondary" href="/optimizador-real.html">Abrir optimizador</a></div>
+<p class="muted">Las cartas Common no se marcarán automáticamente como Arcade: la elegibilidad depende de las reglas de Sorare. Conservaremos las marcas manuales que ya tengas.</p>
+</div>
 <div id="fetch-status" class="notice" role="status" aria-live="polite" hidden></div>
 <p class="muted">Esta es una vista previa de cartas; aún no se han comprobado restricciones de Game Week, elegibilidad ni los tipos de colección Arcade.</p>
 </section>
@@ -66,7 +74,24 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 (()=>{
  const $=id=>document.getElementById(id);
  const status=$("status"),fetchStatus=$("fetch-status");
- let cursor=null,loading=false,count=0,seen=new Set();
+ let cursor=null,loading=false,count=0,seen=new Set(),selected=new Map();
+ const KEY="sorarefutscout:optimizer-pool:v1",MAX_POOL=120,MAX_SELECTED=20;
+ const validSlug=x=>typeof x==="string"&&x.length<=100&&/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(x);
+ function updateSelected(){
+  $("chosen").textContent=selected.size+" de "+MAX_SELECTED+" futbolistas seleccionados";
+  $("import").disabled=loading||selected.size===0;
+  for(const element of $("cards").querySelectorAll("input[data-player-slug]"))
+    element.checked=selected.has(element.dataset.playerSlug);
+ }
+ function toggleCard(card,isOn){
+  if(!validSlug(card.playerSlug))return;
+  if(isOn&&selected.size>=MAX_SELECTED&&!selected.has(card.playerSlug)){
+    feedback("Puedes elegir un máximo de "+MAX_SELECTED+" futbolistas distintos por importación.",true);
+    updateSelected();return;
+  }
+  if(isOn)selected.set(card.playerSlug,card);else selected.delete(card.playerSlug);
+  updateSelected();
+ }
  function feedback(msg,isError=false){
   fetchStatus.hidden=false;
   fetchStatus.className=isError?"notice error":"notice";
@@ -96,7 +121,17 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
   position.textContent=(card.positions||[]).join(" · ")||"Posición no indicada";body.append(position);
   const tag=document.createElement("span");tag.className="tag";
   tag.textContent=(rarityName[card.rarity]||card.rarity||"Sin rareza")+(card.season?" · "+card.season:"");
-  body.append(tag);node.append(body);
+  body.append(tag);
+  if(validSlug(card.playerSlug)){
+    const line=document.createElement("label");line.className="select-player";
+    const checkbox=document.createElement("input");
+    checkbox.type="checkbox";checkbox.dataset.playerSlug=card.playerSlug;
+    checkbox.checked=selected.has(card.playerSlug);
+    checkbox.addEventListener("change",()=>toggleCard(card,checkbox.checked));
+    line.append(checkbox,document.createTextNode("Seleccionar futbolista"));
+    body.append(line);
+  }
+  node.append(body);
   return node;
  }
  async function fetchCards(next=false){
@@ -114,7 +149,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
      "Sorare no ha permitido consultar la colección ("+(data.error||"error")+").";
     throw Error(msg);
    }
-   if(!next){$("cards").replaceChildren();seen=new Set();count=0;}
+   if(!next){$("cards").replaceChildren();seen=new Set();count=0;selected.clear();}
    for(const card of data.cards||[]){
     const id=card.assetId||card.cardSlug||card.playerSlug;
     if(!id||seen.has(id))continue;
@@ -122,13 +157,67 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
    }
    cursor=data.pagination?.nextCursor||null;
    $("results").hidden=false;
+   $("import-panel").hidden=count===0;
+   updateSelected();
    $("loaded").textContent=count+" cartas cargadas";
    $("total").textContent=data.totalCount!=null?data.totalCount+" cartas según Sorare":"Total no disponible";
    $("more").hidden=!data.pagination?.hasNextPage;
    $("empty").hidden=count>0;
    setStatus("Consulta completada. Esta vista previa contiene únicamente cartas que Sorare devuelve a tu sesión.","good");
   }catch(err){feedback(err?.message||"No se pudo recuperar la colección.",true);}
-  finally{loading=false;$("load").disabled=false;$("more").disabled=false;}
+  finally{loading=false;$("load").disabled=false;$("more").disabled=false;updateSelected();}
+ }
+
+ async function importSelected(){
+  if(loading||selected.size<1||selected.size>MAX_SELECTED)return;
+  const entries=[...selected.values()];
+  loading=true;updateSelected();$("load").disabled=true;$("more").disabled=true;
+  feedback("Consultando las medias de "+entries.length+" futbolistas en una única petición…");
+  try{
+   const response=await fetch("/api/import-player-stats",{
+    method:"POST",credentials:"same-origin",cache:"no-store",
+    headers:{"content-type":"application/json"},
+    body:JSON.stringify({slugs:entries.map(c=>c.playerSlug)})
+   });
+   const data=await response.json();
+   if(!response.ok||!data.ok){
+    if(data.error==="limite_de_sorare")throw Error("Sorare ha limitado las consultas. No se ha añadido nada. Inténtalo más adelante.");
+    if(data.error==="sin_sesion"||data.error==="prueba_privada_caducada")throw Error("La sesión privada ha caducado. Vuelve a conectar desde Mi club.");
+    throw Error("Consulta rechazada ("+(data.error||"error")+"). Tu selección anterior sigue intacta.");
+   }
+   const current=JSON.parse(localStorage.getItem(KEY)||"[]");
+   if(!Array.isArray(current)||current.length>MAX_POOL)throw Error("La selección almacenada no es válida. No se ha modificado.");
+   const index=new Map(current.map((p,i)=>[p?.slug,i]).filter(([slug])=>validSlug(slug)));
+   const safeScore=x=>typeof x==="number"&&Number.isFinite(x)&&x>=0&&x<=100?x:null;
+   let added=0,updated=0,skipped=0,withoutStats=0;
+   for(const p of data.players||[]){
+    if(!validSlug(p.slug)||!["Goalkeeper","Defender","Midfielder","Forward"].includes(p.position))continue;
+    const card=selected.get(p.slug);
+    if(!card)continue;
+    const prior=index.get(p.slug);
+    if(prior===undefined&&current.length>=MAX_POOL){skipped++;continue;}
+    const existing=prior===undefined?null:current[prior];
+    const entry={...existing,slug:p.slug,
+      name:String(p.name||card.name||"Jugador").slice(0,100),
+      club:String(p.club||card.club||"Sin club").slice(0,100),
+      position:p.position,l5:safeScore(p.l5),l10:safeScore(p.l10),l15:safeScore(p.l15),
+      avatar:card.playerPicture||existing?.avatar||null,
+      ownedArcade:existing?.ownedArcade===true,
+      ownedCompetitive:existing?.ownedCompetitive===true,
+      savedAt:Date.now()};
+    if(entry.l5===null&&entry.l10===null&&entry.l15===null)withoutStats++;
+    if(prior===undefined){index.set(p.slug,current.length);current.push(entry);added++;}
+    else{current[prior]=entry;updated++;}
+   }
+   if(!added&&!updated)throw Error(skipped?"El optimizador ya tiene 120 futbolistas. Retira algunos antes de añadir más.":"No se han recibido futbolistas compatibles para importar.");
+   localStorage.setItem(KEY,JSON.stringify(current));
+   selected.clear();updateSelected();
+   feedback("Importación completada: "+added+" añadidos, "+updated+" actualizados"+
+     (skipped?", "+skipped+" omitidos por el límite de 120":"")+
+     (withoutStats?", "+withoutStats+" sin medias disponibles":"")+
+     ". La propiedad y elegibilidad Arcade no se han confirmado; las marcas manuales se han conservado.");
+  }catch(err){feedback(err?.message||"No se ha completado la importación.",true);}
+  finally{loading=false;$("load").disabled=false;$("more").disabled=false;updateSelected();}
  }
  async function init(){
   try{
@@ -149,6 +238,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
  }
  $("load").addEventListener("click",()=>fetchCards(false));
  $("more").addEventListener("click",()=>fetchCards(true));
+ $("import").addEventListener("click",importSelected);
  init();
 })();
 </script>
