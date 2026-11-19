@@ -10,8 +10,14 @@ const te=new TextEncoder(),td=new TextDecoder();
 export function validContact(value){
  return typeof value==="string"&&value.length<150&&/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(value);
 }
+// Test mode keeps the public OAuth switch off. A 24+ character access secret
+// allows a private, time-limited test gate before any Sorare redirect.
+export function privateTestEnabled(env){
+ return env?.SFS_OAUTH_ENABLED!=="true"&&
+  typeof env?.SFS_OAUTH_TEST_SECRET==="string"&&env.SFS_OAUTH_TEST_SECRET.length>=24;
+}
 export function authReady(env){
- return Boolean(env?.SFS_OAUTH_ENABLED==="true"&&
+ return Boolean((env?.SFS_OAUTH_ENABLED==="true"||privateTestEnabled(env))&&
  typeof env?.SORARE_OAUTH_CLIENT_ID==="string"&&env.SORARE_OAUTH_CLIENT_ID.trim()&&
  typeof env?.SORARE_OAUTH_CLIENT_SECRET==="string"&&env.SORARE_OAUTH_CLIENT_SECRET.trim()&&
  validContact(env?.SFS_PRIVACY_CONTACT)&&
@@ -32,6 +38,42 @@ export function cookie(request,key){
  const raw=request.headers.get("cookie")||"";
  const item=raw.split(";").map(v=>v.trim()).find(p=>p.startsWith(key+"="));
  return item?item.slice(key.length+1):"";
+}
+export const TEST_COOKIE="__Host-sfs_test_access";
+const TEST_TTL=30*60;
+async function testHmacKey(env){
+ return crypto.subtle.importKey("raw",te.encode(env.SFS_OAUTH_TEST_SECRET),
+  {name:"HMAC",hash:"SHA-256"},false,["sign"]);
+}
+async function testSignature(env,payload){
+ const key=await testHmacKey(env);
+ return toBase64(new Uint8Array(await crypto.subtle.sign("HMAC",key,te.encode(payload))));
+}
+export async function testAccessGranted(env,request){
+ if(!privateTestEnabled(env))return env?.SFS_OAUTH_ENABLED==="true";
+ const ticket=cookie(request,TEST_COOKIE);
+ const chunks=ticket.split(".");
+ if(chunks.length!==3)return false;
+ const [exp,nonce,mac]=chunks;
+ if(!/^\d{10,13}$/.test(exp)||! /^[A-Za-z0-9_-]{43}$/.test(nonce)||
+    !/^[A-Za-z0-9_-]{43}$/.test(mac))return false;
+ const expire=Number(exp);
+ if(!Number.isSafeInteger(expire)||expire<=Date.now()||expire>Date.now()+TEST_TTL*1000)return false;
+ const expected=await testSignature(env,exp+"."+nonce);
+ return equalSafe(mac,expected);
+}
+export async function makeTestTicket(env){
+ const exp=String(Date.now()+TEST_TTL*1000);
+ const nonce=randomValue();
+ const body=exp+"."+nonce;
+ return body+"."+await testSignature(env,body);
+}
+export async function testSecretMatches(env,submitted){
+ if(!privateTestEnabled(env)||typeof submitted!=="string"||submitted.length>512)return false;
+ const key=await testHmacKey(env);
+ const value=toBase64(new Uint8Array(await crypto.subtle.sign("HMAC",key,te.encode(submitted))));
+ const known=toBase64(new Uint8Array(await crypto.subtle.sign("HMAC",key,te.encode(env.SFS_OAUTH_TEST_SECRET))));
+ return equalSafe(value,known);
 }
 export function cookieHeader(name,value,seconds){
  const base=name+"="+value+"; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age="+seconds;
