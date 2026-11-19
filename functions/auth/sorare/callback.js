@@ -32,7 +32,9 @@ export async function onRequestGet({request,env}){
   h.append("set-cookie",cookieHeader(SESSION_COOKIE,sid,7*24*3600));
   return new Response(null,{status:302,headers:h});
  }catch(err){
-  // Return only a fixed phase and a tightly whitelisted error label; never raw upstream responses.
+  // Avoid repeated code exchanges. OAuth authorization codes are single-use.
+  if(phase==="token"&&err?.message==="token_http_429")return go("rate_limited");
+  // Return only a fixed phase and a tightly whitelisted error label.
   return go("failed",phase,typeof err?.message==="string"?err.message:"");
  }
 }
