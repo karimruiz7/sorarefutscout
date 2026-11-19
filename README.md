@@ -255,3 +255,17 @@ Esquema técnico Sorare verificado: https://api.sorare.com/graphql/schema
 - Mantener `SFS_OAUTH_ENABLED` desactivado; no anunciar importación de cartas hasta que esté validada con una sesión real.
 
 Documentación de límites GraphQL de Sorare: https://github.com/sorare/api#rate-limit
+
+
+### Fase 4.3 — Importación voluntaria de futbolistas desde cartas a optimizador (19-11-2026)
+
+- **Primera prueba real exitosa:** OAuth autenticado; `/api/my-cards` devolvió **20 cartas de 640 totales indicadas**, con fotografía, club, posición, rareza **Common** y temporada 2026 para las cartas visibles. El total de cartas no equivale al total de futbolistas únicos.
+- `mis-cartas.html` permite seleccionar **hasta 20 futbolistas únicos** entre las páginas de cartas cargadas, sin importar automáticamente toda la colección de 640 cartas.
+- Nuevo endpoint `POST /api/import-player-stats`: requiere sesión OAuth y control privado; una única consulta agrupada a la API pública de fútbol obtiene L5/L10/L15 reales de esos futbolistas. Respeta errores 429 y no modifica cartas, inventario ni alineaciones en Sorare.
+- La operación **se inicia solo al pulsar "Añadir seleccionados al optimizador"**. Guarda localmente el conjunto de jugadores (clave `sorarefutscout:optimizer-pool:v1`) con el límite actual de **120 futbolistas**; deduplica por `slug`, conserva marcas `ownedArcade` y `ownedCompetitive` previamente establecidas y no vacía la selección existente.
+- **No se marca automáticamente Arcade o Pro/Arena** por ser `Common`. La API confirma la propiedad de cartas recuperadas, pero no garantiza elegibilidad para una competición ni que toda la colección Arcade sea visible en este endpoint.
+- Si hay estadísticas sin medias, se importan con valores ausentes indicados, no se inventan puntuaciones. Se muestra aviso de éxito o error.
+- Se han validado sintaxis y pruebas simuladas de API: origen no permitido, falta de sesión, puerta privada caducada, selección duplicada, Sorare HTTP 429 y error GraphQL.
+- **Pendiente:** probar importación en una sesión real, comprobar calidad de posiciones y medias, manejar varias cuentas en un mismo navegador, aumentar capacidad con paginación adecuada y estudiar cómo importar la colección completa sin sobrecargar la API.
+
+La fuente para límites de modo Arcade: https://help.sorare.com/hc/en-us/articles/33949360053917-What-is-Arcade
