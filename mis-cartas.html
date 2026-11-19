@@ -146,6 +146,8 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
     const msg=data.error==="sin_sesion"?"Tu sesión ha terminado. Vuelve a conectarte.":
      data.error==="prueba_privada_caducada"?"La clave de prueba privada ha caducado. Vuelve a Mi club para habilitarla.":
      data.error==="limite_de_sorare"?"Sorare ha limitado las consultas. Evita repetirlas hasta que se restablezca el acceso.":
+     data.error==="sorare_tiempo_agotado"?"Sorare ha tardado demasiado en responder (más de 25 segundos). Las cartas anteriores siguen cargadas. Espera unos minutos antes de volver a probar.":
+     data.error==="sorare_temporalmente_no_disponible"?"No se ha podido conectar con la API de Sorare en esta consulta. Las cartas ya cargadas se conservan. Inténtalo más adelante.":
      "Sorare no ha permitido consultar la colección ("+(data.error||"error")+").";
     throw Error(msg);
    }
