@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b111a"><title>Mis cartas | SorareFutScout</title>
+<meta name="description" content="Vista previa privada de las cartas de fútbol de tu cuenta Sorare conectada.">
+<style>
+:root{color-scheme:dark;--accent:#b5ff65;--bg:#0b111a;--panel:#141e2e;--border:#304660;--muted:#adc0d3;--text:#f7faff}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:radial-gradient(ellipse at 90% 0%,#163128,#0b111a 62%);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+header{background:#0d151fef;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}.wrap{max-width:1100px;margin:auto;padding:0 22px}.head{min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:16px}.logo{font-size:17px;font-weight:900;color:var(--text)}.logo b{display:inline-block;background:var(--accent);border-radius:9px;color:#14210a;padding:7px 9px;margin-right:9px}.logo em{font-style:normal;color:var(--accent)}
+nav{display:flex;gap:15px;flex-wrap:wrap}nav a{color:var(--muted);font-size:13px}nav a.active{font-weight:850;color:var(--accent)}
+main{padding:37px 0 66px}h1{font-size:clamp(31px,4.6vw,47px);line-height:1.14;letter-spacing:-1px;margin:7px 0 12px}h1 em{color:var(--accent);font-style:normal}
+.eyebrow{color:var(--accent);font-size:11px;font-weight:900;letter-spacing:1.4px}.lead{color:var(--muted);max-width:790px;margin:0 0 22px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:17px;padding:22px;margin:16px 0}
+.notice{border:1px solid #486780;border-radius:10px;background:#1c2e42;color:#d1e7f4;padding:12px 14px;margin:14px 0;font-size:13px}
+.notice.error{border-color:#955864;color:#ffd3d8;background:#43272e}
+.notice.good{border-color:#4d7847;color:#dbffce;background:#1b372b}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#142109;font-weight:850;border:none;border-radius:10px;padding:11px 16px;margin:8px 8px 8px 0;text-decoration:none}.btn.secondary{background:#283c53;color:white;border:1px solid #536b83}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.stats{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:15px 0}.stats span{font-size:12px;background:#22374c;border:1px solid #3c566c;padding:7px 9px;border-radius:8px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:18px 0}
+.card{background:#19283b;border:1px solid #3b526c;border-radius:13px;padding:14px;display:flex;gap:12px;min-width:0}
+.avatar{width:55px;height:55px;flex:0 0 55px;border-radius:12px;background:#2e4c5c;object-fit:cover}
+.avatar-fallback{display:grid;place-items:center;font-weight:800;color:white}
+.card-content{min-width:0}.card strong{display:block;font-size:14px;overflow-wrap:anywhere}.card .small{display:block;color:var(--muted);font-size:12px;line-height:1.5}.tag{display:inline-block;margin-top:7px;border:1px solid #587052;color:#d8ffae;border-radius:7px;font-size:11px;padding:3px 7px}.muted{font-size:12px;color:var(--muted)}
+footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size:12px}
+@media(max-width:850px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.cards{grid-template-columns:1fr}.head{flex-direction:column;align-items:flex-start;padding:15px 0}.wrap{padding:0 14px}.panel{padding:15px}}
+</style>
+</head>
+<body>
+<header><div class="wrap head">
+<a href="/" class="logo"><b>SF</b>Sorare<em>FutScout</em></a>
+<nav aria-label="Navegación">
+<a href="/">Inicio</a><a href="/explorador.html">Jugadores</a>
+<a href="/optimizador-real.html">Optimizador</a><a href="/disponibilidad.html">Disponibilidad</a>
+<a href="/mi-club.html" class="active">Mi club</a>
+</nav></div></header>
+<main class="wrap">
+<div class="eyebrow">FASE 4.2 · COLECCIÓN AUTORIZADA · BETA PRIVADA</div>
+<h1>Mis cartas <em>de Sorare Fútbol</em></h1>
+<p class="lead">Consulta una vista previa de las cartas que la API de Sorare devuelve para tu cuenta. No es una lista validada de cartas Arcade ni se incorpora todavía al optimizador.</p>
+<section class="panel">
+<h2>Conexión con tu cuenta</h2>
+<div id="status" class="notice" role="status" aria-live="polite">Comprobando la sesión…</div>
+<div id="controls" hidden>
+  <button id="load" type="button" class="btn">Consultar mis cartas</button>
+  <a class="btn secondary" href="/mi-club.html">Volver a Mi club</a>
+  <p class="muted">Consulta de solo lectura. La lista se mantiene únicamente en memoria durante esta visita; no creamos una copia de tu colección en el servidor.</p>
+</div>
+<div id="offline" hidden><a class="btn" href="/mi-club.html">Ir a conectar mi cuenta</a></div>
+</section>
+<section id="results" class="panel" hidden>
+<h2>Cartas obtenidas</h2>
+<div class="stats"><span id="loaded">0 cargadas</span><span id="total">Total sin confirmar</span><span>Fuente: Sorare GraphQL</span></div>
+<div id="cards" class="cards" aria-live="polite"></div>
+<div id="empty" class="notice" hidden>Esta consulta no ha devuelto cartas de fútbol. Es posible que la API no exponga las cartas Arcade o que esta cuenta no tenga cartas de los tipos consultados. No significa que tu cuenta de Sorare esté vacía.</div>
+<button id="more" class="btn secondary" type="button" hidden>Cargar más cartas</button>
+<div id="fetch-status" class="notice" role="status" aria-live="polite" hidden></div>
+<p class="muted">Esta es una vista previa de cartas; aún no se han comprobado restricciones de Game Week, elegibilidad ni los tipos de colección Arcade.</p>
+</section>
+<footer>SorareFutScout · Herramienta independiente, no oficial · <a href="/privacidad.html">Privacidad</a></footer>
+</main>
+<script>
+(()=>{
+ const $=id=>document.getElementById(id);
+ const status=$("status"),fetchStatus=$("fetch-status");
+ let cursor=null,loading=false,count=0,seen=new Set();
+ function feedback(msg,isError=false){
+  fetchStatus.hidden=false;
+  fetchStatus.className=isError?"notice error":"notice";
+  fetchStatus.textContent=msg;
+ }
+ function setStatus(msg,kind=""){
+  status.className="notice"+(kind?" "+kind:"");
+  status.textContent=msg;
+ }
+ const rarityName={common:"Common",custom_series:"Serie especial",limited:"Limited",rare:"Rare",super_rare:"Super Rare",unique:"Unique"};
+ function renderCard(card){
+  const node=document.createElement("article");node.className="card";
+  const src=card.playerPicture;
+  if(src){
+   const pic=document.createElement("img");
+   pic.className="avatar";pic.src=src;pic.alt="";pic.loading="lazy";
+   node.append(pic);
+  }else{
+   const img=document.createElement("div");
+   img.className="avatar avatar-fallback";img.textContent=(card.name||"SF").slice(0,2).toUpperCase();
+   node.append(img);
+  }
+  const body=document.createElement("div");body.className="card-content";
+  const name=document.createElement("strong");name.textContent=card.name||"Jugador";body.append(name);
+  const club=document.createElement("span");club.className="small";club.textContent=card.club||"Sin club";body.append(club);
+  const position=document.createElement("span");position.className="small";
+  position.textContent=(card.positions||[]).join(" · ")||"Posición no indicada";body.append(position);
+  const tag=document.createElement("span");tag.className="tag";
+  tag.textContent=(rarityName[card.rarity]||card.rarity||"Sin rareza")+(card.season?" · "+card.season:"");
+  body.append(tag);node.append(body);
+  return node;
+ }
+ async function fetchCards(next=false){
+  if(loading)return;
+  loading=true;$("load").disabled=true;$("more").disabled=true;
+  fetchStatus.hidden=true;
+  try{
+   const url="/api/my-cards"+(next&&cursor?"?after="+encodeURIComponent(cursor):"");
+   const r=await fetch(url,{credentials:"same-origin",cache:"no-store"});
+   const data=await r.json();
+   if(!r.ok||!data.ok){
+    const msg=data.error==="sin_sesion"?"Tu sesión ha terminado. Vuelve a conectarte.":
+     data.error==="prueba_privada_caducada"?"La clave de prueba privada ha caducado. Vuelve a Mi club para habilitarla.":
+     data.error==="limite_de_sorare"?"Sorare ha limitado las consultas. Evita repetirlas hasta que se restablezca el acceso.":
+     "Sorare no ha permitido consultar la colección ("+(data.error||"error")+").";
+    throw Error(msg);
+   }
+   if(!next){$("cards").replaceChildren();seen=new Set();count=0;}
+   for(const card of data.cards||[]){
+    const id=card.assetId||card.cardSlug||card.playerSlug;
+    if(!id||seen.has(id))continue;
+    seen.add(id);count++;$("cards").append(renderCard(card));
+   }
+   cursor=data.pagination?.nextCursor||null;
+   $("results").hidden=false;
+   $("loaded").textContent=count+" cartas cargadas";
+   $("total").textContent=data.totalCount!=null?data.totalCount+" cartas según Sorare":"Total no disponible";
+   $("more").hidden=!data.pagination?.hasNextPage;
+   $("empty").hidden=count>0;
+   setStatus("Consulta completada. Esta vista previa contiene únicamente cartas que Sorare devuelve a tu sesión.","good");
+  }catch(err){feedback(err?.message||"No se pudo recuperar la colección.",true);}
+  finally{loading=false;$("load").disabled=false;$("more").disabled=false;}
+ }
+ async function init(){
+  try{
+   const r=await fetch("/api/auth/session",{cache:"no-store",credentials:"same-origin"});
+   if(!r.ok)throw Error();
+   const data=await r.json();
+   if(data.connected){
+    setStatus("Conectado con Sorare. Puedes consultar la colección de fútbol de esta cuenta.","good");
+    $("controls").hidden=false;
+   }else{
+    setStatus("No hay una sesión Sorare activa en este navegador. Conéctate desde Mi club.");
+    $("offline").hidden=false;
+   }
+  }catch(_){
+   setStatus("No se ha podido verificar la sesión. La consulta se mantiene desactivada.","error");
+   $("offline").hidden=false;
+  }
+ }
+ $("load").addEventListener("click",()=>fetchCards(false));
+ $("more").addEventListener("click",()=>fetchCards(true));
+ init();
+})();
+</script>
+</body></html>
