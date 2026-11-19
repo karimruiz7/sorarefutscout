@@ -155,6 +155,7 @@
   if(working)return;
   working=true;complete=false;players=[];choices=[];cardCount=0;
   $("load").disabled=true;
+  $("preview").disabled=true;
   $("auto-results").hidden=false;
   $("auto-lineups").replaceChildren();
   $("auto-metric").disabled=true;
@@ -232,6 +233,7 @@
   }finally{
    working=false;
    $("load").disabled=false;
+   $("preview").disabled=false;
   }
  }
  $("auto-metric").addEventListener("change",()=>{if(complete)showResults();});
