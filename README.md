@@ -215,3 +215,14 @@ Objetivo de producto: conectar Sorare, importar cartas compatibles y preparar la
 Sorare OAuth da acceso autorizado a información básica y cartas; no proporciona email, futuras alineaciones privadas ni operaciones de compraventa. Enlaces: https://github.com/sorare/api#oauth-authentication--login-with-sorare
 
 **Activación deliberada:** el backend solo activa OAuth cuando, además de credenciales, KV y contacto, se configura explícitamente `SFS_OAUTH_ENABLED=true` en Production. No activar esta variable hasta completar revisión de privacidad y pruebas del registro.
+
+
+### Prueba OAuth privada (fase de verificación, antes de abrir al público)
+
+- La infraestructura se ha comprobado con `/api/auth/preflight`: API key, Client ID, Client Secret, contacto y KV cargados, pero esto **no valida aún los permisos frente a Sorare**.
+- Un acceso privado opcional está preparado sin habilitar OAuth públicamente.
+- En Cloudflare Pages (Production) añadir **únicamente** `SFS_OAUTH_TEST_SECRET` con tipo **Secret**, generado aleatoriamente en un gestor de contraseñas (32+ caracteres fuertes), nunca copiado a GitHub o al chat. Mantener `SFS_OAUTH_ENABLED` **ausente** o distinto de `true`.
+- Después del despliegue, abrir `https://sorarefutscout.pages.dev/mi-club.html`, introducir esa clave de prueba en el formulario; el servidor valida la clave y entrega una cookie HttpOnly de **30 minutos**. Sin esa cookie el servidor impide el inicio y el callback OAuth.
+- El navegador de prueba podrá autorizar la cuenta de Sorare, crear una sesión cifrada en `SFS_SESSIONS` y luego cerrar sesión. Durante el test, no activar el importador de cartas ni invitar a usuarios.
+- Cuando se comprueben acceso y desconexión, quitar **`SFS_OAUTH_TEST_SECRET`**, desplegar de nuevo y comprobar que `/mi-club.html` vuelve a indicar que OAuth está en preparación. La cookie deja de ser válida al borrar el secreto. Limpiar cualquier sesión de prueba guardada en KV cuando proceda.
+- Antes de lanzamiento público: revisar política de privacidad, manejo de errores, alertas/monitorización y pruebas de seguridad. Solo entonces se considerará `SFS_OAUTH_ENABLED=true` como activación pública.
