@@ -269,3 +269,11 @@ Documentación de límites GraphQL de Sorare: https://github.com/sorare/api#rate
 - **Pendiente:** probar importación en una sesión real, comprobar calidad de posiciones y medias, manejar varias cuentas en un mismo navegador, aumentar capacidad con paginación adecuada y estudiar cómo importar la colección completa sin sobrecargar la API.
 
 La fuente para límites de modo Arcade: https://help.sorare.com/hc/en-us/articles/33949360053917-What-is-Arcade
+
+## Fase 4.3 · Análisis automático del club completo (19-11-2026)
+
+- `mis-cartas.html`: **Consultar mis cartas y recomendar quinteto** obtiene de forma secuencial todas las páginas de cartas de fútbol que la sesión OAuth autoriza, sin pulsar repetidamente «Cargar más». Conserva la vista individual como opción secundaria.
+- `auto-club.js`: deduplica futbolistas por slug, solicita medias L5/L10/L15 en bloques de 20 a la función de estadísticas existente y calcula los tres mejores quintetos SO5 (GK, DF, MD, FW, extra de campo) por programación dinámica, sin repetir futbolistas. Permite cambiar la media sin nuevas peticiones.
+- Se respetan respuestas HTTP 429 y `Retry-After`, se secuencian las consultas y se comunica el progreso. Si una página falla o la cuenta cambia, **no se muestra un quinteto parcial**. Los datos se mantienen únicamente en memoria de la pestaña, sin copiar la colección al servidor.
+- **Importante:** se optimiza la suma de medias históricas de los futbolistas con estadísticas disponibles, **no** se verifica automáticamente la competición concreta, GW, los partidos de todos los candidatos, rareza/temporada, XP, bonificaciones, titularidad, elegibilidad Arcade, uso previo de la carta ni disponibilidad. Tampoco se envía ninguna alineación a Sorare.
+- Sintaxis JS verificada y prueba de alineaciones distintas sin repetición efectuada sobre datos simulados. Pendiente de validar despliegue y funcionamiento con colección real y límites de Sorare.
