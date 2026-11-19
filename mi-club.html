@@ -70,8 +70,24 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
  const message={denied:"Has cancelado la autorización de Sorare.",not_ready:"La conexión todavía no está configurada.",
  state:"No se ha podido verificar la solicitud de conexión. Inténtalo de nuevo desde esta página.",
  invalid_code:"Sorare no ha devuelto un código de autorización válido.",failed:"La conexión no se ha completado. Revisa la configuración de OAuth.",test_denied:"Acceso de prueba no autorizado o caducado. Desbloquea el acceso privado."};
- const error=new URLSearchParams(location.search).get("error");
- if(error&&message[error]){status.classList.add("error");status.textContent=message[error];}
+ const search=new URLSearchParams(location.search);
+ const error=search.get("error"),phase=search.get("phase"),detail=search.get("detail")||"";
+ const explanation={
+  token:"Sorare ha mostrado el consentimiento, pero nuestro servidor no ha podido obtener los tokens de sesión.",
+  profile:"Sorare ha entregado los tokens, pero todavía no hemos podido consultar el identificador de tu cuenta.",
+  storage:"Sorare ha autorizado la cuenta, pero no hemos podido guardar su sesión cifrada en Cloudflare."
+ };
+ if(error&&message[error]){
+  status.classList.add("error");
+  let msg=message[error];
+  if(error==="failed"&&explanation[phase]){
+   msg=explanation[phase]+" Puedes iniciar una autorización nueva desde esta página.";
+   if(/^(?:token_http_[1-5][0-9]{2}|profile_http_[1-5][0-9]{2}|token_incomplete|token_invalid_json|profile_invalid_json|profile_graphql_error|profile_missing_user)$/.test(detail)){
+    msg+=" Diagnóstico: "+detail+".";
+   }
+  }
+  status.textContent=msg;
+ }
  async function load(){
   try{
    const [config,session,test]=await Promise.all([
