@@ -135,13 +135,50 @@ export async function getSession(env,request){
   return {sid,session};
  }catch(_){return null;}
 }
+// A short, shared pause after Sorare returns HTTP 429 from the OAuth token endpoint.
+// Sorare documents Retry-After for GraphQL; we use it when provided for OAuth too,
+// otherwise a conservative local pause. This is not an authoritative reset time.
+const TOKEN_COOLDOWN_KEY="sfs:oauth:token-cooldown:v1";
+export async function tokenCooldownSeconds(env){
+ if(!env?.SFS_SESSIONS||typeof env.SFS_SESSIONS.get!=="function")return 0;
+ try{
+  const until=Number(await env.SFS_SESSIONS.get(TOKEN_COOLDOWN_KEY));
+  if(!Number.isFinite(until))return 0;
+  return Math.max(0,Math.min(3600,Math.ceil((until-Date.now())/1000)));
+ }catch(_){return 0;}
+}
+function responsePauseSeconds(value){
+ if(typeof value==="string"&&/^\d{1,8}$/.test(value.trim())){
+  return Math.max(5,Math.min(3600,Number(value.trim())));
+ }
+ if(typeof value==="string"&&value.length<128){
+  const until=Date.parse(value);
+  if(Number.isFinite(until)&&until>Date.now())
+   return Math.max(5,Math.min(3600,Math.ceil((until-Date.now())/1000)));
+ }
+ return 180; // fallback safety pause; not a promise from Sorare
+}
+export async function recordTokenRateLimit(env,response){
+ const seconds=responsePauseSeconds(response.headers.get("retry-after"));
+ try{
+  await env.SFS_SESSIONS.put(TOKEN_COOLDOWN_KEY,String(Date.now()+seconds*1000),{
+   expirationTtl:Math.max(60,seconds+10)
+  });
+ }catch(_){ /* Keep original 429 outcome without disclosing storage errors. */ }
+ return seconds;
+}
 export async function tokenRequest(env,params){
+ if(await tokenCooldownSeconds(env)>0)throw Error("token_http_429");
  const body=new URLSearchParams({client_id:env.SORARE_OAUTH_CLIENT_ID,
   client_secret:env.SORARE_OAUTH_CLIENT_SECRET,...params});
  const response=await fetch("https://api.sorare.com/oauth/token",{
   method:"POST",headers:{"content-type":"application/x-www-form-urlencoded","accept":"application/json"},
   body,signal:AbortSignal.timeout(12000)
  });
+ if(response.status===429){
+  await recordTokenRateLimit(env,response);
+  throw Error("token_http_429");
+ }
  if(!response.ok)throw Error("token_http_"+response.status);
  let token;
  try{token=await response.json();}catch(_){throw Error("token_invalid_json");}
