@@ -20,9 +20,16 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
 .test-access label{display:block;font-size:12px;font-weight:750;margin:7px 0}
 .test-access input{display:block;width:100%;max-width:460px;padding:11px;border:1px solid #587388;border-radius:9px;background:#0c1825;color:#fff;font:inherit}
 .test-access input:focus-visible{outline:2px solid var(--accent)}
-</style></head><body>
+</style><link rel="stylesheet" href="/modos-menu.css">
+<script src="/modos-menu.js" defer></script>
+</head><body>
 <header><div class="wrap head"><a class="logo" href="/"><b>SF</b>Sorare<em>FutScout</em></a>
-<nav aria-label="Navegación"><a href="/">Inicio</a><a href="/explorador.html">Jugadores</a><a href="/optimizador-real.html">Optimizador</a><a href="/disponibilidad.html">Disponibilidad</a><a class="active" href="/mi-club.html" aria-current="page">Mi club</a></nav>
+<nav aria-label="Navegación"><a href="/">Inicio</a><a href="/explorador.html">Jugadores</a><a href="/optimizador-real.html">Optimizador</a><details class="modos-menu"><summary>Modos de juego</summary><div class="modos-menu__dropdown">
+<a data-game-mode="arcade" href="/mis-cartas.html#arcade">Arcade · Sets y tableros</a>
+<div class="modos-menu__label">Competitivo</div>
+<a data-game-mode="pro" href="/mis-cartas.html#pro">Pro · Game Weeks</a>
+<a data-game-mode="arena" href="/mis-cartas.html#arena">Arena · Clasificaciones</a>
+</div></details><a href="/disponibilidad.html">Disponibilidad</a><a class="active" href="/mi-club.html" aria-current="page">Mi club</a></nav>
 </div></header>
 <main class="wrap">
 <div class="eyebrow">FASE 4 · TU CLUB EN UN SOLO LUGAR</div>
