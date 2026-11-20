@@ -3,7 +3,7 @@
 import {authReady,canonical,getSession,refreshed,json,privateTestEnabled,
   testAccessGranted} from "../_lib/sorareOAuth.js";
 
-const QUERY="query SorareFutScoutMyFootballCards($after:String) {\n  currentUser {\n    slug\n    cards(first:20, after:$after, sport:FOOTBALL, owned:true, ownedByMe:true) {\n      totalCount\n      pageInfo { endCursor hasNextPage }\n      nodes {\n        assetId slug name rarityTyped seasonYear pictureUrl\n        anyPlayer {\n          slug displayName avatarPictureUrl anyPositions\n          activeClub { name }\n        }\n      }\n    }\n  }\n}";
+const QUERY="query SorareFutScoutMyFootballCards($after:String) {\n  currentUser {\n    slug\n    cards(first:20, after:$after, sport:FOOTBALL, owned:true, ownedByMe:true) {\n      totalCount\n      pageInfo { endCursor hasNextPage }\n      nodes {\n        assetId slug name rarityTyped seasonYear pictureUrl\n        cardSet { id slug name }\n        cardEditionName\n        anyPlayer {\n          slug displayName avatarPictureUrl anyPositions\n          activeClub { name }\n        }\n      }\n    }\n  }\n}";
 const safeString=(v,max=180)=>typeof v==="string"?v.slice(0,max):"";
 const safeImage=(v)=>{
  if(typeof v!=="string"||v.length>1024)return null;
@@ -74,6 +74,12 @@ export async function onRequestGet({request,env}){
    positions:Array.isArray(p.anyPositions)?p.anyPositions.filter(x=>typeof x==="string").slice(0,3):[],
    rarity:safeString(c.rarityTyped,25),
    season:Number.isInteger(c.seasonYear)?c.seasonYear:null,
+   cardSet:c.cardSet&&safeString(c.cardSet.slug,120)&&safeString(c.cardSet.name,120)?{
+    id:safeString(c.cardSet.id,180),
+    slug:safeString(c.cardSet.slug,120),
+    name:safeString(c.cardSet.name,120)
+   }:null,
+   cardEditionName:safeString(c.cardEditionName,120)||null,
    playerPicture:safeImage(p.avatarPictureUrl),
    cardPicture:safeImage(c.pictureUrl)
   };
@@ -89,6 +95,7 @@ export async function onRequestGet({request,env}){
   totalCount:Number.isInteger(connection.totalCount)?connection.totalCount:null,
   cards,
   pagination:{hasNextPage:Boolean(nextCursor),nextCursor},
-  note:"Vista previa de cartas OAuth. Cobertura de Arcade pendiente de verificar. No se han añadido cartas al optimizador."
+  setMetadataSource:"cardSet",
+  note:"Las cartas con cardSet identificado incluyen su Set y edición según Sorare. No se ha comprobado elegibilidad de un tablero ni inscrito ningún equipo."
  });
 }
