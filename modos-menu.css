@@ -1,0 +1,36 @@
+/* SorareFutScout · Navegación compartida: Arcade / Competitivo */
+nav .modos-menu { position:relative; display:block; flex:0 0 auto; }
+nav .modos-menu > summary {
+ list-style:none; display:flex; align-items:center; gap:6px;
+ color:var(--muted,var(--sub,#b9cde0)); font-size:13px; font-weight:750;
+ cursor:pointer; padding:4px 2px; border-radius:7px; white-space:nowrap;
+}
+nav .modos-menu > summary::-webkit-details-marker { display:none; }
+nav .modos-menu > summary::after { content:"⌄"; font-size:13px; line-height:1; color:var(--accent,#b5ff65); }
+nav .modos-menu[open] > summary, nav .modos-menu.current > summary { color:var(--accent,#b5ff65); }
+nav .modos-menu > summary:focus-visible, nav .modos-menu__dropdown a:focus-visible { outline:2px solid var(--accent,#b5ff65); outline-offset:3px; }
+nav .modos-menu__dropdown {
+ position:absolute; top:calc(100% + 8px); right:0; z-index:60;
+ width:245px; padding:11px; background:#142238; border:1px solid #4a657a;
+ border-radius:13px; box-shadow:0 15px 36px #020912bf; display:grid; gap:3px;
+}
+nav .modos-menu__label { color:#a5b8ce; font-size:10px; font-weight:900; letter-spacing:.8px; padding:10px 10px 4px; text-transform:uppercase; }
+nav .modos-menu__dropdown a, nav.menu .modos-menu__dropdown a {
+ display:block; padding:10px 12px; margin:0; border-radius:8px; border:1px solid transparent;
+ font-size:13px; font-weight:750; color:#d8e8f8; text-decoration:none; white-space:normal;
+}
+nav .modos-menu__dropdown a:hover, nav.menu .modos-menu__dropdown a:hover { background:#263d50; }
+nav .modos-menu__dropdown a[aria-current="page"] { color:var(--accent,#b5ff65); background:#25392e; border-color:#4b7144; }
+nav.menu .modos-menu { width:100%; }
+nav.menu .modos-menu > summary { font-size:14px; padding:12px 13px; border:1px solid #30435b; border-radius:11px; background:#182a3c; }
+nav.menu .modos-menu__dropdown { position:static; width:100%; box-shadow:none; margin:6px 0; background:#101d2c; }
+@media(max-width:900px){
+ .head { flex-wrap:wrap; }
+ nav.nav { flex-wrap:wrap; }
+ nav .modos-menu__dropdown { left:0; right:auto; }
+}
+@media(max-width:720px){
+ nav.menu { overflow-x:visible; flex-wrap:wrap; }
+ nav.menu .modos-menu { width:auto; }
+ nav.menu .modos-menu__dropdown { position:absolute; min-width:235px; width:max-content; max-width:calc(100vw - 28px); }
+}
