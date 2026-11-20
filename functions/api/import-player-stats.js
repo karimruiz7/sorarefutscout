@@ -4,7 +4,7 @@
 import {authReady,canonical,privateTestEnabled,testAccessGranted,
  getSession,refreshed,json,SITE} from "../_lib/sorareOAuth.js";
 
-const QUERY="query SorareFutScoutImportScores($slugs: [String!]) { players(slugs: $slugs) { __typename ... on Player { slug displayName position activeClub { name } l5: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE) l10: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE) l15: averageScore(type: LAST_FIFTEEN_SO5_AVERAGE_SCORE) } } }";
+const QUERY="query SorareFutScoutImportScores($slugs: [String!]) { players(slugs: $slugs) { __typename ... on Player { slug displayName position activeClub { slug name } l5: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE) l10: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE) l15: averageScore(type: LAST_FIFTEEN_SO5_AVERAGE_SCORE) } } }";
 const slugValid=s=>typeof s==="string"&&s.length<=100&&
  /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s);
 const score=value=>typeof value==="number"&&Number.isFinite(value)&&
@@ -64,6 +64,7 @@ export async function onRequestPost({request,env}){
    slug:p.slug,
    name:typeof p.displayName==="string"?p.displayName.slice(0,100):"",
    club:typeof p.activeClub?.name==="string"?p.activeClub.name.slice(0,100):"Sin club",
+   clubSlug:typeof p.activeClub?.slug==="string"?p.activeClub.slug.slice(0,120):null,
    position:p.position,l5:score(p.l5),l10:score(p.l10),l15:score(p.l15)
   })).filter(p=>p.name);
  return json({ok:true,source:"Sorare public football player statistics",
