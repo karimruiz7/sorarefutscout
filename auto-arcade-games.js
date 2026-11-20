@@ -8,6 +8,17 @@
  };
  let activeSet="",allPlayers=[],cardMap=new Map(),last=null,loading=false,callVersion=0;
  const nfmt=n=>Number.isFinite(n)?n.toLocaleString("es-ES",{maximumFractionDigits:1}):"—";
+ // A selected date means a LOCAL calendar day, not the next 48 hours.
+ // Date(y,m,d+1) also handles DST changes (23/25-hour days).
+ function localDayWindow(day){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(day))return null;
+  const [year,month,date]=day.split("-").map(Number);
+  const from=new Date(year,month-1,date,0,0,0,0);
+  const to=new Date(year,month-1,date+1,0,0,0,0);
+  if(!Number.isFinite(from.getTime())||from.getFullYear()!==year||
+     from.getMonth()!==month-1||from.getDate()!==date)return null;
+  return {from:from.toISOString(),to:to.toISOString()};
+ }
  function resetResult(msg){
   $("arcade-games-results").replaceChildren();
   $("arcade-games-status").className="notice";
@@ -37,8 +48,9 @@
   const players=allPlayers.filter(p=>p.clubSlug&&fixtureByClub.has(p.clubSlug)&&
    (cardMap.get(p.slug)||[]).some(card=>String(card.setSlug||"").toLowerCase()===activeSet));
   const uniqueMatches=new Set(players.flatMap(p=>fixtureByClub.get(p.clubSlug).map(g=>g.id)));
-  const summary=make("p","muted",last.games.length+" encuentros del Set en la ventana consultada · "+
-   upcoming.length+" con inicio futuro · "+players.length+
+  const summary=make("p","muted",last.games.length+" encuentros del Set el "+
+   last.day.split("-").reverse().join("/")+" · "+upcoming.length+
+   " aún por comenzar · "+players.length+
    " futbolistas de tu colección con club coincidente y estadísticas. "+
    "La coincidencia del club NO garantiza que el futbolista participe en ese encuentro.");
   root.append(summary);
@@ -88,7 +100,8 @@
  async function check(){
   if(loading||!activeSet)return;
   const day=$("arcade-day").value;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(day)){
+  const selectedWindow=localDayWindow(day);
+  if(!selectedWindow){
    resetResult("Selecciona una fecha válida para consultar el calendario.");return;
   }
   if(last?.set?.slug===activeSet&&last?.day===day){
@@ -98,7 +111,10 @@
   loading=true;$("arcade-check-games").disabled=true;
   resetResult("Consultando los partidos puntuables de «"+activeSet+"» directamente en Sorare…");
   try{
-   const url="/api/arcade-games?set="+encodeURIComponent(activeSet)+"&day="+encodeURIComponent(day);
+   const url="/api/arcade-games?set="+encodeURIComponent(activeSet)+
+    "&day="+encodeURIComponent(day)+
+    "&from="+encodeURIComponent(selectedWindow.from)+
+    "&to="+encodeURIComponent(selectedWindow.to);
    const response=await fetch(url,{credentials:"same-origin",cache:"no-store"});
    const data=await response.json();
    if(version!==callVersion)return;
@@ -110,7 +126,8 @@
    last=data;
    $("arcade-games-status").className="notice good";
    $("arcade-games-status").textContent="Consulta completada: "+data.count+
-    " encuentros del Set en la ventana de 48 horas. Se comprueban clubes, no titularidades.";
+    " encuentros del Set el "+day.split("-").reverse().join("/")+
+    ". No se incluyen partidos de otros días. Se comprueban clubes, no titularidades.";
    render();
   }catch(error){
    if(version!==callVersion)return;
@@ -125,6 +142,10 @@
  const day=new Date();const localDay=new Date(day.getTime()-day.getTimezoneOffset()*60000).toISOString().slice(0,10);
  $("arcade-day").value=localDay;
  $("arcade-check-games").addEventListener("click",check);
- $("arcade-day").addEventListener("change",()=>{last=null;rootEmpty();});
+ $("arcade-day").addEventListener("change",()=>{
+  callVersion++;last=null;rootEmpty();
+  $("arcade-games-status").className="notice";
+  $("arcade-games-status").textContent="Fecha cambiada. Pulsa «Consultar partidos del Set» para ver únicamente ese día.";
+ });
  window.SorareGameDays={selectSet,render,check};
 })();
