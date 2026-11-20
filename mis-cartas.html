@@ -44,6 +44,13 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 @media(max-width:520px){.auto-five{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #gw-progress{display:block;width:100%;height:12px;margin:16px 0;accent-color:var(--accent)}
 #gw-summary{margin:16px 0;font-size:13px}
+
+.mode-buttons{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:16px 0}
+.mode-button{background:#283c53;color:#eff7ff;border:1px solid #536b83;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:850}
+.mode-button[aria-pressed="true"]{background:var(--accent);color:#142109;border-color:var(--accent)}
+.mode-button:hover:not([aria-pressed="true"]){border-color:var(--accent)}
+.mode-button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#mode-info{font-size:13px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -55,9 +62,9 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <a href="/mi-club.html" class="active">Mi club</a>
 </nav></div></header>
 <main class="wrap">
-<div class="eyebrow">FASE 4.4 · QUINTETOS Y GAME WEEK · BETA PRIVADA</div>
-<h1>Tu mejor quinteto <em>de Sorare Fútbol</em></h1>
-<p class="lead">Un solo clic para analizar todas tus cartas y obtener quintetos estadísticos SO5. También comprobamos automáticamente la próxima Game Week de tus cartas Pro conocidas para proponer candidatos por rareza y jornada. Las competiciones Arcade y la elegibilidad final de Pro/Arena requieren comprobaciones adicionales.</p>
+<div class="eyebrow">FASE 4.5 · ARCADE, PRO Y ARENA · BETA PRIVADA</div>
+<h1>Tu club, tus cartas, <em>tus mejores quintetos</em></h1>
+<p class="lead">Analiza automáticamente la colección completa de cada usuario. Después compara quintetos candidatos de Arcade, Pro y Arena por separado, según las cartas que posea. La elegibilidad de cada competición debe verificarse con sus reglas oficiales.</p>
 <section class="panel">
 <h2>Conexión con tu cuenta</h2>
 <div id="status" class="notice" role="status" aria-live="polite">Comprobando la sesión…</div>
@@ -71,7 +78,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <div id="offline" hidden><a class="btn" href="/mi-club.html">Ir a conectar mi cuenta</a></div>
 </section>
 <section id="auto-results" class="panel" hidden>
-<h2>Recomendaciones para tu club</h2>
+<h2>Consulta y estadísticas de tu colección</h2>
 <div id="auto-summary" class="notice">Preparando análisis…</div>
 <progress id="auto-progress" max="100" value="0" hidden></progress>
 <div id="auto-status" class="notice" role="status" aria-live="polite" hidden></div>
@@ -83,11 +90,33 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
    <option value="l15">Últimos 15 (L15)</option>
   </select>
 </div>
+<div id="auto-general" hidden>
+<h3>Quintetos estadísticos · todos los jugadores</h3>
 <div id="auto-lineups"></div>
 <p class="muted">Estas son las mejores combinaciones estadísticas de los futbolistas con datos disponibles, sin repetir jugador. No son una predicción ni una alineación confirmada para Arcade, Pro o Arena. Aún no se comprueban Game Week, titularidad, lesiones, rareza, temporada, usos previos, bonos ni todas las reglas de elegibilidad. Sorare es la fuente de las medias.</p>
+</div>
 </section>
+<section id="mode-select" class="panel" hidden>
+<h2>Elige tu modo de juego</h2>
+<div id="mode-counts" class="notice" role="status"></div>
+<div class="mode-buttons" role="group" aria-label="Modo de juego para los quintetos">
+<button type="button" class="mode-button" id="mode-arcade" aria-pressed="false">Arcade</button>
+<button type="button" class="mode-button" id="mode-pro" aria-pressed="false">Pro</button>
+<button type="button" class="mode-button" id="mode-arena" aria-pressed="false">Arena</button>
+<button type="button" class="mode-button" id="mode-libre" aria-pressed="false">Análisis libre</button>
+</div>
+<p id="mode-info" class="muted" aria-live="polite"></p>
+</section>
+<section id="arcade-results" class="panel" hidden>
+<h2>Arcade · candidatos de cartas Common</h2>
+<p class="muted">Arcade funciona mediante Sets, tableros y misiones, no mediante la misma Game Week tradicional de Pro. Aquí elegimos los mejores quintetos entre futbolistas de tu colección con alguna carta Common; aún no podemos comprobar el Set, Tier, bonus ni los objetivos de cada tablero.</p>
+<div id="arcade-inventory" class="notice"></div>
+<div id="arcade-lineups"></div>
+<p class="muted">Orientación por L5/L10/L15. No se comprueba qué partido o plazo exige cada misión ni si una carta Common pertenece a un Set activo. No se garantiza que Sorare permita presentar estos quintetos ni se envían alineaciones.</p>
+</section>
+<div id="mode-proarena" hidden>
 <section id="gw-results" class="panel" hidden>
-<h2>Game Week · Pro y Arena (candidatos)</h2>
+<h2 id="gw-heading">Pro · candidatos por Game Week y rareza</h2>
 <p class="muted">Se comprueba el próximo partido SO5 devuelto por Sorare para futbolistas con alguna carta Limited, Rare, Super Rare o Unique. No es una comprobación de inscripción, titularidad o de elegibilidad real. Un jugador sin partido como próximo encuentro no necesariamente carece de partido en Game Weeks posteriores.</p>
 <div id="gw-inventory" class="notice">Pendiente de inventario de cartas…</div>
 <progress id="gw-progress" max="100" value="0" hidden></progress>
@@ -101,8 +130,9 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <div id="gw-summary" class="muted"></div>
 <div id="gw-lineups"></div>
 <p class="muted"><strong>Limitaciones:</strong> el año de emisión no confirma por sí solo si una carta es In-Season o Classic; no se validan el tablero exacto, las cuotas/bonos, restricciones de ligas, inscripciones anteriores ni los sustitutos. Nunca se envían alineaciones a Sorare.</p>
-<p class="muted"><strong>Arcade:</strong> funciona con Sets y misiones específicos, no con la misma GW. No etiquetamos una carta como Arcade sin comprobar su pertenencia al Set y sus reglas.</p>
+<p class="muted">Los listados de Pro y Arena son preselecciones de futbolistas disponibles en la colección, no alineaciones certificadas. Se debe verificar la competición concreta y sus límites antes de competir.</p>
 </section>
+</div>
 <section id="results" class="panel" hidden>
 <h2>Cartas obtenidas</h2>
 <div class="stats"><span id="loaded">0 cargadas</span><span id="total">Total sin confirmar</span><span>Fuente: Sorare GraphQL</span></div>
@@ -124,6 +154,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 </main>
 <script src="/auto-club.js"></script>
 <script src="/auto-gw.js"></script>
+<script src="/auto-modes.js"></script>
 <script>
 (()=>{
  const $=id=>document.getElementById(id);
