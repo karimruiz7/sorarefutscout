@@ -160,10 +160,17 @@ section[id]{scroll-margin-top:94px}
 .method-details summary{cursor:pointer;color:#b5ff65;font-weight:750}
 .method-details .help{margin:7px 0 0}
 </style>
+<link rel="stylesheet" href="/modos-menu.css">
+<script src="/modos-menu.js" defer></script>
 </head>
 <body>
 <header><div class="wrap head"><a class="brand" href="/"><span class="mark">SF</span><span>Sorare<i>FutScout</i></span></a>
-<nav class="nav" aria-label="Navegación principal"><a href="/">Inicio</a><a href="/explorador.html">Jugadores</a><a class="selected" href="/optimizador-real.html" aria-current="page">Optimizador</a><a href="/disponibilidad.html">Disponibilidad</a><a href="/mi-club.html">Mi club</a><a href="/demo.html">Demo</a></nav></div></header>
+<nav class="nav" aria-label="Navegación principal"><a href="/">Inicio</a><a href="/explorador.html">Jugadores</a><a class="selected" href="/optimizador-real.html" aria-current="page">Optimizador</a><details class="modos-menu"><summary>Modos de juego</summary><div class="modos-menu__dropdown">
+<a data-game-mode="arcade" href="/mis-cartas.html#arcade">Arcade · Sets y tableros</a>
+<div class="modos-menu__label">Competitivo</div>
+<a data-game-mode="pro" href="/mis-cartas.html#pro">Pro · Game Weeks</a>
+<a data-game-mode="arena" href="/mis-cartas.html#arena">Arena · Clasificaciones</a>
+</div></details><a href="/disponibilidad.html">Disponibilidad</a><a href="/mi-club.html">Mi club</a><a href="/demo.html">Demo</a></nav></div></header>
 <main class="wrap">
 <div class="flag">FASE 3 · BETA · ESTADÍSTICAS REALES</div>
 <h1>Optimiza tu <span style="color:var(--accent)">alineación</span></h1>
