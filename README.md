@@ -333,3 +333,12 @@ Documentación: https://help.sorare.com/hc/en-us/articles/33949360053917-What-is
 - Siguiente fase: identificar el Set/edición en una respuesta de API contrastada; después analizar fechas de partidos, elegir capitán conforme a disponibilidad, gestionar hasta cuatro alineaciones simultáneas sin reutilizar cartas y filtrar por tablero activo.
 - Reglas oficiales: https://help.sorare.com/hc/en-us/articles/33949360053917-What-is-Arcade ; https://help.sorare.com/hc/en-us/articles/40621240656797-How-does-scoring-validation-work-in-Arcade
 - Guía Divination: https://soraretools.com/en/guides/sorare-divination
+
+## Fase 4.7 · Menú principal «Modos de juego» (20-11-2026)
+
+- Se añade a las páginas principales una rama desplegable **Modos de juego** con dos grupos: **Arcade** (Sets, tableros y misiones) y **Competitivo** (Pro, Arena). **Mi club** sigue reservado a la vinculación de Sorare y la consulta de propiedad.
+- Los enlaces llevan a `/mis-cartas.html#arcade`, `#pro`, `#arena`: comparten el acceso OAuth y el análisis completo de una colección, pero abren el modo correspondiente sin hacer una nueva descarga cuando la persona ya está en esa página.
+- Para mantener accesibilidad se usa `<details>/<summary>` nativo, navegación de teclado, cierre con Escape y al pulsar fuera, sincronización del elemento activo con el fragmento de URL y CSS compartido (`modos-menu.css`, `modos-menu.js`).
+- No son tres páginas independientes ni se almacena la colección al salir de la página: al navegar desde otra sección, la persona debe pulsar consultar cartas. Un cambio de modo dentro de la página no precisa nuevas peticiones de cartas.
+- Se conserva intacta la beta privada, el OAuth cifrado y el carácter de solo lectura. No se ha modificado la visibilidad del alojamiento o del repositorio.
+- Validaciones: presencia del menú en 7 páginas, comprobación de sintaxis JS y prueba simulada de entrada a Pro por URL y cambio de Arena a Arcade sin repetir el análisis. Falta comprobación visual final en Cloudflare y en móvil.
