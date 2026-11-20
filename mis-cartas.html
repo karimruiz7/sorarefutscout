@@ -42,6 +42,8 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 .auto-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#305365;display:grid;place-items:center;font-size:12px;font-weight:800;color:white}
 @media(max-width:820px){.auto-five{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:520px){.auto-five{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#gw-progress{display:block;width:100%;height:12px;margin:16px 0;accent-color:var(--accent)}
+#gw-summary{margin:16px 0;font-size:13px}
 </style>
 </head>
 <body>
@@ -53,9 +55,9 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <a href="/mi-club.html" class="active">Mi club</a>
 </nav></div></header>
 <main class="wrap">
-<div class="eyebrow">FASE 4.3 · ANÁLISIS AUTOMÁTICO DEL CLUB · BETA PRIVADA</div>
+<div class="eyebrow">FASE 4.4 · QUINTETOS Y GAME WEEK · BETA PRIVADA</div>
 <h1>Tu mejor quinteto <em>de Sorare Fútbol</em></h1>
-<p class="lead">Con un solo clic analizamos las cartas de fútbol que Sorare devuelve para tu club y comparamos hasta tres quintetos SO5 por sus medias L5/L10/L15. No tienes que cargar páginas ni seleccionar futbolistas manualmente.</p>
+<p class="lead">Un solo clic para analizar todas tus cartas y obtener quintetos estadísticos SO5. También comprobamos automáticamente la próxima Game Week de tus cartas Pro conocidas para proponer candidatos por rareza y jornada. Las competiciones Arcade y la elegibilidad final de Pro/Arena requieren comprobaciones adicionales.</p>
 <section class="panel">
 <h2>Conexión con tu cuenta</h2>
 <div id="status" class="notice" role="status" aria-live="polite">Comprobando la sesión…</div>
@@ -83,6 +85,23 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <div id="auto-lineups"></div>
 <p class="muted">Estas son las mejores combinaciones estadísticas de los futbolistas con datos disponibles, sin repetir jugador. No son una predicción ni una alineación confirmada para Arcade, Pro o Arena. Aún no se comprueban Game Week, titularidad, lesiones, rareza, temporada, usos previos, bonos ni todas las reglas de elegibilidad. Sorare es la fuente de las medias.</p>
 </section>
+<section id="gw-results" class="panel" hidden>
+<h2>Game Week · Pro y Arena (candidatos)</h2>
+<p class="muted">Se comprueba el próximo partido SO5 devuelto por Sorare para futbolistas con alguna carta Limited, Rare, Super Rare o Unique. No es una comprobación de inscripción, titularidad o de elegibilidad real. Un jugador sin partido como próximo encuentro no necesariamente carece de partido en Game Weeks posteriores.</p>
+<div id="gw-inventory" class="notice">Pendiente de inventario de cartas…</div>
+<progress id="gw-progress" max="100" value="0" hidden></progress>
+<div id="gw-status" class="notice" role="status" aria-live="polite" hidden></div>
+<div class="auto-tools">
+<label for="gw-week">Game Week</label>
+<select id="gw-week" disabled aria-label="Game Week"></select>
+<label for="gw-rarity">Rareza de cartas</label>
+<select id="gw-rarity" disabled aria-label="Rareza"></select>
+</div>
+<div id="gw-summary" class="muted"></div>
+<div id="gw-lineups"></div>
+<p class="muted"><strong>Limitaciones:</strong> el año de emisión no confirma por sí solo si una carta es In-Season o Classic; no se validan el tablero exacto, las cuotas/bonos, restricciones de ligas, inscripciones anteriores ni los sustitutos. Nunca se envían alineaciones a Sorare.</p>
+<p class="muted"><strong>Arcade:</strong> funciona con Sets y misiones específicos, no con la misma GW. No etiquetamos una carta como Arcade sin comprobar su pertenencia al Set y sus reglas.</p>
+</section>
 <section id="results" class="panel" hidden>
 <h2>Cartas obtenidas</h2>
 <div class="stats"><span id="loaded">0 cargadas</span><span id="total">Total sin confirmar</span><span>Fuente: Sorare GraphQL</span></div>
@@ -103,6 +122,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <footer>SorareFutScout · Herramienta independiente, no oficial · <a href="/privacidad.html">Privacidad</a></footer>
 </main>
 <script src="/auto-club.js"></script>
+<script src="/auto-gw.js"></script>
 <script>
 (()=>{
  const $=id=>document.getElementById(id);
