@@ -34,13 +34,20 @@ code{color:var(--accent);font-size:.94em}
 footer{border-top:1px solid var(--line);padding-top:20px;padding-bottom:36px;color:#a3b8c7;font-size:12px}
 @media(max-width:600px){nav,main,footer{padding-left:14px;padding-right:14px}.panel{padding:16px}.summary{grid-template-columns:1fr}}
 </style>
+<link rel="stylesheet" href="/modos-menu.css">
+<script src="/modos-menu.js" defer></script>
 </head>
 <body>
 <header><nav aria-label="Navegación">
 <a href="/">SF · SorareFutScout</a>
 <a href="/mi-club.html">Mi club</a>
 <a href="/disponibilidad.html">Disponibilidad</a>
-<a href="/optimizador-real.html">Optimizador</a>
+<a href="/optimizador-real.html">Optimizador</a><details class="modos-menu"><summary>Modos de juego</summary><div class="modos-menu__dropdown">
+<a data-game-mode="arcade" href="/mis-cartas.html#arcade">Arcade · Sets y tableros</a>
+<div class="modos-menu__label">Competitivo</div>
+<a data-game-mode="pro" href="/mis-cartas.html#pro">Pro · Game Weeks</a>
+<a data-game-mode="arena" href="/mis-cartas.html#arena">Arena · Clasificaciones</a>
+</div></details>
 </nav></header>
 <main>
 <div class="eyebrow">PROTECCIÓN DE DATOS · BETA GRATUITA</div>
