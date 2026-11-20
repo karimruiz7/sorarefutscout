@@ -129,10 +129,12 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <p id="mode-info" class="muted" aria-live="polite"></p>
 </section>
 <section id="arcade-results" class="panel" hidden>
-<h2>Arcade · Divination y otros Sets</h2>
-<p class="muted">Arcade utiliza cartas del Set correspondiente a cada tablero. Sorare distingue las cartas Common de las cartas de Set: no debemos considerar automáticamente que las cartas Common de una cuenta sean elegibles. Hasta verificar la identificación de Set, los quintetos siguientes son únicamente una exploración estadística de cartas Common, no recomendaciones inscritas o confirmadas para Arcade.</p>
+<h2>Arcade · cartas agrupadas por Set real</h2>
+<p class="muted">Ahora identificamos el Set que Sorare declara en cada carta mediante el campo oficial cardSet. Solo se analizarán juntos futbolistas con cartas del mismo Set. La pertenencia al Set está documentada; sigue pendiente verificar la elegibilidad en el tablero, nivel y misión activos.</p>
 <div id="arcade-inventory" class="notice"></div>
-<section class="divination-board" aria-labelledby="divination-title">
+<div class="auto-tools"><label for="arcade-set">Set identificado en tu colección</label><select id="arcade-set" disabled aria-label="Elegir un Set declarado por Sorare"><option value="">Consulta tus cartas para identificar Sets</option></select></div>
+<p class="muted" id="arcade-set-summary" aria-live="polite"></p>
+<section id="divination-board" class="divination-board" aria-labelledby="divination-title" hidden>
 <h3 id="divination-title">Tablero Divination · seis niveles</h3>
 <p class="muted">Recreación funcional basada en el tablero compartido del Set Divination (noviembre de 2026). Los objetivos y premios se muestran como referencia. Cada Set futuro puede tener otras reglas y premios; no se leen automáticamente el nivel, las vidas ni el resultado de la cuenta Sorare.</p>
 <div class="divination-steps" id="divination-steps" role="group" aria-label="Niveles del tablero Divination"></div>
@@ -149,10 +151,10 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <p id="divination-selected" class="muted" role="status"></p>
 <div id="divination-status" class="notice"></div>
 <p id="divination-reference" class="divination-reference"></p>
-<p class="muted">Para Divination se ilustra el bonus del capitán (+50 % sobre su media). No hemos confirmado ediciones de carta, bonos especiales, disponibilidad de partidos ni elegibilidad en el Set: la puntuación real puede ser muy diferente. Nunca se envía una alineación a Sorare.</p>
+<p class="muted">Para Divination se ilustra el capitán (+50 % sobre su media). La edición ahora puede identificarse, pero no se calculan aún su bonus real, partidos puntuables ni restricciones de cada nivel. La puntuación real puede diferir mucho. Nunca se envían alineaciones a Sorare.</p>
 </section>
 <div id="arcade-lineups"></div>
-<p class="muted">Pendiente: identificar las cartas de cada Set de Arcade mediante datos oficiales y recuperar las reglas del Game Board activo. Ni el valor L5 ni la etiqueta Common prueban elegibilidad; no se envían alineaciones a Sorare.</p>
+<p class="muted">El Set y la edición indicados proceden de la API. Pendiente: elegibilidad por tablero y nivel, reglas de partidos, bonus y cartas ya usadas. No se envían alineaciones a Sorare.</p>
 </section>
 <div id="mode-proarena" hidden>
 <section id="gw-results" class="panel" hidden>
