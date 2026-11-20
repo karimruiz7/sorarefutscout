@@ -6,6 +6,18 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const tabs=["arcade","pro","arena","libre"];
+const requestedMode=()=>{
+ const hash=window.location.hash.replace(/^#/,"").toLowerCase();
+ return tabs.includes(hash)?hash:null;
+};
+function explainEntry(){
+ const mode=requestedMode();
+ const info=document.getElementById("mode-entry");
+ if(info){
+  const labels={arcade:"Arcade",pro:"Pro · Competitivo",arena:"Arena · Competitivo",libre:"Análisis libre"};
+  info.textContent=mode?"Has elegido "+labels[mode]+". Consulta tu colección para ver las recomendaciones de este modo.":"Elige un modo desde «Modos de juego» o consulta tu club para continuar.";
+ }
+}
 const slots=["Portero","Defensa","Centrocampista","Delantero","Extra"];
 let active="arcade",allPlayers=[],cardsByPlayer=new Map(),countByRarity={},completed=false;
 const make=(tag,klass,content)=>{
@@ -85,8 +97,9 @@ function rankArcade(candidates,metricKey){
 
 const isCommon=player=>(cardsByPlayer.get(player.slug)||[])
  .some(card=>String(card.rarity||"").toLowerCase()==="common");
-function setActive(which){
+function setActive(which,updateHash=true){
  if(!tabs.includes(which))return;
+ if(updateHash&&window.location.hash!=="#"+which)window.location.hash=which;
  active=which;
  for(const mode of tabs){
   const btn=$("mode-"+mode);
@@ -182,8 +195,14 @@ function start(payload){
  completed=true;
  $("mode-select").hidden=false;
  render();
- setActive(commonPlayers?"arcade":proPlayers?"pro":"libre");
+ setActive(requestedMode()||(commonPlayers?"arcade":proPlayers?"pro":"libre"),false);
 }
 for(const mode of tabs)$("mode-"+mode).addEventListener("click",()=>setActive(mode));
+window.addEventListener("hashchange",()=>{
+ explainEntry();
+ const mode=requestedMode();
+ if(completed&&mode)setActive(mode,false);
+});
+explainEntry();
 window.SorareModes={start,reset,render,setActive};
 })();
