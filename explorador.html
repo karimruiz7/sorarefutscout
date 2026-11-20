@@ -72,10 +72,17 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 0;color:#8c
 .table-actions{flex-wrap:wrap;min-width:210px}
 @media(max-width:700px){.pool-toolbar .btn{width:100%}}
 </style>
+<link rel="stylesheet" href="/modos-menu.css">
+<script src="/modos-menu.js" defer></script>
 </head>
 <body>
 <header><div class="wrap head"><a class="brand" href="/"><span class="mark">SF</span><span>Sorare<i>FutScout</i></span></a>
-<nav class="nav" aria-label="Navegación principal"><a href="/">Inicio</a><a class="selected" href="/explorador.html" aria-current="page">Jugadores</a><a href="/optimizador-real.html">Optimizador</a><a href="/disponibilidad.html">Disponibilidad</a><a href="/mi-club.html">Mi club</a><a href="/demo.html">Demo</a></nav></div></header>
+<nav class="nav" aria-label="Navegación principal"><a href="/">Inicio</a><a class="selected" href="/explorador.html" aria-current="page">Jugadores</a><a href="/optimizador-real.html">Optimizador</a><details class="modos-menu"><summary>Modos de juego</summary><div class="modos-menu__dropdown">
+<a data-game-mode="arcade" href="/mis-cartas.html#arcade">Arcade · Sets y tableros</a>
+<div class="modos-menu__label">Competitivo</div>
+<a data-game-mode="pro" href="/mis-cartas.html#pro">Pro · Game Weeks</a>
+<a data-game-mode="arena" href="/mis-cartas.html#arena">Arena · Clasificaciones</a>
+</div></details><a href="/disponibilidad.html">Disponibilidad</a><a href="/mi-club.html">Mi club</a><a href="/demo.html">Demo</a></nav></div></header>
 <main class="wrap">
 <div class="flag">FASE 2 · ESTADÍSTICAS REALES · BETA</div>
 <h1>Explora jugadores de<br><span style="color:var(--accent)">Sorare Fútbol</span></h1>
