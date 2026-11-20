@@ -250,6 +250,12 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
   const tag=document.createElement("span");tag.className="tag";
   tag.textContent=(rarityName[card.rarity]||card.rarity||"Sin rareza")+(card.season?" · "+card.season:"");
   body.append(tag);
+  const setInfo=document.createElement("span");
+  setInfo.className="small";
+  setInfo.textContent=card.cardSet?.name?
+   "Set oficial: "+card.cardSet.name+(card.cardEditionName?" · Edición: "+card.cardEditionName:""):
+   "Set no indicado por Sorare";
+  body.append(setInfo);
   if(validSlug(card.playerSlug)){
     const line=document.createElement("label");line.className="select-player";
     const checkbox=document.createElement("input");
