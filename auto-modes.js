@@ -159,6 +159,7 @@ function render(){
  const root=$("arcade-lineups");
  root.replaceChildren();
  const selected=setInventory.get($("arcade-set").value);
+ window.SorareGameDays?.selectSet(selected?.slug||"",allPlayers,cardsByPlayer);
  const board=$("divination-board");
  board.hidden=!isDivination(selected);
  const totalSets=[...setInventory.values()].reduce((n,s)=>n+s.cards,0);
@@ -220,6 +221,7 @@ function reset(){
  $("arcade-set").replaceChildren();$("arcade-set").disabled=true;
  $("divination-board").hidden=true;
  window.SorareBoard?.reset();
+ window.SorareGameDays?.selectSet("",[],new Map());
  $("mode-select").hidden=true;
  $("mode-proarena").hidden=true;
  $("arcade-results").hidden=true;
@@ -265,5 +267,5 @@ window.addEventListener("hashchange",()=>{
  if(completed&&mode)setActive(mode,false);
 });
 explainEntry();
-window.SorareModes={start,reset,render,setActive};
+window.SorareModes={start,reset,render,setActive,rankDivination:rankArcade};
 })();
