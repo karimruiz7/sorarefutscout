@@ -19,7 +19,7 @@ function explainEntry(){
  }
 }
 const slots=["Portero","Defensa","Centrocampista","Delantero","Extra"];
-let active="arcade",allPlayers=[],cardsByPlayer=new Map(),countByRarity={},completed=false;
+let active="arcade",allPlayers=[],cardsByPlayer=new Map(),countByRarity={},setInventory=new Map(),completed=false;
 const make=(tag,klass,content)=>{
  const node=document.createElement(tag);
  if(klass)node.className=klass;
@@ -95,8 +95,43 @@ function rankArcade(candidates,metricKey){
  }));
 }
 
-const isCommon=player=>(cardsByPlayer.get(player.slug)||[])
- .some(card=>String(card.rarity||"").toLowerCase()==="common");
+
+const setKey=c=>typeof c?.setSlug==="string"?c.setSlug.trim().toLowerCase():"";
+function cardInSet(player,slug){
+ return (cardsByPlayer.get(player.slug)||[]).find(c=>setKey(c)===slug)||null;
+}
+function isDivination(set){
+ return !!set&&(set.slug==="divination"||set.name.trim().toLowerCase()==="divination");
+}
+function readSets(){
+ setInventory=new Map();
+ for(const cards of cardsByPlayer.values()){
+  for(const card of cards){
+   const slug=setKey(card);
+   if(!slug)continue;
+   if(!setInventory.has(slug))
+    setInventory.set(slug,{slug,name:typeof card.setName==="string"&&card.setName.trim()?card.setName.trim():slug,cards:0,editions:new Set()});
+   const item=setInventory.get(slug);
+   item.cards++;
+   if(card.edition)item.editions.add(card.edition);
+  }
+ }
+ const select=$("arcade-set");
+ select.replaceChildren();
+ const sets=[...setInventory.values()].sort((a,b)=>Number(isDivination(b))-Number(isDivination(a))||a.name.localeCompare(b.name,"es"));
+ if(!sets.length){
+  const opt=make("option","","No se ha identificado ningún Set en esta colección");
+  opt.value="";select.append(opt);select.disabled=true;
+  return;
+ }
+ for(const set of sets){
+  const opt=make("option","",set.name+" · "+set.cards+" cartas");
+  opt.value=set.slug;select.append(opt);
+ }
+ select.value=sets[0].slug;
+ select.disabled=false;
+}
+
 function setActive(which,updateHash=true){
  if(!tabs.includes(which))return;
  if(updateHash&&window.location.hash!=="#"+which)window.location.hash="#"+which;
@@ -109,7 +144,7 @@ function setActive(which,updateHash=true){
  $("mode-proarena").hidden=active!=="pro"&&active!=="arena";
  $("auto-general").hidden=active!=="libre";
  const modeText={
-  arcade:"Arcade · exploración provisional entre cartas Common. Sorare distingue Common y cartas de Set: sin el identificador del Set activo, ninguna carta aparece como verificada para Arcade.",
+  arcade:"Arcade · clasifica las cartas por el Set oficial que devuelve Sorare. El Set está identificado, pero el tablero y las reglas de cada nivel siguen pendientes de comprobar.",
   pro:"Pro · candidatos por rareza y Game Week. No se han validado las restricciones del tablero o las cartas In-Season.",
   arena:"Arena · preselección estadística por rareza y Game Week. No se han validado las reglas específicas de Arena ni si una carta ya está en Pro.",
   libre:"Análisis libre · todos los futbolistas recuperados, sin exigir compatibilidad con ninguna competición."
@@ -121,45 +156,69 @@ function setActive(which,updateHash=true){
 }
 function render(){
  if(!completed)return;
- const commons=allPlayers.filter(isCommon);
  const root=$("arcade-lineups");
  root.replaceChildren();
- const rankings=rankArcade(commons,$("auto-metric").value);
- window.SorareBoard?.update(rankings[0]||null,$("auto-metric").value,commons.length);
- $("arcade-inventory").textContent=
-  (countByRarity.common||0)+" cartas Common detectadas · "+commons.length+
-  " futbolistas distintos con estadísticas y al menos una Common. "+
-  "El tipo Common NO acredita pertenencia a un Set de Arcade. Son candidatos estadísticos por estudiar, no cartas validadas para competir.";
+ const selected=setInventory.get($("arcade-set").value);
+ const board=$("divination-board");
+ board.hidden=!isDivination(selected);
+ const totalSets=[...setInventory.values()].reduce((n,s)=>n+s.cards,0);
+ const allCards=[...cardsByPlayer.values()].reduce((n,items)=>n+items.length,0);
+ $("arcade-inventory").textContent=setInventory.size+" Sets con identificación oficial · "+
+  totalSets+" cartas asociadas a un Set · "+(allCards-totalSets)+
+  " cartas sin Set declarado en la respuesta. No se confunde rareza Common con un Set.";
+ if(!selected){
+  $("arcade-set-summary").textContent="Sorare no ha aportado un Set para estas cartas. No podemos afirmar que alguna sea de Divination.";
+  root.append(make("div","notice",
+   "Sin cartas con Set identificado. El ranking general sigue disponible en «Análisis libre»; no vamos a atribuir cartas Common a Divination sin evidencia."));
+  return;
+ }
+ const eligiblePlayers=allPlayers.filter(player=>cardInSet(player,selected.slug)!==null);
+ const divination=isDivination(selected);
+ $("arcade-set-summary").textContent="Set «"+selected.name+"» según Sorare: "+
+  selected.cards+" cartas, "+eligiblePlayers.length+
+  " futbolistas distintos con estadísticas. Esto no confirma disponibilidad para el tablero o nivel activo.";
+ const metricKey=$("auto-metric").value;
+ const rankings=divination?rankArcade(eligiblePlayers,metricKey):
+  (window.SorareAuto?.rank(eligiblePlayers,metricKey)||[]).map(x=>({
+   ...x,sum:x.total,raw:x.total,captainSlug:null
+  }));
+ if(divination)window.SorareBoard?.update(rankings[0]||null,metricKey,eligiblePlayers.length);
  if(!rankings.length){
   root.append(make("div","notice",
-   "No hay un quinteto completo GK–DF–MD–FW–Extra entre las cartas Common analizadas. No añadimos cartas Limited ni jugadores que no se hayan encontrado en esta colección."));
+   "No hay suficientes futbolistas con cartas de este mismo Set y medias disponibles para formar GK–DF–MD–FW–Extra. No se utilizarán cartas de otros Sets para completar el equipo."));
   return;
  }
  const best=rankings[0].sum;
  rankings.forEach((rank,index)=>{
   const section=make("section","auto-choice");
   const head=make("div","auto-choice-heading");
-  head.append(make("h3","",index===0?"Quinteto exploratorio con capitán":"Alternativa "+(index+1)));
-  head.append(make("strong","auto-score",format(rank.sum)+" ref. "+$("auto-metric").value.toUpperCase()));
+  head.append(make("h3","",index===0?"Mejor quinteto candidato · "+selected.name:"Alternativa "+(index+1)));
+  head.append(make("strong","auto-score",format(rank.sum)+" ref. "+metricKey.toUpperCase()));
   section.append(head);
-  section.append(make("p","muted","Suma de medias: "+format(rank.raw)+" · Bonus ilustrativo capitán (+50 %): +"+format(rank.sum-rank.raw)+". No incluye edición de carta ni resultado real."));
+  section.append(make("p","muted",
+   "Suma de medias: "+format(rank.raw)+
+   (divination?" · Bonus ilustrativo capitán (+50 %): +"+format(rank.sum-rank.raw)+".":" · Bonus de este Set aún no incorporados.")+
+   " No representa puntos futuros ni elegibilidad confirmada."));
   if(index)section.append(make("p","muted","Diferencia respecto al primero: "+
    format(rank.sum-best)+" puntos de referencia"));
   const grid=make("div","auto-five");
   for(const pick of rank.picks){
    const player=pick.player;
+   const card=cardInSet(player,selected.slug);
    const slot=make("article","auto-player");
    slot.append(make("span","muted",slots[pick.slot]),portrait(player));
    slot.append(make("strong","",player.name+(player.slug===rank.captainSlug?" · CAPITÁN":"")),make("span","muted",player.club));
-   slot.append(make("span","muted","Common · Set no verificado"));
-   slot.append(make("strong","auto-score",format(player[$("auto-metric").value])));
+   slot.append(make("span","muted",selected.name+" · "+(card?.edition||"Edición sin especificar")));
+   slot.append(make("strong","auto-score",format(player[metricKey])));
    grid.append(slot);
   }
   section.append(grid);root.append(section);
  });
 }
 function reset(){
- completed=false;allPlayers=[];cardsByPlayer=new Map();countByRarity={};
+ completed=false;allPlayers=[];cardsByPlayer=new Map();countByRarity={};setInventory=new Map();
+ $("arcade-set").replaceChildren();$("arcade-set").disabled=true;
+ $("divination-board").hidden=true;
  window.SorareBoard?.reset();
  $("mode-select").hidden=true;
  $("mode-proarena").hidden=true;
@@ -177,13 +236,14 @@ function start(payload){
    countByRarity[r]=(countByRarity[r]||0)+1;
   }
  }
- const commonPlayers=allPlayers.filter(isCommon).length;
+ readSets();
+ const commonPlayers=allPlayers.filter(p=>(cardsByPlayer.get(p.slug)||[]).some(c=>c.rarity==="common")).length;
  const proPlayers=allPlayers.filter(p=>(cardsByPlayer.get(p.slug)||[])
   .some(c=>["limited","rare","super_rare","unique"].includes(String(c.rarity||"").toLowerCase()))).length;
  const remaining=Object.entries(countByRarity)
  .filter(([rarity])=>!["common","limited","rare","super_rare","unique"].includes(rarity))
  .reduce((sum,[,count])=>sum+count,0);
- $("mode-arcade").textContent="Arcade · revisar";
+ $("mode-arcade").textContent="Arcade · "+setInventory.size+" Sets";
  $("mode-pro").textContent="Pro · "+proPlayers;
  $("mode-arena").textContent="Arena · "+proPlayers;
  $("mode-libre").textContent="Análisis libre · "+allPlayers.length;
@@ -197,6 +257,7 @@ function start(payload){
  render();
  setActive(requestedMode()||(commonPlayers?"arcade":proPlayers?"pro":"libre"),false);
 }
+$("arcade-set").addEventListener("change",render);
 for(const mode of tabs)$("mode-"+mode).addEventListener("click",()=>setActive(mode));
 window.addEventListener("hashchange",()=>{
  explainEntry();
