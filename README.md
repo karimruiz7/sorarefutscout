@@ -293,3 +293,18 @@ Documentación Sorare:
 - https://sorare.com/es/help/a/17629357197341/What%20are%20the%203%20game%20modes%20in%20Sorare%20Football
 - https://sorare.com/es/help/a/4406429217053/understanding-sorare-cards-pro-common-and-scarcity-levels
 - https://sorare.com/es/help/a/28920678508061/what-is-the-arena-how-does-it-work
+
+
+## Fase 4.5 · Modos por colección, Arcade / Pro / Arena / análisis libre (20-11-2026)
+
+- La colección de cada usuario se lee una sola vez mediante OAuth y se conserva en memoria del navegador; no se asumen las cartas del propietario como configuración universal.
+- **Arcade:** `auto-modes.js` distingue cartas con rareza `common` y utiliza exclusivamente los futbolistas cuya colección contiene al menos una de ellas. Genera hasta tres quintetos SO5 por medias L5/L10/L15. La clasificación **no** confirma pertenencia a un Set activo, Tier, objetivo de Game Board ni bonos. Arcade se evalúa independientemente de las GW Pro.
+- **Pro:** utiliza el análisis de cartas Limited/Rare/Super Rare/Unique, agrupadas por rareza y siguiente Game Week SO5 registrada. No confirma el tablero exacto, In-Season/Classic ni condiciones de elegibilidad; no se permite mezclar automáticamente distintas rarezas a menos que las reglas de una competición se verifiquen en una fase futura.
+- **Arena:** muestra por separado el mismo grupo **preliminar** de candidatos competitivos, con aviso de que Arena tiene reglas, selección, uso de cartas, bonos y restricciones distintas de Pro. Este filtro no certifica una alineación Arena.
+- **Análisis libre:** las cartas de todos los tipos pueden contribuir a la clasificación estadística, sin presentar la combinación como inscribible.
+- Los cuatro modos se muestran en un selector después de completar el análisis, con conteos calculados exclusivamente a partir de esa colección; puede cambiarse de modo sin nuevas consultas ni importaciones manuales.
+- Durante la carga el resumen y progreso permanecen visibles. Una colección con Common precarga Arcade; si no tiene Common pero sí cartas competitivas, precarga Pro; si no hay cartas clasificadas, muestra análisis libre.
+- Se mantiene la beta privada existente, el acceso temporal y las políticas de solo lectura. No se ha ampliado la visibilidad, no se han cambiado secretos ni se envían alineaciones a Sorare.
+- Validación técnica: sintaxis JS de todos los archivos y simulación cliente de un club mixto Common/Limited, con cambio de vistas, 5 futbolistas Common, render de un quinteto, cambio de Pro a Arena y vuelta al modo libre. **Pendiente prueba real tras Cloudflare.**
+
+Fuentes: https://help.sorare.com/hc/es/articles/33949360053917--Qu%C3%A9-es-Arcade ; https://sorare.com/help/a/17629357197341/what-are-the-3-game-modes-in-sorare-football-arcade-pro-arena
