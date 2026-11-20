@@ -308,3 +308,13 @@ Documentación Sorare:
 - Validación técnica: sintaxis JS de todos los archivos y simulación cliente de un club mixto Common/Limited, con cambio de vistas, 5 futbolistas Common, render de un quinteto, cambio de Pro a Arena y vuelta al modo libre. **Pendiente prueba real tras Cloudflare.**
 
 Fuentes: https://help.sorare.com/hc/es/articles/33949360053917--Qu%C3%A9-es-Arcade ; https://sorare.com/help/a/17629357197341/what-are-the-3-game-modes-in-sorare-football-arcade-pro-arena
+
+
+### Rectificación de la fase 4.5 · Common no equivale a Arcade Set (20-11-2026)
+La integración original clasificaba cualquier carta con `rarityTyped=common` como "candidato Set" para Arcade. **Este supuesto no es válido**: las reglas oficiales de Sorare distinguen cartas Common y cartas de Set; los tableros requieren cartas del Set concreto, y el ejemplo del tablero WNTR excluye explícitamente Common y Pro. Hasta que encontremos un campo API contrastado que identifique el Set de cada carta:
+- El selector Arcade presenta solo una **exploración estadística provisional de cartas Common**, sin certificar elegibilidad.
+- Se elimina el rótulo engañoso "Common · candidato Set" y se reemplaza por "Common · Set no verificado".
+- El identificador de Set, nivel de Game Board, reglas y elegibilidad siguen pendientes y no se inventan.
+- No se modifica el sistema OAuth, la privacidad, las consultas ya funcionales ni la elección separada de Pro/Arena.
+
+Documentación: https://help.sorare.com/hc/en-us/articles/33949360053917-What-is-Arcade ; https://sorare.com/blog/football/%F0%9F%86%95-introducing-sorare-set
