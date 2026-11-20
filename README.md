@@ -318,3 +318,18 @@ La integración original clasificaba cualquier carta con `rarityTyped=common` co
 - No se modifica el sistema OAuth, la privacidad, las consultas ya funcionales ni la elección separada de Pro/Arena.
 
 Documentación: https://help.sorare.com/hc/en-us/articles/33949360053917-What-is-Arcade ; https://sorare.com/blog/football/%F0%9F%86%95-introducing-sorare-set
+
+
+## Fase 4.6 · Tablero Divination y capitán (20-11-2026)
+
+- A partir de las capturas compartidas del tablero de Arcade Divination se incorpora un **tablero original de referencia** con seis objetivos, no un clon visual de Sorare: 260, 300, 360, 400, 440 y 480 puntos.
+- Recompensas según las capturas: 2.000 Essence, 5.000 Essence, 10 Gems, 30 Gems, 100 € y 1.000 €; las dos recompensas de efectivo muestran bonos adicionales en Sorare que **no se desglosan numéricamente** hasta confirmar todas sus condiciones.
+- `auto-board.js` permite seleccionar nivel y ajustar las vidas restantes **manualmente** entre cero y cuatro. Hay cuatro vidas iniciales por nivel según las reglas de Arcade. El formulario **no** afirma leer progreso de la cuenta ni persiste su estado.
+- `auto-modes.js` incorpora un ranking exploratorio para cartas Common de SO5 con **un capitán +50 %** aplicado sobre la media histórica L5/L10/L15. Utiliza una programación dinámica de 2 estados por máscara de puestos y retiene ocho configuraciones parciales por estado: las tres alternativas finales son **aproximaciones por mejores combinaciones evaluadas**, no optimización de probabilidad de alcanzar el objetivo ni garantía de óptimo absoluto.
+- El panel muestra suma base, aporte adicional del capitán, total histórico ilustrativo y distancia respecto al objetivo seleccionado. No se consideran bonos de edición Divination (Standard/Shiny/Holo/etc.), disponibilidad en próximos partidos, fixture rules ni puntuaciones reales.
+- **Limitación crítica:** no se ha identificado en la API un campo verificado de pertenencia al Set Divination de cada carta, ni el nivel/vida real de cada usuario. Se siguen usando cartas `common` únicamente como un subconjunto exploratorio; NO hay una alineación jugable confirmada. El tablero Divination es un preset identificado con fecha y NO debe suponerse vigente en todos los Sets ni en futuras temporadas.
+- No se consulta la API de Sorare al seleccionar nivel o cambiar vidas, no se publican nuevas rutas OAuth, no se cambia ningún secreto ni se realiza ninguna acción en Sorare.
+- **Pruebas locales:** sintaxis de `auto-modes.js`, `auto-board.js`, `auto-club.js`; mock de 6 jugadores con suma de medias 369 + capitán 42 = 411, actualización de objetivo 260 a 300, ajuste de 4 a 3 vidas; carga de 617 futbolistas simulados y tres quintetos en aproximadamente 1,2 s del entorno de prueba. Falta prueba real en Cloudflare.
+- Siguiente fase: identificar el Set/edición en una respuesta de API contrastada; después analizar fechas de partidos, elegir capitán conforme a disponibilidad, gestionar hasta cuatro alineaciones simultáneas sin reutilizar cartas y filtrar por tablero activo.
+- Reglas oficiales: https://help.sorare.com/hc/en-us/articles/33949360053917-What-is-Arcade ; https://help.sorare.com/hc/en-us/articles/40621240656797-How-does-scoring-validation-work-in-Arcade
+- Guía Divination: https://soraretools.com/en/guides/sorare-divination
