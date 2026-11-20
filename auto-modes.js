@@ -30,6 +30,59 @@ function portrait(p){
  }
  return alt;
 }
+
+// DP with exactly one 50% captain bonus (Divination reference only).
+// Keeps 8 strongest partial configurations per slot mask and captain state.
+// These are heuristic top alternatives, not verified entries into Sorare.
+function rankArcade(candidates,metricKey){
+ const required=["Goalkeeper","Defender","Midfielder","Forward","Extra"];
+ const states=Array.from({length:32},()=>[[],[]]),LIMIT=8;
+ states[0][0]=[{sum:0,raw:0,picks:[],captainSlug:null,signature:""}];
+ const add=(bucket,entry)=>{
+  const duplicate=bucket.findIndex(x=>x.signature===entry.signature);
+  if(duplicate>=0){
+   if(bucket[duplicate].sum>=entry.sum-1e-8)return;
+   bucket.splice(duplicate,1);
+  }
+  bucket.push(entry);
+  bucket.sort((a,b)=>b.sum-a.sum||a.signature.localeCompare(b.signature));
+  if(bucket.length>LIMIT)bucket.length=LIMIT;
+ };
+ for(const p of candidates){
+  const score=p[metricKey];
+  if(!Number.isFinite(score)||score<0)continue;
+  for(let mask=31;mask>=0;mask--){
+   for(let captainSet=0;captainSet<=1;captainSet++){
+    const previousStates=states[mask][captainSet];
+    if(!previousStates.length)continue;
+    for(const previous of previousStates){
+     for(let slot=0;slot<5;slot++){
+      if((mask&(1<<slot))!==0)continue;
+      if(required[slot]!=="Extra"&&p.position!==required[slot])continue;
+      if(required[slot]==="Extra"&&p.position==="Goalkeeper")continue;
+      const updatedMask=mask|(1<<slot);
+      const picks=[...previous.picks,{slot,player:p}];
+      const signature=picks.map(x=>x.player.slug).sort().join("|");
+      add(states[updatedMask][captainSet],{
+       sum:previous.sum+score,raw:previous.raw+score,
+       picks,captainSlug:previous.captainSlug,signature
+      });
+      if(!captainSet){
+       add(states[updatedMask][1],{
+        sum:previous.sum+score*1.5,raw:previous.raw+score,
+        picks,captainSlug:p.slug,signature
+       });
+      }
+     }
+    }
+   }
+  }
+ }
+ return states[31][1].slice(0,3).map(entry=>({
+  ...entry,picks:entry.picks.sort((a,b)=>a.slot-b.slot)
+ }));
+}
+
 const isCommon=player=>(cardsByPlayer.get(player.slug)||[])
  .some(card=>String(card.rarity||"").toLowerCase()==="common");
 function setActive(which){
@@ -58,7 +111,8 @@ function render(){
  const commons=allPlayers.filter(isCommon);
  const root=$("arcade-lineups");
  root.replaceChildren();
- const rankings=window.SorareAuto?.rank(commons,$("auto-metric").value)||[];
+ const rankings=rankArcade(commons,$("auto-metric").value);
+ window.SorareBoard?.update(rankings[0]||null,$("auto-metric").value,commons.length);
  $("arcade-inventory").textContent=
   (countByRarity.common||0)+" cartas Common detectadas · "+commons.length+
   " futbolistas distintos con estadísticas y al menos una Common. "+
@@ -72,17 +126,18 @@ function render(){
  rankings.forEach((rank,index)=>{
   const section=make("section","auto-choice");
   const head=make("div","auto-choice-heading");
-  head.append(make("h3","",index===0?"Mejor quinteto exploratorio Common":"Alternativa "+(index+1)));
-  head.append(make("strong","auto-score",format(rank.sum)+" puntos · "+$("auto-metric").value.toUpperCase()));
+  head.append(make("h3","",index===0?"Quinteto exploratorio con capitán":"Alternativa "+(index+1)));
+  head.append(make("strong","auto-score",format(rank.sum)+" ref. "+$("auto-metric").value.toUpperCase()));
   section.append(head);
+  section.append(make("p","muted","Suma de medias: "+format(rank.raw)+" · Bonus ilustrativo capitán (+50 %): +"+format(rank.sum-rank.raw)+". No incluye edición de carta ni resultado real."));
   if(index)section.append(make("p","muted","Diferencia respecto al primero: "+
-   format(rank.sum-best)+" puntos acumulados de medias"));
+   format(rank.sum-best)+" puntos de referencia"));
   const grid=make("div","auto-five");
   for(const pick of rank.picks){
    const player=pick.player;
    const slot=make("article","auto-player");
    slot.append(make("span","muted",slots[pick.slot]),portrait(player));
-   slot.append(make("strong","",player.name),make("span","muted",player.club));
+   slot.append(make("strong","",player.name+(player.slug===rank.captainSlug?" · CAPITÁN":"")),make("span","muted",player.club));
    slot.append(make("span","muted","Common · Set no verificado"));
    slot.append(make("strong","auto-score",format(player[$("auto-metric").value])));
    grid.append(slot);
@@ -92,6 +147,7 @@ function render(){
 }
 function reset(){
  completed=false;allPlayers=[];cardsByPlayer=new Map();countByRarity={};
+ window.SorareBoard?.reset();
  $("mode-select").hidden=true;
  $("mode-proarena").hidden=true;
  $("arcade-results").hidden=true;
