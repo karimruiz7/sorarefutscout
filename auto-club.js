@@ -159,6 +159,7 @@
   if(working)return;
   working=true;complete=false;players=[];choices=[];cardCount=0;ownedCards=new Map();
   window.SorareGW?.reset();
+  window.SorareModes?.reset();
   $("load").disabled=true;
   $("preview").disabled=true;
   $("auto-results").hidden=false;
@@ -187,7 +188,7 @@
      if(!card.playerSlug)continue;
      if(!ownedCards.has(card.playerSlug))ownedCards.set(card.playerSlug,[]);
      ownedCards.get(card.playerSlug).push({
-      assetId:id,rarity:card.rarity||"",season:card.season,cardSlug:card.cardSlug||""
+      assetId:id,rarity:String(card.rarity||"").toLowerCase(),season:card.season,cardSlug:card.cardSlug||""
      });
      if(!uniquePlayers.has(card.playerSlug)){
       uniquePlayers.set(card.playerSlug,{
@@ -234,6 +235,7 @@
     (lacking?" · "+lacking+" sin ficha":"");
    showResults();
    $("auto-metric").disabled=false;
+   window.SorareModes?.start({players,ownedCards,cardCount});
    window.SorareGW?.start({players,ownedCards,cardCount});
   }catch(err){
    complete=false;players=[];choices=[];
@@ -246,6 +248,6 @@
    $("preview").disabled=false;
   }
  }
- $("auto-metric").addEventListener("change",()=>{if(complete)showResults();window.SorareGW?.render();});
+ $("auto-metric").addEventListener("change",()=>{if(complete)showResults();window.SorareModes?.render();window.SorareGW?.render();});
  window.SorareAuto={run,rank:(data,metricKey)=>possibilities(data,metricKey)};
 })();
