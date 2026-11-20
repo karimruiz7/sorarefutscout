@@ -1,5 +1,5 @@
 // SorareFutScout · Fase 4.5 · Tres experiencias sobre la colección de CADA usuario.
-// Common -> candidatos Arcade sin certificar Set. Limited/Rare/SR/Unique ->
+// Common -> exploración independiente; NO acreditan cartas Set de Arcade. Limited/Rare/SR/Unique ->
 // candidatos Pro/Arena sujetos a elegibilidad de cada competición.
 // Nunca se mezclan cartas de modos distintos ni se garantiza inscripción.
 (()=>{
@@ -43,7 +43,7 @@ function setActive(which){
  $("mode-proarena").hidden=active!=="pro"&&active!=="arena";
  $("auto-general").hidden=active!=="libre";
  const modeText={
-  arcade:"Arcade · candidatos Common (Set sin verificar). Se usan medias históricas, no una Game Week fija.",
+  arcade:"Arcade · exploración provisional entre cartas Common. Sorare distingue Common y cartas de Set: sin el identificador del Set activo, ninguna carta aparece como verificada para Arcade.",
   pro:"Pro · candidatos por rareza y Game Week. No se han validado las restricciones del tablero o las cartas In-Season.",
   arena:"Arena · preselección estadística por rareza y Game Week. No se han validado las reglas específicas de Arena ni si una carta ya está en Pro.",
   libre:"Análisis libre · todos los futbolistas recuperados, sin exigir compatibilidad con ninguna competición."
@@ -62,7 +62,7 @@ function render(){
  $("arcade-inventory").textContent=
   (countByRarity.common||0)+" cartas Common detectadas · "+commons.length+
   " futbolistas distintos con estadísticas y al menos una Common. "+
-  "El campo de rareza no confirma el Set, Tier o misión Arcade.";
+  "El tipo Common NO acredita pertenencia a un Set de Arcade. Son candidatos estadísticos por estudiar, no cartas validadas para competir.";
  if(!rankings.length){
   root.append(make("div","notice",
    "No hay un quinteto completo GK–DF–MD–FW–Extra entre las cartas Common analizadas. No añadimos cartas Limited ni jugadores que no se hayan encontrado en esta colección."));
@@ -72,7 +72,7 @@ function render(){
  rankings.forEach((rank,index)=>{
   const section=make("section","auto-choice");
   const head=make("div","auto-choice-heading");
-  head.append(make("h3","",index===0?"Mejor quinteto candidato Arcade":"Alternativa "+(index+1)));
+  head.append(make("h3","",index===0?"Mejor quinteto exploratorio Common":"Alternativa "+(index+1)));
   head.append(make("strong","auto-score",format(rank.sum)+" puntos · "+$("auto-metric").value.toUpperCase()));
   section.append(head);
   if(index)section.append(make("p","muted","Diferencia respecto al primero: "+
@@ -83,7 +83,7 @@ function render(){
    const slot=make("article","auto-player");
    slot.append(make("span","muted",slots[pick.slot]),portrait(player));
    slot.append(make("strong","",player.name),make("span","muted",player.club));
-   slot.append(make("span","muted","Common · candidato Set"));
+   slot.append(make("span","muted","Common · Set no verificado"));
    slot.append(make("strong","auto-score",format(player[$("auto-metric").value])));
    grid.append(slot);
   }
@@ -114,7 +114,7 @@ function start(payload){
  const remaining=Object.entries(countByRarity)
  .filter(([rarity])=>!["common","limited","rare","super_rare","unique"].includes(rarity))
  .reduce((sum,[,count])=>sum+count,0);
- $("mode-arcade").textContent="Arcade · "+commonPlayers;
+ $("mode-arcade").textContent="Arcade · revisar";
  $("mode-pro").textContent="Pro · "+proPlayers;
  $("mode-arena").textContent="Arena · "+proPlayers;
  $("mode-libre").textContent="Análisis libre · "+allPlayers.length;
@@ -122,7 +122,7 @@ function start(payload){
   "Cartas recuperadas por rareza: "+(countByRarity.common||0)+" Common, "+
   ["limited","rare","super_rare","unique"].reduce((sum,r)=>sum+(countByRarity[r]||0),0)+
   " competitivas"+(remaining?", "+remaining+" de categoría no identificada":"")+
-  ". Las cifras por modo son candidaturas, no inscripciones garantizadas.";
+  ". Ninguna carta se ha certificado para los tableros Arcade, Pro o Arena.";
  completed=true;
  $("mode-select").hidden=false;
  render();
