@@ -41,8 +41,8 @@
   $("divination-lives").value=String(lives[active]);
   const note=$("divination-reference");
   if(!rank){
-   note.textContent="Sin quinteto de referencia entre los futbolistas Common analizados. "+
-    "Es necesario identificar las cartas del Set Divination antes de recomendar un equipo jugable.";
+   note.textContent="Sin quinteto de referencia entre los futbolistas con cartas del Set Divination identificado. "+
+    "Puede faltar alguna posición o media, y queda pendiente validar el tablero y sus reglas.";
    return;
   }
   const target=stages[active].points;
@@ -52,14 +52,14 @@
    ": "+fmt(rank.raw)+" puntos base + "+fmt(rank.sum-rank.raw)+
    " de capitán"+(captain?" ("+captain.name+")":"")+
    " = "+fmt(rank.sum)+". Distancia al objetivo: "+(diff>=0?"+":"")+fmt(diff)+
-   " puntos. NO es una predicción, no incluye bonus de edición ni prueba que estas cartas sean Divination.";
+   " puntos. Las cartas pertenecen al Set Divination según Sorare; NO garantiza que estén habilitadas para este nivel, ni predice puntos. No incorpora bonus de edición.";
  }
  function update(choice,metricKey,count){
   rank=choice&&Number.isFinite(choice.sum)?choice:null;
   metric=typeof metricKey==="string"?metricKey:"l5";
   available=Number(count)||0;
-  $("divination-status").textContent="Tablero Divination de referencia, no sincronizado con Sorare. "+
-   available+" futbolistas Common analizados: no se ha confirmado su pertenencia a Divination.";
+  $("divination-status").textContent="Tablero Divination de referencia (vidas y nivel sin sincronización). "+
+   available+" futbolistas con cartas del Set Divination identificadas por Sorare. Elegibilidad específica pendiente.";
   draw();
  }
  function reset(){
