@@ -35,12 +35,12 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
 <div id="profile" class="status good" hidden></div>
 <a id="my-cards" href="/mis-cartas.html" class="btn" hidden>Ver mis cartas de fútbol (beta)</a>
 <div id="test-gate" class="test-access" hidden>
-  <strong>Prueba privada del propietario</strong>
-  <p class="small">Este acceso es solo para verificar la conexión OAuth. Introduce la clave de prueba que guardaste como secreto en Cloudflare; NO es tu contraseña de Sorare, tu Client Secret ni tu API key.</p>
+  <strong>Acceso privado del propietario · 30 minutos</strong>
+  <p class="small">Para renovar la prueba privada, introduce la clave que guardaste como secreto SFS_OAUTH_TEST_SECRET en Cloudflare. Puedes hacerlo sin desconectar tu cuenta Sorare. NO es tu contraseña de Sorare, tu Client Secret ni tu API key. No compartas esta clave.</p>
   <form id="test-form">
     <label for="test-passphrase">Clave temporal de prueba</label>
     <input id="test-passphrase" type="password" minlength="24" maxlength="512" autocomplete="off" required>
-    <button class="btn" type="submit">Desbloquear prueba privada</button>
+    <button class="btn" type="submit">Activar o renovar acceso privado</button>
   </form>
   <p class="small" id="test-feedback" role="status" aria-live="polite"></p>
 </div>
@@ -99,11 +99,16 @@ footer{margin-top:30px;border-top:1px solid var(--border);padding-top:18px;font-
    ]);
    $("test-gate").hidden=true;
    if(session.connected){
+    const expired=Boolean(config.privateTestAvailable)&&!Boolean(test.granted);
     $("profile").hidden=false;
-    $("profile").textContent="Cuenta conectada: "+session.user.slug+". Puedes consultar una vista previa de cartas, pendiente de validar con Sorare.";
+    $("profile").textContent="Cuenta Sorare conectada: "+session.user.slug+". No necesitas volver a autorizar tu cuenta.";
     $("disconnect").hidden=false;$("connect").style.display="none";
-    $("my-cards").hidden=false;
-    if(!error){status.textContent="Sesión Sorare activa. Puedes consultar una vista previa de tus cartas con permiso de lectura.";}
+    $("my-cards").hidden=expired;
+    $("test-gate").hidden=!expired;
+    status.classList.toggle("error",expired);
+    if(!error){status.textContent=expired?
+      "El permiso temporal de la beta privada ha caducado. Introduce tu clave de prueba debajo para renovarlo durante 30 minutos, sin desconectar Sorare.":
+      "Sesión Sorare activa. Puedes consultar tus cartas con permiso de lectura.";}
    }else if(Number(config.retryAfterSeconds)>0){
     $("my-cards").hidden=true;
     $("profile").hidden=true;$("disconnect").hidden=true;
