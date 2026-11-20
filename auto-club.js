@@ -13,7 +13,7 @@
   {name:"Extra",pos:"Extra"}
  ];
  const MAX_PAGES=200, MAX_RETRIES=3;
- let working=false,players=[],choices=[],cardCount=0,complete=false;
+ let working=false,players=[],choices=[],cardCount=0,complete=false,ownedCards=new Map();
  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  const fmt=n=>Number.isFinite(n)?n.toLocaleString("es-ES",{maximumFractionDigits:1}):"—";
  const newEl=(tag,className,content)=>{
@@ -70,7 +70,7 @@
   }
   throw Error("No se pudo completar la consulta a Sorare.");
  }
- function possibilities(collection){
+ function possibilities(collection,metricKey=metric()){
   const states=Array.from({length:32},()=>[]);
   states[0]=[{sum:0,picks:[],signature:""}];
   const LIMIT=8;
@@ -85,7 +85,7 @@
    if(bucket.length>LIMIT)bucket.length=LIMIT;
   };
   for(const player of collection){
-   const value=player[metric()];
+   const value=player[metricKey];
    if(typeof value!=="number"||!Number.isFinite(value))continue;
    for(let mask=31;mask>=0;mask--){
     for(const previous of states[mask]){
@@ -153,7 +153,8 @@
  }
  async function run(){
   if(working)return;
-  working=true;complete=false;players=[];choices=[];cardCount=0;
+  working=true;complete=false;players=[];choices=[];cardCount=0;ownedCards=new Map();
+  window.SorareGW?.reset();
   $("load").disabled=true;
   $("preview").disabled=true;
   $("auto-results").hidden=false;
@@ -180,6 +181,10 @@
      if(!id||seenCards.has(id))continue;
      seenCards.add(id);cardCount++;
      if(!card.playerSlug)continue;
+     if(!ownedCards.has(card.playerSlug))ownedCards.set(card.playerSlug,[]);
+     ownedCards.get(card.playerSlug).push({
+      assetId:id,rarity:card.rarity||"",season:card.season,cardSlug:card.cardSlug||""
+     });
      if(!uniquePlayers.has(card.playerSlug)){
       uniquePlayers.set(card.playerSlug,{
        slug:card.playerSlug,name:card.name||"Jugador",
@@ -225,6 +230,7 @@
     (lacking?" · "+lacking+" sin ficha":"");
    showResults();
    $("auto-metric").disabled=false;
+   window.SorareGW?.start({players,ownedCards,cardCount});
   }catch(err){
    complete=false;players=[];choices=[];
    $("auto-lineups").replaceChildren();
@@ -236,6 +242,6 @@
    $("preview").disabled=false;
   }
  }
- $("auto-metric").addEventListener("change",()=>{if(complete)showResults();});
- window.SorareAuto={run};
+ $("auto-metric").addEventListener("change",()=>{if(complete)showResults();window.SorareGW?.render();});
+ window.SorareAuto={run,rank:(data,metricKey)=>possibilities(data,metricKey)};
 })();
