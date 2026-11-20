@@ -61,6 +61,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <section class="panel">
 <h2>Conexión con tu cuenta</h2>
 <div id="status" class="notice" role="status" aria-live="polite">Comprobando la sesión…</div>
+<a id="renew-test" class="btn" href="/mi-club.html" hidden>Renovar acceso privado (30 min)</a>
 <div id="controls" hidden>
   <button id="load" type="button" class="btn">Consultar mis cartas y recomendar quinteto</button>
   <button id="preview" type="button" class="btn secondary">Ver cartas individualmente (opcional)</button>
@@ -275,19 +276,30 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
   finally{loading=false;$("load").disabled=false;$("more").disabled=false;updateSelected();}
  }
  async function init(){
+  $("controls").hidden=true;
+  $("offline").hidden=true;
+  $("renew-test").hidden=true;
   try{
-   const r=await fetch("/api/auth/session",{cache:"no-store",credentials:"same-origin"});
-   if(!r.ok)throw Error();
-   const data=await r.json();
+   const [r,g]=await Promise.all([
+    fetch("/api/auth/session",{cache:"no-store",credentials:"same-origin"}),
+    fetch("/api/auth/test-access",{cache:"no-store",credentials:"same-origin"})
+   ]);
+   if(!r.ok||!g.ok)throw Error();
+   const [data,gate]=await Promise.all([r.json(),g.json()]);
    if(data.connected){
-    setStatus("Conectado con Sorare. Puedes consultar la colección de fútbol de esta cuenta.","good");
-    $("controls").hidden=false;
+    if(gate.testAvailable&&!gate.granted){
+     setStatus("Tu cuenta Sorare sigue conectada, pero el acceso temporal a la prueba privada ha caducado. Renueva la clave desde Mi club sin desconectar tu cuenta.","error");
+     $("renew-test").hidden=false;
+    }else{
+     setStatus("Conectado con Sorare. Puedes consultar la colección de fútbol de esta cuenta.","good");
+     $("controls").hidden=false;
+    }
    }else{
     setStatus("No hay una sesión Sorare activa en este navegador. Conéctate desde Mi club.");
     $("offline").hidden=false;
    }
   }catch(_){
-   setStatus("No se ha podido verificar la sesión. La consulta se mantiene desactivada.","error");
+   setStatus("No se ha podido verificar la sesión o el permiso privado. La consulta se mantiene desactivada.","error");
    $("offline").hidden=false;
   }
  }
