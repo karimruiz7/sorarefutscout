@@ -99,7 +99,7 @@ const isCommon=player=>(cardsByPlayer.get(player.slug)||[])
  .some(card=>String(card.rarity||"").toLowerCase()==="common");
 function setActive(which,updateHash=true){
  if(!tabs.includes(which))return;
- if(updateHash&&window.location.hash!=="#"+which)window.location.hash=which;
+ if(updateHash&&window.location.hash!=="#"+which)window.location.hash="#"+which;
  active=which;
  for(const mode of tabs){
   const btn=$("mode-"+mode);
