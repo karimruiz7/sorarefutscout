@@ -58,6 +58,10 @@
     continue;
    }
    if(!response.ok||!data?.ok){
+    if(data?.error==="prueba_privada_caducada"){
+     $("renew-test").hidden=false;
+     throw Error("El permiso de la beta privada ha caducado. Renueva el acceso desde Mi club sin desconectar tu cuenta Sorare y vuelve a iniciar el análisis.");
+    }
     if(response.status===502||response.status===503||response.status===504){
      if(attempt<MAX_RETRIES){
       progress("Respuesta temporal de Sorare. Reintentando…",$("auto-progress").value);
