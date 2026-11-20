@@ -277,3 +277,19 @@ La fuente para límites de modo Arcade: https://help.sorare.com/hc/en-us/article
 - Se respetan respuestas HTTP 429 y `Retry-After`, se secuencian las consultas y se comunica el progreso. Si una página falla o la cuenta cambia, **no se muestra un quinteto parcial**. Los datos se mantienen únicamente en memoria de la pestaña, sin copiar la colección al servidor.
 - **Importante:** se optimiza la suma de medias históricas de los futbolistas con estadísticas disponibles, **no** se verifica automáticamente la competición concreta, GW, los partidos de todos los candidatos, rareza/temporada, XP, bonificaciones, titularidad, elegibilidad Arcade, uso previo de la carta ni disponibilidad. Tampoco se envía ninguna alineación a Sorare.
 - Sintaxis JS verificada y prueba de alineaciones distintas sin repetición efectuada sobre datos simulados. Pendiente de validar despliegue y funcionamiento con colección real y límites de Sorare.
+
+
+## Fase 4.4 · Game Week por rareza y candidatos Pro/Arena (20-11-2026)
+
+- Desde `mis-cartas.html` se conserva la recuperación automática de la colección completa y el top-3 general por media histórica L5/L10/L15.
+- Nueva capa `auto-gw.js`: **tras el análisis general, automáticamente** separa los futbolistas con cartas en las rarezas Pro conocidas (Limited, Rare, Super Rare y Unique) y consulta `/api/next-games` en lotes de hasta 12 slugs; respeta `429`/`Retry-After`, evita concurrencia y comunica el progreso.
+- Agrupa únicamente **el próximo partido SO5 que Sorare devuelve**, con Game Week numérica real, y permite filtrar GW y rareza. Calcula hasta tres quintetos sin repetir futbolistas dentro de la misma rareza. Si no hay jugadores suficientes o la consulta se interrumpe, lo explica sin mostrar una alineación parcial.
+- Conserva la rareza y el año declarado de cada carta durante la visita, sin enviar las cartas a un servidor de almacenamiento. La lista y las recomendaciones siguen siendo de solo lectura. No se cambian permisos, OAuth ni secretos.
+- **Limitación estricta**: una GW registrada para el próximo partido no es la lista exhaustiva de partidos futuros ni asegura que el jugador participe. Tampoco se valida que una carta pertenezca al grupo In-Season de la competición, bonificaciones, temporada, licencia, disponibilidad, cap, cartas usadas, capitán, sustitutos ni envío de alineaciones. El campo `seasonYear` no acredita elegibilidad In-Season.
+- **Arcade** es un modo de Set/misiones distinto de la GW de Pro; no inferir pertenencia ni elegibilidad Arcade por ser Common o por poseer la carta.
+- Validaciones efectuadas: sintaxis de JS de los archivos nuevos y de la página, caso de 5 jugadores Limited en una GW con un quinteto propuesto, caso de solo Common (sin consultas GW innecesarias), error 429 con espera demasiado larga (informa calendario incompleto, cero quintetos falsos). **Pendiente comprobar en el despliegue Cloudflare con sesión real**.
+
+Documentación Sorare:
+- https://sorare.com/es/help/a/17629357197341/What%20are%20the%203%20game%20modes%20in%20Sorare%20Football
+- https://sorare.com/es/help/a/4406429217053/understanding-sorare-cards-pro-common-and-scarcity-levels
+- https://sorare.com/es/help/a/28920678508061/what-is-the-arena-how-does-it-work
