@@ -64,6 +64,12 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 .divination-hearts{font-size:18px;color:#c3ff75;letter-spacing:3px}
 .divination-reference{color:#e5f5d1;font-size:14px;line-height:1.65}
 @media(max-width:660px){.divination-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.arcade-games-panel{border:1px solid #3a596e;background:#111e2e;border-radius:13px;padding:17px;margin:17px 0}
+.arcade-games-panel h3{margin:0 0 8px;font-size:17px}
+.arcade-games-panel input[type="date"]{background:#122235;color:#f5faff;border:1px solid #516e83;border-radius:9px;padding:10px;font:inherit}
+.arcade-games-panel .auto-choice{margin-top:12px}
+.arcade-match-list{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0}
+.arcade-match-list span{font-size:11px;border:1px solid #445e6f;border-radius:7px;background:#172f3c;padding:7px 9px}
 </style>
 <link rel="stylesheet" href="/modos-menu.css">
 <script src="/modos-menu.js" defer></script>
@@ -134,6 +140,17 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <div id="arcade-inventory" class="notice"></div>
 <div class="auto-tools"><label for="arcade-set">Set identificado en tu colección</label><select id="arcade-set" disabled aria-label="Elegir un Set declarado por Sorare"><option value="">Consulta tus cartas para identificar Sets</option></select></div>
 <p class="muted" id="arcade-set-summary" aria-live="polite"></p>
+<section class="arcade-games-panel" aria-labelledby="arcade-games-title">
+<h3 id="arcade-games-title">Partidos puntuables de este Set</h3>
+<p class="muted">Sorare publica los encuentros que cuentan para cada Set en ventanas de hasta 48 horas. Consulta una fecha para filtrar por clubes con partidos registrados; esta comprobación todavía no garantiza participación, titularidad ni elegibilidad de cada carta para el nivel activo.</p>
+<div class="auto-tools">
+<label for="arcade-day">Fecha inicial</label>
+<input id="arcade-day" type="date" aria-label="Fecha de partidos del Set">
+<button id="arcade-check-games" class="btn secondary" type="button" disabled>Consultar partidos del Set</button>
+</div>
+<div id="arcade-games-status" class="notice" role="status" aria-live="polite">Completa el análisis para consultar los partidos de un Set.</div>
+<div id="arcade-games-results"></div>
+</section>
 <section id="divination-board" class="divination-board" aria-labelledby="divination-title" hidden>
 <h3 id="divination-title">Tablero Divination · seis niveles</h3>
 <p class="muted">Recreación funcional basada en el tablero compartido del Set Divination (noviembre de 2026). Los objetivos y premios se muestran como referencia. Cada Set futuro puede tener otras reglas y premios; no se leen automáticamente el nivel, las vidas ni el resultado de la cuenta Sorare.</p>
@@ -198,6 +215,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <script src="/auto-gw.js"></script>
 <script src="/auto-modes.js"></script>
 <script src="/auto-board.js"></script>
+<script src="/auto-arcade-games.js"></script>
 <script>
 (()=>{
  const $=id=>document.getElementById(id);
