@@ -26,6 +26,8 @@ footer{margin-top:35px;color:#8ea3b4;font-size:12px;border-top:1px solid var(--l
 @media(max-width:1050px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:720px){.app{display:block}.sidebar{position:static;height:auto;padding:12px}.brand{padding:5px 8px}.menu{display:flex;gap:5px;overflow-x:auto}.menu a{padding:9px 12px;white-space:nowrap}.menu-header,.side-note{display:none}main{padding:20px 14px}.hero{padding:22px}.illustration{display:none}.cards{grid-template-columns:1fr}}
 </style>
+<link rel="stylesheet" href="/modos-menu.css">
+<script src="/modos-menu.js" defer></script>
 </head>
 <body>
 <div class="app">
@@ -34,7 +36,12 @@ footer{margin-top:35px;color:#8ea3b4;font-size:12px;border-top:1px solid var(--l
 <nav class="menu" aria-label="Menú principal">
 <a class="active" href="/" aria-current="page"><span class="symbol">▣</span> Panel general</a>
 <a href="/explorador.html"><span class="symbol">⚽</span> Jugadores reales</a>
-<a href="/optimizador-real.html"><span class="symbol">✦</span> Optimizador</a>
+<a href="/optimizador-real.html"><span class="symbol">✦</span> Optimizador</a><details class="modos-menu"><summary>Modos de juego</summary><div class="modos-menu__dropdown">
+<a data-game-mode="arcade" href="/mis-cartas.html#arcade">Arcade · Sets y tableros</a>
+<div class="modos-menu__label">Competitivo</div>
+<a data-game-mode="pro" href="/mis-cartas.html#pro">Pro · Game Weeks</a>
+<a data-game-mode="arena" href="/mis-cartas.html#arena">Arena · Clasificaciones</a>
+</div></details>
 <a href="/disponibilidad.html"><span class="symbol">🩺</span> Disponibilidad y noticias</a>
 <a href="/mi-club.html"><span class="symbol">🔐</span> Mi club · conectar Sorare</a>
 <div class="menu-header">OTRAS HERRAMIENTAS</div>
