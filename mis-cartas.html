@@ -51,6 +51,19 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 .mode-button:hover:not([aria-pressed="true"]){border-color:var(--accent)}
 .mode-button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 #mode-info{font-size:13px;line-height:1.6}
+
+.divination-board{border:1px solid #47627a;background:#101e30;border-radius:14px;padding:16px;margin:18px 0}
+.divination-board h3{margin:0 0 7px;font-size:17px}
+.divination-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.divination-step{background:#17283b;color:#f0f7ff;min-width:0;border:1px solid #486078;border-radius:12px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:5px;cursor:pointer}
+.divination-step:hover{border-color:var(--accent)}
+.divination-step[aria-pressed="true"]{border-color:var(--accent);outline:1px solid var(--accent);background:#233c34}
+.divination-level{font-size:11px;color:#b4cadb}
+.divination-target{font-size:18px;color:var(--accent)}
+.divination-reward{font-size:12px;overflow-wrap:anywhere}
+.divination-hearts{font-size:18px;color:#c3ff75;letter-spacing:3px}
+.divination-reference{color:#e5f5d1;font-size:14px;line-height:1.65}
+@media(max-width:660px){.divination-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -62,7 +75,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <a href="/mi-club.html" class="active">Mi club</a>
 </nav></div></header>
 <main class="wrap">
-<div class="eyebrow">FASE 4.5 · ARCADE, PRO Y ARENA · BETA PRIVADA</div>
+<div class="eyebrow">FASE 4.6 · DIVINATION Y MODOS · BETA PRIVADA</div>
 <h1>Tu club, tus cartas, <em>tus mejores quintetos</em></h1>
 <p class="lead">Analiza automáticamente la colección completa de cada usuario. Compara quintetos estadísticos y explora Arcade, Pro y Arena por separado. Las cartas Common no se confunden con cartas de Set ni se certifica elegibilidad hasta consultar las reglas de cada competición.</p>
 <section class="panel">
@@ -108,9 +121,28 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <p id="mode-info" class="muted" aria-live="polite"></p>
 </section>
 <section id="arcade-results" class="panel" hidden>
-<h2>Arcade · revisión de cartas y Sets</h2>
+<h2>Arcade · Divination y otros Sets</h2>
 <p class="muted">Arcade utiliza cartas del Set correspondiente a cada tablero. Sorare distingue las cartas Common de las cartas de Set: no debemos considerar automáticamente que las cartas Common de una cuenta sean elegibles. Hasta verificar la identificación de Set, los quintetos siguientes son únicamente una exploración estadística de cartas Common, no recomendaciones inscritas o confirmadas para Arcade.</p>
 <div id="arcade-inventory" class="notice"></div>
+<section class="divination-board" aria-labelledby="divination-title">
+<h3 id="divination-title">Tablero Divination · seis niveles</h3>
+<p class="muted">Recreación funcional basada en el tablero compartido del Set Divination (noviembre de 2026). Los objetivos y premios se muestran como referencia. Cada Set futuro puede tener otras reglas y premios; no se leen automáticamente el nivel, las vidas ni el resultado de la cuenta Sorare.</p>
+<div class="divination-steps" id="divination-steps" role="group" aria-label="Niveles del tablero Divination"></div>
+<div class="auto-tools">
+<label for="divination-lives">Vidas restantes del nivel seleccionado (introducción manual)</label>
+<select id="divination-lives">
+<option value="4">4 vidas</option>
+<option value="3">3 vidas</option>
+<option value="2">2 vidas</option>
+<option value="1">1 vida</option>
+<option value="0">0 vidas</option>
+</select>
+</div>
+<p id="divination-selected" class="muted" role="status"></p>
+<div id="divination-status" class="notice"></div>
+<p id="divination-reference" class="divination-reference"></p>
+<p class="muted">Para Divination se ilustra el bonus del capitán (+50 % sobre su media). No hemos confirmado ediciones de carta, bonos especiales, disponibilidad de partidos ni elegibilidad en el Set: la puntuación real puede ser muy diferente. Nunca se envía una alineación a Sorare.</p>
+</section>
 <div id="arcade-lineups"></div>
 <p class="muted">Pendiente: identificar las cartas de cada Set de Arcade mediante datos oficiales y recuperar las reglas del Game Board activo. Ni el valor L5 ni la etiqueta Common prueban elegibilidad; no se envían alineaciones a Sorare.</p>
 </section>
@@ -155,6 +187,7 @@ footer{border-top:1px solid var(--border);padding:18px 0;color:#8da6b9;font-size
 <script src="/auto-club.js"></script>
 <script src="/auto-gw.js"></script>
 <script src="/auto-modes.js"></script>
+<script src="/auto-board.js"></script>
 <script>
 (()=>{
  const $=id=>document.getElementById(id);
