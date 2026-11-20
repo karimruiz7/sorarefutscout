@@ -188,7 +188,11 @@
      if(!card.playerSlug)continue;
      if(!ownedCards.has(card.playerSlug))ownedCards.set(card.playerSlug,[]);
      ownedCards.get(card.playerSlug).push({
-      assetId:id,rarity:String(card.rarity||"").toLowerCase(),season:card.season,cardSlug:card.cardSlug||""
+      assetId:id,rarity:String(card.rarity||"").toLowerCase(),season:card.season,cardSlug:card.cardSlug||"",
+      setId:typeof card.cardSet?.id==="string"?card.cardSet.id:null,
+      setSlug:typeof card.cardSet?.slug==="string"?card.cardSet.slug:null,
+      setName:typeof card.cardSet?.name==="string"?card.cardSet.name:null,
+      edition:typeof card.cardEditionName==="string"?card.cardEditionName:null
      });
      if(!uniquePlayers.has(card.playerSlug)){
       uniquePlayers.set(card.playerSlug,{
